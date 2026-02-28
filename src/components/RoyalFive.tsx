@@ -1,5 +1,5 @@
 import { useState } from "react";
-import packagingImg from "@/assets/packaging.jpg";
+import packagingImg from "@/assets/packaging-royal.jpg";
 
 interface Product {
   name: string;

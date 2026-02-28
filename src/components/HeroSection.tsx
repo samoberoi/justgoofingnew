@@ -1,14 +1,17 @@
-import heroBg from "@/assets/hero-bg.jpg";
+import heroBg from "@/assets/hero-dark.jpg";
 import { ChevronDown } from "lucide-react";
 
 const HeroSection = () => {
   return (
-    <section className="relative h-screen flex flex-col items-center justify-center overflow-hidden">
-      {/* Background */}
-      <div className="absolute inset-0 overflow-hidden">
-        <img src={heroBg} alt="BIRYAAN hero" className="w-full h-full object-cover object-top" />
-        <div className="absolute inset-0 bg-background/65" />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-background/50" />
+    <section className="relative h-screen max-h-screen flex flex-col items-center justify-center overflow-hidden">
+      {/* Background - strictly contained */}
+      <div className="absolute inset-0 z-0">
+        <img
+          src={heroBg}
+          alt="BIRYAAN hero"
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-background/40" />
       </div>
 
       {/* Content */}
@@ -66,7 +69,7 @@ const HeroSection = () => {
       </div>
 
       {/* Scroll indicator */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-float">
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-float z-10">
         <ChevronDown size={28} className="text-gold/40" />
       </div>
     </section>
