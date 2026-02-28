@@ -1,4 +1,4 @@
-import heroBg from "@/assets/hero-dark.jpg";
+import heroBg from "@/assets/hero-mughal.jpg";
 import { ChevronDown } from "lucide-react";
 
 const HeroSection = () => {
