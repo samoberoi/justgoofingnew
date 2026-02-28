@@ -1,6 +1,7 @@
-import { Bell, Crown } from 'lucide-react';
+import { Bell, Crown, Volume2, VolumeX } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store';
+import { useState, useRef, useCallback, useEffect } from 'react';
 
 const tierColors: Record<string, string> = {
   Sipahi: 'bg-muted text-muted-foreground',
@@ -10,8 +11,31 @@ const tierColors: Record<string, string> = {
 };
 
 const RoyalHeader = () => {
-  const { walletBalance, tier } = useAppStore();
+  const { walletBalance, tier, musicEnabled, setMusicEnabled } = useAppStore();
   const navigate = useNavigate();
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const getAudio = useCallback(() => {
+    if (!audioRef.current) {
+      const audio = new Audio("/music/sitar.mp3");
+      audio.loop = true;
+      audio.volume = 0.2;
+      audioRef.current = audio;
+    }
+    return audioRef.current;
+  }, []);
+
+  useEffect(() => {
+    const audio = getAudio();
+    if (musicEnabled) {
+      audio.play().catch(() => {});
+    } else {
+      audio.pause();
+    }
+    return () => { audio.pause(); };
+  }, [musicEnabled, getAudio]);
+
+  const toggleMusic = () => setMusicEnabled(!musicEnabled);
 
   return (
     <header className="sticky top-0 z-40 bg-card/95 backdrop-blur-xl border-b border-border">
@@ -19,7 +43,14 @@ const RoyalHeader = () => {
         <div className="flex items-center gap-2">
           <span className="font-display text-lg text-gradient-gold">BIRYAAN</span>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={toggleMusic}
+            className="w-8 h-8 flex items-center justify-center rounded-full border border-secondary/30 text-secondary"
+            aria-label={musicEnabled ? "Mute music" : "Play music"}
+          >
+            {musicEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
+          </button>
           <button
             onClick={() => navigate('/app/wallet')}
             className="flex items-center gap-1.5 bg-secondary/10 px-3 py-1 rounded-full"
