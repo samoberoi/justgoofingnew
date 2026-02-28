@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { Volume2, VolumeX } from "lucide-react";
 
 const MusicToggle = () => {
@@ -15,15 +15,18 @@ const MusicToggle = () => {
     return audioRef.current;
   }, []);
 
-  // Attempt autoplay on first render
-  useState(() => {
+  useEffect(() => {
+    // Only autoplay when NOT inside an iframe (i.e., not in Lovable editor preview)
+    const isInIframe = window.self !== window.top;
+    if (isInIframe) return;
+
     const audio = getAudio();
     audio.play().then(() => {
       setPlaying(true);
     }).catch(() => {
       // Autoplay blocked by browser — user must click
     });
-  });
+  }, [getAudio]);
 
   const toggle = useCallback(() => {
     const audio = getAudio();

@@ -1,11 +1,13 @@
 import { useState } from "react";
 import packagingImg from "@/assets/packaging-royal.jpg";
+import { ShieldCheck } from "lucide-react";
 
 interface Product {
   name: string;
   description: string;
-  hasFlavorToggle?: boolean;
-  hasBoneToggle?: boolean;
+  isNonVeg?: boolean;
+  isSehat?: boolean;
+  protein?: string;
 }
 
 const products: Product[] = [
@@ -13,13 +15,13 @@ const products: Product[] = [
     name: "Badshahi Murgh Biryani",
     description:
       "Royal chicken layered with aromatic basmati, saffron infusion, hand-ground masalas. Dum sealed individually.",
-    hasFlavorToggle: true,
-    hasBoneToggle: true,
+    isNonVeg: true,
   },
   {
     name: "Nawabi Gosht Biryani",
     description:
       "Hand-selected bone-in mutton. Slow-dum cooked. Deep masala layering. Rich and regal.",
+    isNonVeg: true,
   },
   {
     name: "Zaffrani Sabz Biryani",
@@ -29,12 +31,17 @@ const products: Product[] = [
   {
     name: "Sehat Sabz Biryani",
     description:
-      "Balanced, lighter vegetable biryani. Crafted fresh. Less oil. Whole spices.",
+      "Balanced, lighter vegetable biryani with paneer & chickpeas. Crafted fresh. Less oil. Whole spices.",
+    isSehat: true,
+    protein: "18g protein per serving",
   },
   {
     name: "Sehat Murgh Biryani",
     description:
       "Lean chicken cuts. Balanced masala. Dum sealed for strength with refinement.",
+    isNonVeg: true,
+    isSehat: true,
+    protein: "32g protein per serving",
   },
 ];
 
@@ -55,11 +62,22 @@ const ProductCard = ({ product }: { product: Product }) => {
       <h3 className="font-heading text-xl md:text-2xl text-gold mb-3 tracking-wide">
         {product.name}
       </h3>
-      <p className="font-body text-sm md:text-base text-muted-foreground mb-5 leading-relaxed">
+      <p className="font-body text-sm md:text-base text-muted-foreground mb-4 leading-relaxed">
         {product.description}
       </p>
 
-      {product.hasFlavorToggle && (
+      {/* Protein badge for Sehat range */}
+      {product.isSehat && product.protein && (
+        <div className="flex items-center gap-2 mb-4 px-3 py-2 border border-gold/20 bg-gold/5">
+          <ShieldCheck size={16} className="text-gold shrink-0" />
+          <span className="font-heading text-xs tracking-[0.1em] uppercase text-gold">
+            {product.protein}
+          </span>
+        </div>
+      )}
+
+      {/* Flavor toggle for all non-veg */}
+      {product.isNonVeg && (
         <div className="flex gap-2 mb-3">
           {(["hyderabadi", "muradabadi"] as const).map((f) => (
             <button
@@ -77,7 +95,8 @@ const ProductCard = ({ product }: { product: Product }) => {
         </div>
       )}
 
-      {product.hasBoneToggle && (
+      {/* Bone toggle for all non-veg */}
+      {product.isNonVeg && (
         <div className="flex gap-2 mb-5">
           {(["bone", "boneless"] as const).map((b) => (
             <button
