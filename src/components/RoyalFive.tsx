@@ -8,6 +8,7 @@ interface Product {
   isNonVeg?: boolean;
   isSehat?: boolean;
   protein?: string;
+  tags?: string[];
 }
 
 const products: Product[] = [
@@ -16,17 +17,20 @@ const products: Product[] = [
     description:
       "Royal chicken layered with aromatic basmati, saffron infusion, hand-ground masalas. Dum sealed individually.",
     isNonVeg: true,
+    tags: ["Saffron", "Whole Spices", "Dum Sealed"],
   },
   {
     name: "Nawabi Gosht Biryani",
     description:
       "Hand-selected bone-in mutton. Slow-dum cooked. Deep masala layering. Rich and regal.",
     isNonVeg: true,
+    tags: ["Bone-In Mutton", "Slow Dum", "Rich Masala"],
   },
   {
     name: "Zaffrani Sabz Biryani",
     description:
       "Seasonal vegetables layered with saffron bloom and whole spices. Elegant vegetarian royalty.",
+    tags: ["Paneer", "Zafran", "Seasonal Veggies", "Whole Spices"],
   },
   {
     name: "Sehat Sabz Biryani",
@@ -34,6 +38,7 @@ const products: Product[] = [
       "Balanced, lighter vegetable biryani with paneer & chickpeas. Crafted fresh. Less oil. Whole spices.",
     isSehat: true,
     protein: "18g protein per serving",
+    tags: ["Low Oil", "Chickpeas", "Paneer", "Whole Grain"],
   },
   {
     name: "Sehat Murgh Biryani",
@@ -42,6 +47,7 @@ const products: Product[] = [
     isNonVeg: true,
     isSehat: true,
     protein: "32g protein per serving",
+    tags: ["Lean Chicken", "Low Oil", "Balanced Masala"],
   },
 ];
 
@@ -65,6 +71,20 @@ const ProductCard = ({ product }: { product: Product }) => {
       <p className="font-body text-sm md:text-base text-muted-foreground mb-4 leading-relaxed">
         {product.description}
       </p>
+
+      {/* Ingredient/feature tags */}
+      {product.tags && product.tags.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mb-4">
+          {product.tags.map((tag) => (
+            <span
+              key={tag}
+              className="font-body text-[10px] uppercase tracking-wider px-2.5 py-1 border border-gold/20 text-gold/70 bg-gold/5"
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
+      )}
 
       {/* Spacer to push toggles and CTA to bottom */}
       <div className="flex-1" />
