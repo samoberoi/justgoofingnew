@@ -50,7 +50,7 @@ const ProductCard = ({ product }: { product: Product }) => {
   const [bone, setBone] = useState<"bone" | "boneless">("bone");
 
   return (
-    <div className="group border border-gold/20 bg-card hover:border-gold/40 transition-all duration-500 p-6 md:p-8">
+    <div className="group flex flex-col border border-gold/20 bg-card hover:border-gold/40 transition-all duration-500 p-6 md:p-8 h-full">
       <div className="aspect-square mb-6 overflow-hidden bg-muted/20">
         <img
           src={packagingImg}
@@ -66,6 +66,9 @@ const ProductCard = ({ product }: { product: Product }) => {
         {product.description}
       </p>
 
+      {/* Spacer to push toggles and CTA to bottom */}
+      <div className="flex-1" />
+
       {/* Protein badge for Sehat range */}
       {product.isSehat && product.protein && (
         <div className="flex items-center gap-2 mb-4 px-3 py-2 border border-gold/20 bg-gold/5">
@@ -76,47 +79,51 @@ const ProductCard = ({ product }: { product: Product }) => {
         </div>
       )}
 
-      {/* Flavor toggle for all non-veg */}
-      {product.isNonVeg && (
-        <div className="flex gap-2 mb-3">
-          {(["hyderabadi", "muradabadi"] as const).map((f) => (
-            <button
-              key={f}
-              onClick={() => setFlavor(f)}
-              className={`font-body text-xs uppercase tracking-wider px-3 py-1.5 border transition-all ${
-                flavor === f
-                  ? "border-gold bg-gold/10 text-gold"
-                  : "border-border text-muted-foreground hover:border-gold/30"
-              }`}
-            >
-              {f}
-            </button>
-          ))}
-        </div>
-      )}
+      {/* Flavor toggle — shown for all non-veg, placeholder for veg to keep alignment */}
+      <div className="mb-3 min-h-[34px]">
+        {product.isNonVeg ? (
+          <div className="flex gap-2">
+            {(["hyderabadi", "muradabadi"] as const).map((f) => (
+              <button
+                key={f}
+                onClick={() => setFlavor(f)}
+                className={`font-body text-xs uppercase tracking-wider px-3 py-1.5 border transition-all ${
+                  flavor === f
+                    ? "border-gold bg-gold/10 text-gold"
+                    : "border-border text-muted-foreground hover:border-gold/30"
+                }`}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+        ) : null}
+      </div>
 
-      {/* Bone toggle for all non-veg */}
-      {product.isNonVeg && (
-        <div className="flex gap-2 mb-5">
-          {(["bone", "boneless"] as const).map((b) => (
-            <button
-              key={b}
-              onClick={() => setBone(b)}
-              className={`font-body text-xs uppercase tracking-wider px-3 py-1.5 border transition-all ${
-                bone === b
-                  ? "border-gold bg-gold/10 text-gold"
-                  : "border-border text-muted-foreground hover:border-gold/30"
-              }`}
-            >
-              {b}
-            </button>
-          ))}
-        </div>
-      )}
+      {/* Bone toggle — shown for all non-veg, placeholder for veg to keep alignment */}
+      <div className="mb-5 min-h-[34px]">
+        {product.isNonVeg ? (
+          <div className="flex gap-2">
+            {(["bone", "boneless"] as const).map((b) => (
+              <button
+                key={b}
+                onClick={() => setBone(b)}
+                className={`font-body text-xs uppercase tracking-wider px-3 py-1.5 border transition-all ${
+                  bone === b
+                    ? "border-gold bg-gold/10 text-gold"
+                    : "border-border text-muted-foreground hover:border-gold/30"
+                }`}
+              >
+                {b}
+              </button>
+            ))}
+          </div>
+        ) : null}
+      </div>
 
       <a
         href="#contact"
-        className="inline-block w-full text-center bg-gradient-saffron font-heading text-sm tracking-[0.15em] uppercase px-6 py-3 text-primary-foreground hover:opacity-90 transition-opacity"
+        className="inline-block w-full text-center bg-gradient-saffron font-heading text-sm tracking-[0.15em] uppercase px-6 py-3 text-primary-foreground hover:opacity-90 transition-opacity mt-auto"
       >
         Dawat Mangaiye
       </a>
@@ -135,7 +142,7 @@ const RoyalFive = () => {
           <h2 className="heading-lg text-gradient-gold">THE ROYAL DAWAT</h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
           {products.map((product) => (
             <ProductCard key={product.name} product={product} />
           ))}
