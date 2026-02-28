@@ -1,16 +1,22 @@
+import heroVideo from "@/assets/hero-video.mp4";
 import heroBg from "@/assets/hero-biryani.jpg";
 import { ChevronDown } from "lucide-react";
 
 const HeroSection = () => {
   return (
     <section className="relative h-screen max-h-screen flex flex-col items-center justify-center overflow-hidden">
-      {/* Background - strictly contained */}
+      {/* Video Background */}
       <div className="absolute inset-0 z-0">
-        <img
-          src={heroBg}
-          alt="BIRYAAN hero"
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          poster={heroBg}
           className="w-full h-full object-cover"
-        />
+        >
+          <source src={heroVideo} type="video/mp4" />
+        </video>
         <div className="absolute inset-0 bg-background/65" />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-background/60" />
       </div>
