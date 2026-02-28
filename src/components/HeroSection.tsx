@@ -11,7 +11,8 @@ const HeroSection = () => {
           alt="BIRYAAN hero"
           className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-background/40" />
+        <div className="absolute inset-0 bg-background/65" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-background/60" />
       </div>
 
       {/* Content */}
