@@ -46,8 +46,8 @@ const HomePage = () => {
               transition={{ delay: i * 0.08 }}
               className="bg-card border border-border rounded-xl p-4 flex gap-4"
             >
-              <div className="text-4xl w-16 h-16 flex items-center justify-center bg-muted rounded-lg shrink-0">
-                {item.image}
+              <div className="w-20 h-20 rounded-lg shrink-0 overflow-hidden">
+                <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-2">

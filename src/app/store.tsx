@@ -63,12 +63,18 @@ interface AppState {
   earnPoints: (amount: number, desc: string) => void;
 }
 
+import badshahiImg from '@/assets/biryani-badshahi-murgh.jpg';
+import nawabiImg from '@/assets/biryani-nawabi-gosht.jpg';
+import zaffraniImg from '@/assets/biryani-zaffrani-sabz.jpg';
+import sehatSabzImg from '@/assets/biryani-sehat-sabz.jpg';
+import sehatMurghImg from '@/assets/biryani-sehat-murgh.jpg';
+
 const BIRYANI_MENU: BiryaniItem[] = [
-  { id: '1', name: 'Badshahi Murgh Biryani', description: 'The emperor\'s recipe. Slow-cooked chicken layered with aged basmati, saffron & royal spices.', price: 349, image: '🍗', tags: ['Bestseller', 'Non-Veg'] },
-  { id: '2', name: 'Nawabi Gosht Biryani', description: 'Tender mutton pieces marinated for 24 hours in secret Nawabi masala, sealed with dum.', price: 449, image: '🥩', tags: ['Premium', 'Non-Veg'] },
-  { id: '3', name: 'Zaffrani Sabz Biryani', description: 'Garden-fresh vegetables kissed by real Kashmiri saffron & slow-cooked with paneer.', price: 299, image: '🌿', tags: ['Zafran', 'Veg'] },
-  { id: '4', name: 'Sehat Sabz Biryani', description: 'Low-oil, high-fiber vegetarian biryani for the health-conscious royal.', price: 279, image: '🥗', tags: ['Healthy', 'Veg'] },
-  { id: '5', name: 'Sehat Murgh Biryani', description: 'Lean chicken breast biryani with quinoa blend. The warrior\'s choice.', price: 329, image: '💪', tags: ['Healthy', 'Non-Veg'] },
+  { id: '1', name: 'Badshahi Murgh Biryani', description: 'The emperor\'s recipe. Slow-cooked chicken layered with aged basmati, saffron & royal spices.', price: 349, image: badshahiImg, tags: ['Bestseller', 'Non-Veg'] },
+  { id: '2', name: 'Nawabi Gosht Biryani', description: 'Tender mutton pieces marinated for 24 hours in secret Nawabi masala, sealed with dum.', price: 449, image: nawabiImg, tags: ['Premium', 'Non-Veg'] },
+  { id: '3', name: 'Zaffrani Sabz Biryani', description: 'Garden-fresh vegetables kissed by real Kashmiri saffron & slow-cooked with paneer.', price: 299, image: zaffraniImg, tags: ['Zafran', 'Veg'] },
+  { id: '4', name: 'Sehat Sabz Biryani', description: 'Low-oil, high-fiber vegetarian biryani for the health-conscious royal. 18g protein.', price: 279, image: sehatSabzImg, tags: ['Healthy', 'Veg', '18g Protein'] },
+  { id: '5', name: 'Sehat Murgh Biryani', description: 'Lean chicken breast biryani with quinoa blend. The warrior\'s choice. 32g protein.', price: 329, image: sehatMurghImg, tags: ['Healthy', 'Non-Veg', '32g Protein'] },
 ];
 
 export { BIRYANI_MENU };

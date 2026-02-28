@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { ArrowLeft, Phone } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowLeft, Phone, Star } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAppStore } from '../store';
 
 const stages = [
   { title: 'Your Dawat Has Been Accepted', description: 'The royal kitchen acknowledges your order.', icon: '📜' },
@@ -13,15 +14,26 @@ const stages = [
 
 const OrderTrackingPage = () => {
   const navigate = useNavigate();
+  const { earnPoints } = useAppStore();
   const [currentStage, setCurrentStage] = useState(0);
+  const [showReview, setShowReview] = useState(false);
+  const [reviewSubmitted, setReviewSubmitted] = useState(false);
+  const [selectedRating, setSelectedRating] = useState(0);
 
-  // Simulate progress
   useEffect(() => {
     if (currentStage < 4) {
       const timer = setTimeout(() => setCurrentStage(prev => prev + 1), 5000);
       return () => clearTimeout(timer);
+    } else {
+      const timer = setTimeout(() => setShowReview(true), 1500);
+      return () => clearTimeout(timer);
     }
   }, [currentStage]);
+
+  const handleReviewSubmit = () => {
+    earnPoints(50, 'Review Bonus – 50 Sultanat Points');
+    setReviewSubmitted(true);
+  };
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -36,6 +48,98 @@ const OrderTrackingPage = () => {
           </button>
         </div>
       </header>
+
+      {/* Review overlay */}
+      <AnimatePresence>
+        {showReview && !reviewSubmitted && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-background/95 backdrop-blur-xl flex items-center justify-center p-6"
+          >
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: 'spring', damping: 20 }}
+              className="w-full max-w-sm text-center"
+            >
+              <div className="text-6xl mb-4">👑</div>
+              <h2 className="font-heading text-2xl text-gradient-gold mb-2">Your Dawat is Complete!</h2>
+              <p className="text-muted-foreground text-sm mb-6">Rate your royal experience and earn Sultanat Points</p>
+
+              {/* Star rating */}
+              <div className="flex justify-center gap-2 mb-6">
+                {[1, 2, 3, 4, 5].map(star => (
+                  <motion.button
+                    key={star}
+                    whileTap={{ scale: 1.3 }}
+                    onClick={() => setSelectedRating(star)}
+                    className="p-1"
+                  >
+                    <Star
+                      size={36}
+                      className={star <= selectedRating ? 'text-secondary fill-secondary' : 'text-muted-foreground'}
+                    />
+                  </motion.button>
+                ))}
+              </div>
+
+              <div className="bg-secondary/10 border border-secondary/20 rounded-xl p-4 mb-6">
+                <p className="font-heading text-lg text-secondary">+50 Sultanat Points</p>
+                <p className="text-xs text-muted-foreground mt-1">Earned instantly when you leave a review</p>
+              </div>
+
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={handleReviewSubmit}
+                disabled={selectedRating === 0}
+                className="w-full py-4 bg-gradient-saffron rounded-xl font-heading text-sm uppercase tracking-widest text-primary-foreground shadow-saffron disabled:opacity-40"
+              >
+                Submit Review & Earn Points
+              </motion.button>
+
+              <button
+                onClick={() => setShowReview(false)}
+                className="mt-4 text-xs text-muted-foreground underline"
+              >
+                Skip for now
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {reviewSubmitted && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-background/95 backdrop-blur-xl flex items-center justify-center p-6"
+          >
+            <motion.div
+              initial={{ scale: 0.5 }}
+              animate={{ scale: 1 }}
+              transition={{ type: 'spring', damping: 15 }}
+              className="text-center"
+            >
+              <motion.div
+                animate={{ rotate: [0, 10, -10, 0] }}
+                transition={{ duration: 0.5 }}
+                className="text-7xl mb-4"
+              >🎉</motion.div>
+              <h2 className="font-heading text-2xl text-gradient-gold mb-2">+50 Sultanat Points!</h2>
+              <p className="text-muted-foreground text-sm mb-8">Thank you for your royal review</p>
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={() => navigate('/app')}
+                className="px-8 py-4 bg-gradient-saffron rounded-xl font-heading text-sm uppercase tracking-widest text-primary-foreground shadow-saffron"
+              >
+                Back to Home
+              </motion.button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Animated current stage */}
       <div className="px-6 pt-8 pb-6 text-center">
