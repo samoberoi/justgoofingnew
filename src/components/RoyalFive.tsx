@@ -1,5 +1,5 @@
 import { useState } from "react";
-import packagingImg from "@/assets/packaging-royal.jpg";
+import packagingImg from "@/assets/packaging-biryaan.jpg";
 import { ShieldCheck } from "lucide-react";
 
 interface Product {
