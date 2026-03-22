@@ -3,8 +3,6 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
 import { AppProvider } from "./app/store";
 import SplashScreen from "./app/pages/SplashScreen";
 import LoginPage from "./app/pages/LoginPage";
@@ -34,29 +32,23 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Index />} />
-            
-            {/* Mobile App Routes */}
-            <Route path="/app/splash" element={<SplashScreen />} />
-            <Route path="/app/login" element={<LoginPage />} />
-            <Route path="/app/welcome" element={<WelcomePage />} />
-            <Route path="/app" element={<HomePage />} />
-            <Route path="/app/cart" element={<CartPage />} />
-            <Route path="/app/payment" element={<PaymentPage />} />
-            <Route path="/app/tracking" element={<OrderTrackingPage />} />
-            <Route path="/app/wallet" element={<WalletPage />} />
-            <Route path="/app/orders" element={<OrdersPage />} />
-            <Route path="/app/tiers" element={<TiersPage />} />
-            <Route path="/app/streak" element={<StreakPage />} />
-            <Route path="/app/spin" element={<SpinWheelPage />} />
-            <Route path="/app/flash-dawats" element={<FlashDawatsPage />} />
-            <Route path="/app/subscription" element={<SubscriptionPage />} />
-            <Route path="/app/pre-book" element={<PreBookPage />} />
-            <Route path="/app/profile" element={<ProfilePage />} />
-            <Route path="/app/notifications" element={<NotificationsPage />} />
-
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
+            <Route path="/" element={<SplashScreen />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/welcome" element={<WelcomePage />} />
+            <Route path="/home" element={<HomePage />} />
+            <Route path="/cart" element={<CartPage />} />
+            <Route path="/payment" element={<PaymentPage />} />
+            <Route path="/tracking" element={<OrderTrackingPage />} />
+            <Route path="/wallet" element={<WalletPage />} />
+            <Route path="/orders" element={<OrdersPage />} />
+            <Route path="/tiers" element={<TiersPage />} />
+            <Route path="/streak" element={<StreakPage />} />
+            <Route path="/spin" element={<SpinWheelPage />} />
+            <Route path="/flash-dawats" element={<FlashDawatsPage />} />
+            <Route path="/subscription" element={<SubscriptionPage />} />
+            <Route path="/pre-book" element={<PreBookPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/notifications" element={<NotificationsPage />} />
           </Routes>
         </BrowserRouter>
       </AppProvider>
