@@ -21,7 +21,7 @@ const CartPage = () => {
         <div className="text-6xl mb-4">🍽️</div>
         <h2 className="font-heading text-xl text-foreground">Your Dawat is Empty</h2>
         <p className="text-muted-foreground text-sm mt-2">Add biryani to begin your royal feast</p>
-        <button onClick={() => navigate('/app')} className="mt-6 px-6 py-3 bg-gradient-saffron rounded-lg font-heading text-sm text-primary-foreground">
+        <button onClick={() => navigate('/home')} className="mt-6 px-6 py-3 bg-gradient-saffron rounded-lg font-heading text-sm text-primary-foreground">
           Browse Menu
         </button>
       </div>
