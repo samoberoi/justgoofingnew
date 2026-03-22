@@ -52,7 +52,7 @@ const RoyalHeader = () => {
             {musicEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
           </button>
           <button
-            onClick={() => navigate('/app/wallet')}
+            onClick={() => navigate('/wallet')}
             className="flex items-center gap-1.5 bg-secondary/10 px-3 py-1 rounded-full"
           >
             <span className="text-xs text-secondary font-semibold">💰 {walletBalance} pts</span>
