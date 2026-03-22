@@ -61,7 +61,7 @@ const RoyalHeader = () => {
             <Crown size={12} />
             {tier}
           </button>
-          <button onClick={() => navigate('/app/notifications')} className="relative">
+          <button onClick={() => navigate('/notifications')} className="relative">
             <Bell size={20} className="text-muted-foreground" />
             <span className="absolute -top-1 -right-1 w-2 h-2 bg-accent rounded-full" />
           </button>

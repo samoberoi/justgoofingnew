@@ -142,7 +142,7 @@ const ProfilePage = () => {
       {/* Logout */}
       <div className="px-4 pt-6 pb-8">
         <button
-          onClick={() => { setLoggedIn(false); navigate('/app/splash'); }}
+          onClick={() => { setLoggedIn(false); navigate('/'); }}
           className="w-full py-3 border border-accent/30 rounded-xl text-accent text-sm font-heading flex items-center justify-center gap-2"
         >
           <LogOut size={14} /> Leave the Sultanat

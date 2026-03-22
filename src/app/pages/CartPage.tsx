@@ -114,7 +114,7 @@ const CartPage = () => {
       <div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-xl border-t border-border p-4">
         <motion.button
           whileTap={{ scale: 0.97 }}
-          onClick={() => navigate('/app/payment')}
+          onClick={() => navigate('/payment')}
           className="w-full py-4 bg-gradient-saffron rounded-xl font-heading text-sm uppercase tracking-widest text-primary-foreground shadow-saffron"
         >
           Continue to Payment • ₹{Math.max(0, total)}

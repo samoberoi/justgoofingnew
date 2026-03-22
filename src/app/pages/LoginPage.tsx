@@ -32,7 +32,7 @@ const LoginPage = () => {
         setStep('success');
         setTimeout(() => {
           setLoggedIn(true);
-          navigate(isFirstTime ? '/app/welcome' : '/app');
+          navigate(isFirstTime ? '/welcome' : '/home');
         }, 2000);
       }, 500);
     }

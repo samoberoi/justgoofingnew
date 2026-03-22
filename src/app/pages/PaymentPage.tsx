@@ -54,7 +54,7 @@ const PaymentPage = () => {
           >
             Track My Biryani
           </motion.button>
-          <button onClick={() => navigate('/app')} className="text-muted-foreground text-xs underline">
+          <button onClick={() => navigate('/home')} className="text-muted-foreground text-xs underline">
             Back to Menu
           </button>
         </motion.div>

@@ -94,7 +94,7 @@ const HomePage = () => {
         <motion.button
           initial={{ y: 100 }}
           animate={{ y: 0 }}
-          onClick={() => navigate('/app/cart')}
+          onClick={() => navigate('/cart')}
           className="fixed bottom-20 left-4 right-4 max-w-lg mx-auto bg-gradient-saffron rounded-xl py-4 px-6 flex items-center justify-between shadow-saffron z-40"
         >
           <div className="flex items-center gap-2">
