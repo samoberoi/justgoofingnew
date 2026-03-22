@@ -52,7 +52,7 @@ const RoyalHeader = () => {
             {musicEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
           </button>
           <button
-            onClick={() => navigate('/app/wallet')}
+            onClick={() => navigate('/wallet')}
             className="flex items-center gap-1.5 bg-secondary/10 px-3 py-1 rounded-full"
           >
             <span className="text-xs text-secondary font-semibold">💰 {walletBalance} pts</span>
@@ -61,7 +61,7 @@ const RoyalHeader = () => {
             <Crown size={12} />
             {tier}
           </button>
-          <button onClick={() => navigate('/app/notifications')} className="relative">
+          <button onClick={() => navigate('/notifications')} className="relative">
             <Bell size={20} className="text-muted-foreground" />
             <span className="absolute -top-1 -right-1 w-2 h-2 bg-accent rounded-full" />
           </button>

@@ -8,7 +8,7 @@ const WelcomePage = () => {
 
   const handleContinue = () => {
     setFirstTime(false);
-    navigate('/app');
+    navigate('/home');
   };
 
   return (

@@ -49,7 +49,7 @@ const OrdersPage = () => {
               <span className="font-heading text-sm text-secondary">₹{order.total}</span>
             </div>
             <button
-              onClick={() => navigate('/app/tracking')}
+              onClick={() => navigate('/tracking')}
               className="w-full mt-3 py-2 bg-muted rounded-lg text-xs font-heading text-foreground"
             >
               Reorder

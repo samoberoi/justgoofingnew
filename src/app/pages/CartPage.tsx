@@ -21,7 +21,7 @@ const CartPage = () => {
         <div className="text-6xl mb-4">🍽️</div>
         <h2 className="font-heading text-xl text-foreground">Your Dawat is Empty</h2>
         <p className="text-muted-foreground text-sm mt-2">Add biryani to begin your royal feast</p>
-        <button onClick={() => navigate('/app')} className="mt-6 px-6 py-3 bg-gradient-saffron rounded-lg font-heading text-sm text-primary-foreground">
+        <button onClick={() => navigate('/home')} className="mt-6 px-6 py-3 bg-gradient-saffron rounded-lg font-heading text-sm text-primary-foreground">
           Browse Menu
         </button>
       </div>
@@ -114,7 +114,7 @@ const CartPage = () => {
       <div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-xl border-t border-border p-4">
         <motion.button
           whileTap={{ scale: 0.97 }}
-          onClick={() => navigate('/app/payment')}
+          onClick={() => navigate('/payment')}
           className="w-full py-4 bg-gradient-saffron rounded-xl font-heading text-sm uppercase tracking-widest text-primary-foreground shadow-saffron"
         >
           Continue to Payment • ₹{Math.max(0, total)}
