@@ -49,7 +49,7 @@ const PaymentPage = () => {
           <p className="text-muted-foreground text-sm">Order #BRYN-{Date.now().toString().slice(-4)}</p>
           <motion.button
             whileTap={{ scale: 0.97 }}
-            onClick={() => navigate('/app/tracking')}
+            onClick={() => navigate('/tracking')}
             className="w-full py-4 bg-gradient-saffron rounded-xl font-heading text-sm uppercase tracking-widest text-primary-foreground"
           >
             Track My Biryani
