@@ -14,12 +14,12 @@ const ProfilePage = () => {
   } = useAppStore();
 
   const menuItems = [
-    { label: 'Royalty Tiers', icon: Crown, path: '/app/tiers', color: 'text-secondary' },
-    { label: 'Sultan\'s Streak', icon: Flame, path: '/app/streak', color: 'text-primary' },
-    { label: 'Spin the Wheel', icon: Gift, path: '/app/spin', color: 'text-accent' },
-    { label: 'Flash Dawats', icon: Flame, path: '/app/flash-dawats', color: 'text-primary' },
-    { label: 'Subscription', icon: Crown, path: '/app/subscription', color: 'text-secondary' },
-    { label: 'Pre-Book Order', icon: MapPin, path: '/app/pre-book', color: 'text-secondary' },
+    { label: 'Royalty Tiers', icon: Crown, path: '/tiers', color: 'text-secondary' },
+    { label: 'Sultan\'s Streak', icon: Flame, path: '/streak', color: 'text-primary' },
+    { label: 'Spin the Wheel', icon: Gift, path: '/spin', color: 'text-accent' },
+    { label: 'Flash Dawats', icon: Flame, path: '/flash-dawats', color: 'text-primary' },
+    { label: 'Subscription', icon: Crown, path: '/subscription', color: 'text-secondary' },
+    { label: 'Pre-Book Order', icon: MapPin, path: '/pre-book', color: 'text-secondary' },
   ];
 
   return (
