@@ -97,55 +97,312 @@ export type Database = {
           },
         ]
       }
-      menu_items: {
+      menu_addon_groups: {
         Row: {
-          category: string | null
           created_at: string
-          description: string | null
           id: string
-          image_url: string | null
-          is_available: boolean
-          is_veg: boolean
+          is_active: boolean
+          max_selections: number
+          min_selections: number
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          max_selections?: number
+          min_selections?: number
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          max_selections?: number
+          min_selections?: number
+          name?: string
+        }
+        Relationships: []
+      }
+      menu_addons: {
+        Row: {
+          created_at: string
+          display_order: number
+          group_id: string
+          id: string
+          is_active: boolean
           name: string
           price: number
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          group_id: string
+          id?: string
+          is_active?: boolean
+          name: string
+          price?: number
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          group_id?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_addons_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "menu_addon_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      menu_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          display_order: number
+          id: string
+          image_url: string | null
+          is_active: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      menu_item_addon_groups: {
+        Row: {
+          addon_group_id: string
+          id: string
+          menu_item_id: string
+        }
+        Insert: {
+          addon_group_id: string
+          id?: string
+          menu_item_id: string
+        }
+        Update: {
+          addon_group_id?: string
+          id?: string
+          menu_item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_item_addon_groups_addon_group_id_fkey"
+            columns: ["addon_group_id"]
+            isOneToOne: false
+            referencedRelation: "menu_addon_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_item_addon_groups_menu_item_id_fkey"
+            columns: ["menu_item_id"]
+            isOneToOne: false
+            referencedRelation: "menu_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      menu_items: {
+        Row: {
+          availability_schedule: Json | null
+          base_price: number | null
+          category: string | null
+          category_id: string | null
+          created_at: string
+          description: string | null
+          discounted_price: number | null
+          display_order: number
+          id: string
+          image_url: string | null
+          is_active: boolean
+          is_available: boolean
+          is_bestseller: boolean
+          is_chefs_special: boolean
+          is_new: boolean
+          is_veg: boolean
+          name: string
+          prep_time: number | null
+          price: number
+          spice_level: number | null
           store_id: string | null
           tags: string[] | null
           updated_at: string
         }
         Insert: {
+          availability_schedule?: Json | null
+          base_price?: number | null
           category?: string | null
+          category_id?: string | null
           created_at?: string
           description?: string | null
+          discounted_price?: number | null
+          display_order?: number
           id?: string
           image_url?: string | null
+          is_active?: boolean
           is_available?: boolean
+          is_bestseller?: boolean
+          is_chefs_special?: boolean
+          is_new?: boolean
           is_veg?: boolean
           name: string
+          prep_time?: number | null
           price: number
+          spice_level?: number | null
           store_id?: string | null
           tags?: string[] | null
           updated_at?: string
         }
         Update: {
+          availability_schedule?: Json | null
+          base_price?: number | null
           category?: string | null
+          category_id?: string | null
           created_at?: string
           description?: string | null
+          discounted_price?: number | null
+          display_order?: number
           id?: string
           image_url?: string | null
+          is_active?: boolean
           is_available?: boolean
+          is_bestseller?: boolean
+          is_chefs_special?: boolean
+          is_new?: boolean
           is_veg?: boolean
           name?: string
+          prep_time?: number | null
           price?: number
+          spice_level?: number | null
           store_id?: string | null
           tags?: string[] | null
           updated_at?: string
         }
         Relationships: [
           {
+            foreignKeyName: "menu_items_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "menu_categories"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "menu_items_store_id_fkey"
             columns: ["store_id"]
             isOneToOne: false
             referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      menu_store_overrides: {
+        Row: {
+          created_at: string
+          id: string
+          is_available: boolean
+          menu_item_id: string
+          price_override: number | null
+          store_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_available?: boolean
+          menu_item_id: string
+          price_override?: number | null
+          store_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_available?: boolean
+          menu_item_id?: string
+          price_override?: number | null
+          store_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_store_overrides_menu_item_id_fkey"
+            columns: ["menu_item_id"]
+            isOneToOne: false
+            referencedRelation: "menu_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_store_overrides_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      menu_variants: {
+        Row: {
+          created_at: string
+          display_order: number
+          id: string
+          is_active: boolean
+          menu_item_id: string
+          name: string
+          prep_time_override: number | null
+          price: number
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          menu_item_id: string
+          name: string
+          prep_time_override?: number | null
+          price: number
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          menu_item_id?: string
+          name?: string
+          prep_time_override?: number | null
+          price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_variants_menu_item_id_fkey"
+            columns: ["menu_item_id"]
+            isOneToOne: false
+            referencedRelation: "menu_items"
             referencedColumns: ["id"]
           },
         ]
