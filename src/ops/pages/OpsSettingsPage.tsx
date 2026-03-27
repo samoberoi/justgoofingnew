@@ -13,6 +13,8 @@ interface StoreForm {
   delivery_radius: string;
   default_prep_time: string;
   tax_percent: string;
+  latitude: string;
+  longitude: string;
   is_active: boolean;
 }
 
