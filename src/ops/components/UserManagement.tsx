@@ -33,6 +33,8 @@ const UserManagement = () => {
   const [stores, setStores] = useState<any[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editPhone, setEditPhone] = useState('');
   const [editRole, setEditRole] = useState('');
   const [editStoreId, setEditStoreId] = useState('');
   const [editIsActive, setEditIsActive] = useState(true);
