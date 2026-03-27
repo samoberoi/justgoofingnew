@@ -52,7 +52,7 @@ const WelcomePage = () => {
       .eq('id', referral.id);
 
     setReferralResult('success');
-    setReferralMsg('Referral applied! You'll both earn points on your first order.');
+    setReferralMsg('Referral applied! You will both earn points on your first order.');
     setApplying(false);
   };
 
