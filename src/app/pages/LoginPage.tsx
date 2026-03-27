@@ -42,58 +42,66 @@ const LoginPage = () => {
       const email = mockEmail(phone);
 
       // Try sign in
-      const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
+      const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
+
+      let userId: string | null = signInData?.user?.id ?? null;
 
       if (signInErr) {
         // Try sign up
-        const { error: signUpErr } = await supabase.auth.signUp({ email, password });
+        const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({ email, password });
         if (signUpErr) {
           setError(signUpErr.message);
           resetOtp();
           return;
         }
-        // Sign in after signup
-        const { error: retryErr } = await supabase.auth.signInWithPassword({ email, password });
-        if (retryErr) {
-          setError('Account created but login failed. Try again.');
-          resetOtp();
-          return;
+        userId = signUpData?.user?.id ?? null;
+
+        // Sign in after signup if needed
+        if (!signUpData?.session) {
+          const { data: retryData, error: retryErr } = await supabase.auth.signInWithPassword({ email, password });
+          if (retryErr) {
+            setError('Account created but login failed. Try again.');
+            resetOtp();
+            return;
+          }
+          userId = retryData?.user?.id ?? null;
         }
       }
 
-      // Success
+      if (!userId) {
+        setError('Could not get user info. Try again.');
+        resetOtp();
+        return;
+      }
+
+      // Success — show animation
       setStep('success');
 
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: roleData } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', user.id)
-          .eq('is_active', true)
-          .limit(1)
-          .maybeSingle();
+      // Check role
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .eq('is_active', true)
+        .limit(1)
+        .maybeSingle();
 
-        setTimeout(() => {
-          if (roleData?.role) {
-            const roleRoutes: Record<string, string> = {
-              super_admin: '/dashboard',
-              store_manager: '/dashboard',
-              kitchen_manager: '/kitchen',
-              delivery_partner: '/deliveries',
-            };
-            navigate(roleRoutes[roleData.role] || '/dashboard');
-          } else {
-            setLoggedIn(true);
-            navigate('/welcome');
-          }
-        }, 1500);
-      } else {
-        setError('Login succeeded but user not found. Try again.');
-        setStep('otp');
-        resetOtp();
-      }
+      setTimeout(() => {
+        if (roleData?.role) {
+          const roleRoutes: Record<string, string> = {
+            super_admin: '/dashboard',
+            store_manager: '/dashboard',
+            kitchen_manager: '/kitchen',
+            delivery_partner: '/deliveries',
+          };
+          navigate(roleRoutes[roleData.role] || '/dashboard');
+        } else {
+          setLoggedIn(true);
+          navigate('/welcome');
+        }
+      }, 1500);
     } catch (err: any) {
+      console.error('Login error:', err);
       setError(err?.message || 'Something went wrong. Try again.');
       setStep('otp');
       resetOtp();
