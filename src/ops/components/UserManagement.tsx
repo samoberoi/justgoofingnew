@@ -90,16 +90,35 @@ const UserManagement = () => {
     }
   };
 
-  const updateRole = async (roleId: string) => {
+  const updateUser = async (user: any) => {
     setSaving(true);
-    await supabase.from('user_roles').update({
-      role: editRole as any,
-      store_id: editStoreId || null,
-      is_active: editIsActive,
-    }).eq('id', roleId);
-    setEditingId(null);
-    setSaving(false);
-    fetchData();
+    setError('');
+    try {
+      // Update role
+      await supabase.from('user_roles').update({
+        role: editRole as any,
+        store_id: editStoreId || null,
+        is_active: editIsActive,
+      }).eq('id', user.id);
+
+      // Update profile via edge function (RLS prevents cross-user updates)
+      if (editName !== (user.profiles?.full_name || '') || editPhone !== (user.profiles?.phone || '')) {
+        await supabase.functions.invoke('update-ops-user', {
+          body: {
+            user_id: user.user_id,
+            full_name: editName.trim(),
+            phone: editPhone.trim(),
+          },
+        });
+      }
+
+      setEditingId(null);
+      fetchData();
+    } catch (err: any) {
+      setError(err.message || 'Failed to update user');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const toggleActive = async (roleId: string, current: boolean) => {
