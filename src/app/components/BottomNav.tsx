@@ -15,30 +15,34 @@ const BottomNav = () => {
   const location = useLocation();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card/95 backdrop-blur-xl">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-secondary/10 bg-background/90 backdrop-blur-2xl">
       <div className="flex items-center justify-around h-16 max-w-lg mx-auto">
         {tabs.map(tab => {
           const isActive = location.pathname === tab.path;
           return (
-            <button
+            <motion.button
               key={tab.path}
+              whileTap={{ scale: 0.9 }}
               onClick={() => navigate(tab.path)}
               className="relative flex flex-col items-center gap-0.5 px-4 py-2"
             >
               {isActive && (
                 <motion.div
                   layoutId="bottomNavIndicator"
-                  className="absolute -top-px left-2 right-2 h-0.5 bg-gradient-saffron rounded-full"
+                  className="absolute -top-px left-3 right-3 h-0.5 bg-gradient-saffron rounded-full"
+                  transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                 />
               )}
               <tab.icon
                 size={20}
-                className={isActive ? 'text-secondary' : 'text-muted-foreground'}
+                className={`transition-colors ${isActive ? 'text-secondary' : 'text-muted-foreground/60'}`}
+                fill={isActive ? 'currentColor' : 'none'}
+                strokeWidth={isActive ? 2 : 1.5}
               />
-              <span className={`text-[10px] font-medium ${isActive ? 'text-secondary' : 'text-muted-foreground'}`}>
+              <span className={`text-[10px] font-semibold transition-colors ${isActive ? 'text-secondary' : 'text-muted-foreground/60'}`}>
                 {tab.label}
               </span>
-            </button>
+            </motion.button>
           );
         })}
       </div>

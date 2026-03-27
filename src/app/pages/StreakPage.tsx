@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Flame, Check } from 'lucide-react';
+import { ArrowLeft, Flame, Check, Lock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import BottomNav from '../components/BottomNav';
 
 const StreakPage = () => {
   const navigate = useNavigate();
@@ -18,18 +19,19 @@ const StreakPage = () => {
     fetch();
   }, []);
 
-  const campaign = streakCampaigns[0]; // Show first active streak
-  const currentWeek = 0; // Will be tracked via user_streaks table
+  const campaign = streakCampaigns[0];
+  const currentWeek = 0;
   const durationWeeks = campaign?.duration_weeks || 4;
 
   const weeks = Array.from({ length: durationWeeks }, (_, i) => ({
     week: i + 1,
     completed: i < currentWeek,
+    active: i === currentWeek,
   }));
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <header className="sticky top-0 z-40 bg-card/95 backdrop-blur-xl border-b border-border">
+    <div className="min-h-screen bg-background pb-24">
+      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-2xl border-b border-secondary/10">
         <div className="flex items-center gap-3 px-4 h-14">
           <button onClick={() => navigate(-1)}><ArrowLeft size={20} className="text-foreground" /></button>
           <h1 className="font-heading text-lg text-foreground">The Sultan's Streak</h1>
@@ -41,87 +43,102 @@ const StreakPage = () => {
           <div className="w-6 h-6 border-2 border-secondary border-t-transparent rounded-full animate-spin" />
         </div>
       ) : !campaign ? (
-        <div className="px-4 pt-12 text-center">
-          <Flame size={48} className="text-muted-foreground mx-auto mb-4" />
-          <p className="text-muted-foreground text-sm">No active streak campaigns right now. Check back soon!</p>
+        <div className="px-4 pt-16 text-center">
+          <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
+            <Flame size={32} className="text-muted-foreground/40" />
+          </div>
+          <p className="font-heading text-base text-foreground">No Active Streaks</p>
+          <p className="text-muted-foreground text-sm mt-1">Check back soon for new streak campaigns!</p>
         </div>
       ) : (
         <>
-          <div className="px-4 pt-6 text-center">
-            <motion.div animate={{ scale: [1, 1.05, 1] }} transition={{ duration: 2, repeat: Infinity }} className="inline-block">
-              <Flame size={60} className="text-primary mx-auto" />
+          {/* Hero */}
+          <div className="px-4 pt-8 text-center">
+            <motion.div
+              animate={{ scale: [1, 1.08, 1], rotate: [0, -3, 3, 0] }}
+              transition={{ duration: 2.5, repeat: Infinity }}
+              className="inline-block"
+            >
+              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 border border-primary/30 flex items-center justify-center mx-auto">
+                <Flame size={40} className="text-primary" />
+              </div>
             </motion.div>
-            <h2 className="font-heading text-2xl text-gradient-gold mt-4">{campaign.name}</h2>
+            <h2 className="font-heading text-xl text-gradient-gold mt-5">{campaign.name}</h2>
             <p className="text-muted-foreground text-sm mt-2">
-              Order {campaign.min_orders_per_week}× per week for {durationWeeks} weeks!
+              Order {campaign.min_orders_per_week}× per week for {durationWeeks} weeks
             </p>
           </div>
 
-          {/* Weekly seals */}
-          <div className="px-8 pt-8">
-            <div className="flex items-center justify-between">
+          {/* Weekly Progress */}
+          <div className="px-6 pt-8">
+            <div className="flex items-center justify-between relative">
+              {/* Connecting line */}
+              <div className="absolute top-7 left-8 right-8 h-0.5 bg-border" />
+              <div className="absolute top-7 left-8 h-0.5 bg-secondary/50" style={{ width: `${(currentWeek / (durationWeeks - 1)) * 100}%`, maxWidth: 'calc(100% - 4rem)' }} />
+
               {weeks.map((w, i) => (
-                <div key={i} className="flex flex-col items-center gap-2">
+                <div key={i} className="flex flex-col items-center gap-2 relative z-10">
                   <motion.div
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    transition={{ delay: i * 0.15, type: 'spring' }}
-                    className={`w-14 h-14 rounded-full flex items-center justify-center border-2 ${
-                      w.completed ? 'bg-secondary/20 border-secondary' : 'bg-muted border-border'
+                    transition={{ delay: i * 0.12, type: 'spring' }}
+                    className={`w-14 h-14 rounded-full flex items-center justify-center border-2 transition-all ${
+                      w.completed
+                        ? 'bg-secondary/20 border-secondary shadow-gold'
+                        : w.active
+                          ? 'bg-primary/10 border-primary/50 ring-2 ring-primary/20'
+                          : 'bg-muted border-border'
                     }`}
                   >
                     {w.completed ? (
-                      <Check size={24} className="text-secondary" />
+                      <Check size={22} className="text-secondary" />
+                    ) : w.active ? (
+                      <Flame size={20} className="text-primary" />
                     ) : (
-                      <span className="text-muted-foreground text-xs font-heading">{w.week}</span>
+                      <Lock size={14} className="text-muted-foreground/40" />
                     )}
                   </motion.div>
-                  <span className="text-[10px] text-muted-foreground">Week {w.week}</span>
+                  <span className={`text-[10px] font-heading ${w.completed ? 'text-secondary' : w.active ? 'text-primary' : 'text-muted-foreground'}`}>
+                    Wk {w.week}
+                  </span>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Rules */}
+          {/* How It Works */}
           <div className="px-4 mt-8 space-y-3">
-            <h3 className="font-heading text-sm text-foreground">How It Works</h3>
-            <div className="bg-card border border-border rounded-xl p-4 space-y-3">
-              <div className="flex items-start gap-3">
-                <span className="text-lg">📦</span>
-                <div>
-                  <p className="text-sm text-foreground font-semibold">{campaign.min_orders_per_week} Order{campaign.min_orders_per_week > 1 ? 's' : ''}/Week</p>
-                  <p className="text-xs text-muted-foreground">Place at least {campaign.min_orders_per_week} order each week</p>
-                </div>
-              </div>
-              <div className="border-t border-border" />
-              <div className="flex items-start gap-3">
-                <span className="text-lg">🔥</span>
-                <div>
-                  <p className="text-sm text-foreground font-semibold">{durationWeeks} Weeks Straight</p>
-                  <p className="text-xs text-muted-foreground">Maintain your streak for the full duration</p>
-                </div>
-              </div>
-              {campaign.grace_period_hours && (
-                <>
-                  <div className="border-t border-border" />
+            <h3 className="font-heading text-xs text-secondary uppercase tracking-[0.15em]">How It Works</h3>
+            <div className="bg-card border border-border rounded-2xl p-4 space-y-4">
+              {[
+                { emoji: '📦', title: `${campaign.min_orders_per_week} Order${campaign.min_orders_per_week > 1 ? 's' : ''}/Week`, desc: `Place at least ${campaign.min_orders_per_week} order each week` },
+                { emoji: '🔥', title: `${durationWeeks} Weeks Straight`, desc: 'Maintain your streak for the full duration' },
+                ...(campaign.grace_period_hours ? [{ emoji: '⏰', title: `${campaign.grace_period_hours}h Grace Period`, desc: 'A little breathing room before your streak resets' }] : []),
+              ].map((rule, i) => (
+                <div key={i}>
+                  {i > 0 && <div className="border-t border-border -mt-1 mb-3" />}
                   <div className="flex items-start gap-3">
-                    <span className="text-lg">⏰</span>
+                    <span className="text-lg">{rule.emoji}</span>
                     <div>
-                      <p className="text-sm text-foreground font-semibold">{campaign.grace_period_hours}h Grace Period</p>
-                      <p className="text-xs text-muted-foreground">A little breathing room before your streak resets</p>
+                      <p className="text-sm text-foreground font-semibold">{rule.title}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{rule.desc}</p>
                     </div>
                   </div>
-                </>
-              )}
+                </div>
+              ))}
             </div>
 
-            <div className="bg-secondary/10 border border-secondary/20 rounded-xl p-4 text-center">
-              <p className="text-2xl mb-1">🎁</p>
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+              className="bg-gradient-to-r from-secondary/12 to-secondary/5 border border-secondary/15 rounded-2xl p-5 text-center">
+              <p className="text-3xl mb-2">🎁</p>
               <p className="font-heading text-sm text-secondary">Complete the streak for a royal reward!</p>
-            </div>
+              <p className="text-[11px] text-muted-foreground mt-1">Exclusive discounts and free items await</p>
+            </motion.div>
           </div>
         </>
       )}
+
+      <BottomNav />
     </div>
   );
 };
