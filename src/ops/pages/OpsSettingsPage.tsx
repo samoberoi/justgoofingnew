@@ -2,14 +2,43 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '../hooks/useAuth';
 import OpsBottomNav from '../components/OpsBottomNav';
-import { Plus, Store, Users, Trash2 } from 'lucide-react';
+import { Plus, Store, Users, Clock, MapPin, Phone, ChevronDown, ChevronUp } from 'lucide-react';
+
+interface StoreForm {
+  name: string;
+  address: string;
+  phone: string;
+  opening_time: string;
+  closing_time: string;
+  delivery_radius: string;
+  default_prep_time: string;
+  tax_percent: string;
+  is_active: boolean;
+}
+
+const defaultForm: StoreForm = {
+  name: '',
+  address: '',
+  phone: '',
+  opening_time: '09:00',
+  closing_time: '23:00',
+  delivery_radius: '5',
+  default_prep_time: '30',
+  tax_percent: '5',
+  is_active: true,
+};
+
+const inputClass = 'w-full px-3 py-2.5 bg-muted border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-secondary transition-colors';
+const labelClass = 'text-xs font-medium text-muted-foreground mb-1 block';
 
 const OpsSettingsPage = () => {
   const { role } = useAuth();
   const [stores, setStores] = useState<any[]>([]);
   const [roles, setRoles] = useState<any[]>([]);
   const [showStoreForm, setShowStoreForm] = useState(false);
-  const [storeForm, setStoreForm] = useState({ name: '', address: '', phone: '' });
+  const [storeForm, setStoreForm] = useState<StoreForm>(defaultForm);
+  const [expandedStore, setExpandedStore] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -25,10 +54,27 @@ const OpsSettingsPage = () => {
   };
 
   const addStore = async () => {
-    if (!storeForm.name) return;
-    await supabase.from('stores').insert(storeForm);
-    setStoreForm({ name: '', address: '', phone: '' });
+    if (!storeForm.name.trim()) return;
+    setSaving(true);
+    await supabase.from('stores').insert({
+      name: storeForm.name.trim(),
+      address: storeForm.address.trim() || null,
+      phone: storeForm.phone.trim() || null,
+      opening_time: storeForm.opening_time || '09:00',
+      closing_time: storeForm.closing_time || '23:00',
+      delivery_radius: parseFloat(storeForm.delivery_radius) || 5,
+      default_prep_time: parseInt(storeForm.default_prep_time) || 30,
+      tax_percent: parseFloat(storeForm.tax_percent) || 5,
+      is_active: storeForm.is_active,
+    });
+    setStoreForm(defaultForm);
     setShowStoreForm(false);
+    setSaving(false);
+    fetchData();
+  };
+
+  const toggleStoreStatus = async (storeId: string, currentStatus: boolean) => {
+    await supabase.from('stores').update({ is_active: !currentStatus }).eq('id', storeId);
     fetchData();
   };
 
@@ -51,22 +97,128 @@ const OpsSettingsPage = () => {
           </div>
 
           {showStoreForm && (
-            <div className="bg-card border border-border rounded-lg p-3 mb-3 space-y-2">
-              <input value={storeForm.name} onChange={e => setStoreForm(p => ({ ...p, name: e.target.value }))} placeholder="Store name" className="w-full px-3 py-2 bg-muted border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-secondary" />
-              <input value={storeForm.address} onChange={e => setStoreForm(p => ({ ...p, address: e.target.value }))} placeholder="Address" className="w-full px-3 py-2 bg-muted border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-secondary" />
-              <input value={storeForm.phone} onChange={e => setStoreForm(p => ({ ...p, phone: e.target.value }))} placeholder="Phone" className="w-full px-3 py-2 bg-muted border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-secondary" />
-              <button onClick={addStore} className="w-full py-2 bg-gradient-saffron rounded-lg text-xs font-medium text-primary-foreground">Save Store</button>
+            <div className="bg-card border border-border rounded-xl p-4 mb-4 space-y-3">
+              <p className="font-heading text-sm text-foreground mb-1">New Store</p>
+
+              <div>
+                <label className={labelClass}>Store Name *</label>
+                <input value={storeForm.name} onChange={e => setStoreForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. BIRYAAN HSR Layout" className={inputClass} />
+              </div>
+
+              <div>
+                <label className={labelClass}>Full Address</label>
+                <input value={storeForm.address} onChange={e => setStoreForm(p => ({ ...p, address: e.target.value }))} placeholder="Full address with pin code" className={inputClass} />
+              </div>
+
+              <div>
+                <label className={labelClass}>Phone Number</label>
+                <input type="tel" value={storeForm.phone} onChange={e => setStoreForm(p => ({ ...p, phone: e.target.value.replace(/[^\d+\-\s]/g, '') }))} placeholder="+91 XXXXX XXXXX" className={inputClass} />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={labelClass}>Open Time</label>
+                  <input type="time" value={storeForm.opening_time} onChange={e => setStoreForm(p => ({ ...p, opening_time: e.target.value }))} className={inputClass} />
+                </div>
+                <div>
+                  <label className={labelClass}>Close Time</label>
+                  <input type="time" value={storeForm.closing_time} onChange={e => setStoreForm(p => ({ ...p, closing_time: e.target.value }))} className={inputClass} />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className={labelClass}>Delivery Radius (km)</label>
+                  <input type="number" min="1" max="50" value={storeForm.delivery_radius} onChange={e => setStoreForm(p => ({ ...p, delivery_radius: e.target.value }))} className={inputClass} />
+                </div>
+                <div>
+                  <label className={labelClass}>Prep Time (min)</label>
+                  <input type="number" min="5" max="120" value={storeForm.default_prep_time} onChange={e => setStoreForm(p => ({ ...p, default_prep_time: e.target.value }))} className={inputClass} />
+                </div>
+                <div>
+                  <label className={labelClass}>GST %</label>
+                  <input type="number" min="0" max="28" step="0.5" value={storeForm.tax_percent} onChange={e => setStoreForm(p => ({ ...p, tax_percent: e.target.value }))} className={inputClass} />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between py-1">
+                <label className="text-sm text-foreground">Store Status</label>
+                <button
+                  onClick={() => setStoreForm(p => ({ ...p, is_active: !p.is_active }))}
+                  className={`relative w-12 h-6 rounded-full transition-colors ${storeForm.is_active ? 'bg-green-500' : 'bg-muted-foreground/30'}`}
+                >
+                  <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${storeForm.is_active ? 'translate-x-6' : 'translate-x-0.5'}`} />
+                </button>
+              </div>
+
+              <div className="flex gap-2 pt-1">
+                <button onClick={() => { setShowStoreForm(false); setStoreForm(defaultForm); }} className="flex-1 py-2.5 border border-border rounded-lg text-xs font-medium text-muted-foreground">
+                  Cancel
+                </button>
+                <button onClick={addStore} disabled={!storeForm.name.trim() || saving} className="flex-1 py-2.5 bg-gradient-saffron rounded-lg text-xs font-medium text-primary-foreground disabled:opacity-40">
+                  {saving ? 'Saving...' : 'Save Store'}
+                </button>
+              </div>
             </div>
           )}
 
+          {/* Store List */}
           <div className="space-y-2">
             {stores.map(store => (
-              <div key={store.id} className="bg-card border border-border rounded-lg p-3 flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-foreground">{store.name}</p>
-                  <p className="text-xs text-muted-foreground">{store.address || 'No address'}</p>
-                </div>
-                <div className={`w-2 h-2 rounded-full ${store.is_active ? 'bg-green-500' : 'bg-destructive'}`} />
+              <div key={store.id} className="bg-card border border-border rounded-xl overflow-hidden">
+                <button
+                  onClick={() => setExpandedStore(expandedStore === store.id ? null : store.id)}
+                  className="w-full p-3 flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-2.5 h-2.5 rounded-full ${store.is_active ? 'bg-green-500' : 'bg-destructive'}`} />
+                    <div className="text-left">
+                      <p className="text-sm font-medium text-foreground">{store.name}</p>
+                      <p className="text-xs text-muted-foreground">{store.address || 'No address'}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${store.is_active ? 'bg-green-500/20 text-green-400' : 'bg-destructive/20 text-destructive'}`}>
+                      {store.is_active ? 'Open' : 'Closed'}
+                    </span>
+                    {expandedStore === store.id ? <ChevronUp size={16} className="text-muted-foreground" /> : <ChevronDown size={16} className="text-muted-foreground" />}
+                  </div>
+                </button>
+
+                {expandedStore === store.id && (
+                  <div className="px-3 pb-3 border-t border-border pt-3 space-y-2">
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div className="flex items-center gap-1.5 text-muted-foreground">
+                        <Phone size={12} />
+                        <span>{store.phone || '—'}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-muted-foreground">
+                        <Clock size={12} />
+                        <span>{store.opening_time?.slice(0, 5) || '09:00'} – {store.closing_time?.slice(0, 5) || '23:00'}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-muted-foreground">
+                        <MapPin size={12} />
+                        <span>{store.delivery_radius || 5} km radius</span>
+                      </div>
+                      <div className="text-muted-foreground">
+                        Prep: {store.default_prep_time || 30} min
+                      </div>
+                      <div className="text-muted-foreground">
+                        GST: {store.tax_percent || 5}%
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2">
+                      <span className="text-xs text-foreground">Quick Toggle</span>
+                      <button
+                        onClick={() => toggleStoreStatus(store.id, store.is_active)}
+                        className={`relative w-12 h-6 rounded-full transition-colors ${store.is_active ? 'bg-green-500' : 'bg-muted-foreground/30'}`}
+                      >
+                        <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${store.is_active ? 'translate-x-6' : 'translate-x-0.5'}`} />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
             {stores.length === 0 && <p className="text-center text-sm text-muted-foreground py-6">No stores yet</p>}
