@@ -58,44 +58,18 @@ const UserManagement = () => {
     setError('');
 
     try {
-      const email = `${form.phone.replace(/\D/g, '')}@ops.biryaan.app`;
-      
-      // Sign up the user with mock email/password
-      const { data: authData, error: signUpErr } = await supabase.auth.signUp({
-        email,
-        password: form.password || '111111',
+      const { data, error: fnErr } = await supabase.functions.invoke('create-ops-user', {
+        body: {
+          full_name: form.full_name.trim(),
+          phone: form.phone.trim(),
+          password: form.password || '111111',
+          role: form.role,
+          store_id: form.store_id || null,
+        },
       });
 
-      if (signUpErr) {
-        // If user already exists, try to find them
-        if (signUpErr.message.includes('already registered')) {
-          setError('User with this phone already exists. Update their role instead.');
-          setSaving(false);
-          return;
-        }
-        throw signUpErr;
-      }
-
-      if (!authData.user) throw new Error('Failed to create user');
-
-      const userId = authData.user.id;
-
-      // Update profile with name
-      await supabase.from('profiles').update({
-        full_name: form.full_name.trim(),
-        phone: form.phone.trim(),
-      }).eq('user_id', userId);
-
-      // Remove auto-assigned super_admin role if any (from trigger)
-      await supabase.from('user_roles').delete().eq('user_id', userId);
-
-      // Insert the correct role
-      await supabase.from('user_roles').insert({
-        user_id: userId,
-        role: form.role as any,
-        store_id: form.store_id || null,
-        is_active: true,
-      });
+      if (fnErr) throw new Error(fnErr.message || 'Failed to create user');
+      if (data?.error) throw new Error(data.error);
 
       setForm(defaultUserForm);
       setShowForm(false);
