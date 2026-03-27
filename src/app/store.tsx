@@ -132,10 +132,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const refreshUserData = async () => {
     if (!userId) return;
 
-    // Fetch points balance from transactions
+    // Fetch points balance from transactions for THIS user only
     const { data: ptsTx } = await supabase
       .from('points_transactions')
       .select('amount, type, description, created_at, id')
+      .eq('user_id', userId)
       .order('created_at', { ascending: false }) as any;
 
     if (ptsTx) {
