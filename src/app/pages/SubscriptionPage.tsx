@@ -81,13 +81,15 @@ const SubscriptionPage = () => {
         <div>
           <p className="text-sm text-foreground font-semibold mb-2">Choose Biryani</p>
           <div className="space-y-2">
-            {BIRYANI_MENU.map(b => (
+            {menuItems.map(b => (
               <button
                 key={b.id}
                 onClick={() => setSelectedBiryani(b.id)}
                 className={`w-full flex items-center gap-3 p-3 rounded-xl border ${selectedBiryani === b.id ? 'border-secondary bg-secondary/5' : 'border-border bg-card'}`}
               >
-                <span className="text-2xl">{b.image}</span>
+                <div className="w-8 h-8 rounded bg-muted overflow-hidden shrink-0">
+                  {b.image_url ? <img src={b.image_url} className="w-full h-full object-cover" alt="" /> : <span className="text-lg flex items-center justify-center h-full">🍚</span>}
+                </div>
                 <span className="text-sm text-foreground flex-1 text-left">{b.name}</span>
                 {selectedBiryani === b.id && <Check size={16} className="text-secondary" />}
               </button>
