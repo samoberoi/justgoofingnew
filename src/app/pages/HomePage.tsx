@@ -46,7 +46,7 @@ const ItemCard = ({ item, index }: { item: MenuItem; index: number }) => {
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-1.5">
-            {item.is_veg ? <Leaf size={12} className="text-green-500 shrink-0" /> : <Drumstick size={12} className="text-destructive shrink-0" />}
+            {item.is_veg ? <Leaf size={12} className="text-secondary shrink-0" /> : <Drumstick size={12} className="text-destructive shrink-0" />}
             <h3 className="font-heading text-sm text-foreground leading-tight">{item.name}</h3>
           </div>
         </div>
