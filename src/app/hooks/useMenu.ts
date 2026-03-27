@@ -43,22 +43,16 @@ export const useMenu = (storeId?: string | null) => {
 
   useEffect(() => {
     const fetchMenu = async () => {
-      const queries: Promise<any>[] = [
-        supabase.from('menu_items').select('*').eq('is_active', true).eq('is_available', true).order('display_order'),
-        supabase.from('menu_categories').select('*').eq('is_active', true).order('display_order'),
-        supabase.from('menu_variants').select('*').eq('is_active', true).order('display_order'),
-      ];
+      const itemsQ = supabase.from('menu_items').select('*').eq('is_active', true).eq('is_available', true).order('display_order');
+      const catsQ = supabase.from('menu_categories').select('*').eq('is_active', true).order('display_order');
+      const variantsQ = supabase.from('menu_variants').select('*').eq('is_active', true).order('display_order');
+      const overridesQ = storeId
+        ? supabase.from('menu_store_overrides').select('*').eq('store_id', storeId)
+        : null;
 
-      // If a store is selected, also fetch store overrides
-      if (storeId) {
-        queries.push(
-          supabase.from('menu_store_overrides').select('*').eq('store_id', storeId)
-        );
-      }
-
-      const results = await Promise.all(queries);
-      const [itemsRes, catsRes, variantsRes] = results;
-      const overridesRes = storeId ? results[3] : null;
+      const [itemsRes, catsRes, variantsRes, overridesRes] = await Promise.all([
+        itemsQ, catsQ, variantsQ, overridesQ ? overridesQ : Promise.resolve({ data: null }),
+      ]);
 
       // Build override map: menu_item_id -> override
       const overrideMap = new Map<string, { is_available: boolean; price_override: number | null }>();
