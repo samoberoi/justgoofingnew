@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '../hooks/useAuth';
 import OpsBottomNav from '../components/OpsBottomNav';
 import UserManagement from '../components/UserManagement';
-import { Plus, Store, Clock, MapPin, Phone, ChevronDown, ChevronUp, Pencil, ExternalLink } from 'lucide-react';
+import { Plus, Store, Clock, MapPin, Phone, ChevronDown, ChevronUp, Pencil, ExternalLink, Truck } from 'lucide-react';
 
 interface StoreForm {
   name: string;
@@ -343,6 +343,26 @@ const OpsSettingsPage = () => {
             {stores.length === 0 && <p className="text-center text-sm text-muted-foreground py-6">No stores yet</p>}
           </div>
         </div>
+
+        {/* Delivery Fee Settings */}
+        <div>
+          <h2 className="font-heading text-sm text-foreground flex items-center gap-2 mb-3"><Truck size={16} /> Delivery Fee Settings</h2>
+          <div className="bg-card border border-border rounded-xl p-4 space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={labelClass}>Base Delivery Fee (₹)</label>
+                <input type="number" min="0" value={deliveryFee} onChange={e => setDeliveryFee(e.target.value)} className={inputClass} />
+              </div>
+              <div>
+                <label className={labelClass}>Free Delivery Above (₹)</label>
+                <input type="number" min="0" value={freeAbove} onChange={e => setFreeAbove(e.target.value)} className={inputClass} />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">Orders above ₹{freeAbove} get free delivery. Others pay ₹{deliveryFee}.</p>
+            <button onClick={saveDeliverySettings} disabled={savingDelivery} className="w-full py-2.5 bg-gradient-saffron rounded-lg text-xs font-medium text-primary-foreground disabled:opacity-40">
+              {savingDelivery ? 'Saving...' : 'Save Delivery Settings'}
+            </button>
+          </div>
 
         {/* User Management */}
         <UserManagement />
