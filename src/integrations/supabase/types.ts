@@ -286,29 +286,50 @@ export type Database = {
       }
       profiles: {
         Row: {
+          aadhaar_document_url: string | null
+          aadhaar_number: string | null
           avatar_url: string | null
           created_at: string
+          designation: string | null
           full_name: string | null
           id: string
+          pan_document_url: string | null
+          pan_number: string | null
           phone: string | null
+          salary: number | null
+          start_date: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          aadhaar_document_url?: string | null
+          aadhaar_number?: string | null
           avatar_url?: string | null
           created_at?: string
+          designation?: string | null
           full_name?: string | null
           id?: string
+          pan_document_url?: string | null
+          pan_number?: string | null
           phone?: string | null
+          salary?: number | null
+          start_date?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          aadhaar_document_url?: string | null
+          aadhaar_number?: string | null
           avatar_url?: string | null
           created_at?: string
+          designation?: string | null
           full_name?: string | null
           id?: string
+          pan_document_url?: string | null
+          pan_number?: string | null
           phone?: string | null
+          salary?: number | null
+          start_date?: string | null
           updated_at?: string
           user_id?: string
         }
