@@ -118,7 +118,7 @@ const ItemFormModal = ({ item, categories, addonGroups, onClose, onSaved }: Prop
     if (item) {
       await supabase.from('menu_items').update(payload).eq('id', item.id);
     } else {
-      const { data } = await supabase.from('menu_items').insert(payload).select('id').single();
+      const { data } = await supabase.from('menu_items').insert(payload as any).select('id').single();
       itemId = data?.id;
     }
 
