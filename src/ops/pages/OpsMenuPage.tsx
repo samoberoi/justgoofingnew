@@ -7,10 +7,11 @@ import CategoryManager from '../components/menu/CategoryManager';
 import AddonManager from '../components/menu/AddonManager';
 import MenuItemCard from '../components/menu/MenuItemCard';
 import ItemFormModal from '../components/menu/ItemFormModal';
+import StoreMenuMapping from '../components/menu/StoreMenuMapping';
 import BulkActions from '../components/menu/BulkActions';
 import { Plus, Search, CheckSquare, X, Leaf, Drumstick } from 'lucide-react';
 
-type Tab = 'items' | 'categories' | 'addons';
+type Tab = 'items' | 'categories' | 'addons' | 'stores';
 
 const OpsMenuPage = () => {
   const { role } = useAuth();
@@ -102,6 +103,7 @@ const OpsMenuPage = () => {
     { key: 'items', label: 'Items' },
     { key: 'categories', label: 'Categories' },
     { key: 'addons', label: 'Add-ons' },
+    { key: 'stores', label: 'Store Map' },
   ];
 
   return (
@@ -221,6 +223,10 @@ const OpsMenuPage = () => {
 
         {tab === 'addons' && role === 'super_admin' && (
           <AddonManager onRefresh={fetchAll} />
+        )}
+
+        {tab === 'stores' && role === 'super_admin' && (
+          <StoreMenuMapping items={items} onRefresh={fetchAll} />
         )}
 
         

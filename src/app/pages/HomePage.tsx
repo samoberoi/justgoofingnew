@@ -134,9 +134,9 @@ const HomePage = () => {
   const { cart, activeCampaigns, totalOrders, userId } = useAppStore();
   const { categories, grouped, uncategorized, loading, items } = useMenu();
   const [vegFilter, setVegFilter] = useState<'all' | 'veg' | 'nonveg'>('all');
-  const [activeOrder, setActiveOrder] = useState<any>(null);
+  const [activeOrders, setActiveOrders] = useState<any[]>([]);
 
-  // Fetch latest active order for this user
+  // Fetch ALL active orders for this user
   useEffect(() => {
     if (!userId) return;
     const fetchActive = async () => {
@@ -145,9 +145,8 @@ const HomePage = () => {
         .select('id, order_number, status, created_at') as any)
         .eq('user_id', userId)
         .not('status', 'in', '("delivered","cancelled")')
-        .order('created_at', { ascending: false })
-        .limit(1);
-      setActiveOrder(data?.[0] || null);
+        .order('created_at', { ascending: false });
+      setActiveOrders(data || []);
     };
     fetchActive();
 
@@ -175,23 +174,25 @@ const HomePage = () => {
     <div className="min-h-screen bg-background pb-20">
       <RoyalHeader />
 
-      {/* Active Order Banner */}
-      {activeOrder && ACTIVE_STATUS_LABELS[activeOrder.status] && (
-        <div className="px-4 pt-3">
-          <motion.div
-            key={activeOrder.status}
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            onClick={() => navigate(`/tracking/${activeOrder.id}`)}
-            className="bg-gradient-to-r from-secondary/15 to-secondary/5 border border-secondary/30 rounded-xl p-3.5 flex items-center gap-3 cursor-pointer active:scale-[0.98] transition-transform"
-          >
-            <span className="text-2xl">{ACTIVE_STATUS_LABELS[activeOrder.status].emoji}</span>
-            <div className="flex-1 min-w-0">
-              <p className="font-heading text-xs text-secondary">{activeOrder.order_number}</p>
-              <p className="text-xs text-foreground truncate">{ACTIVE_STATUS_LABELS[activeOrder.status].label}</p>
-            </div>
-            <span className="text-xs text-secondary font-heading shrink-0">Track →</span>
-          </motion.div>
+      {/* Active Order Banners */}
+      {activeOrders.length > 0 && (
+        <div className="px-4 pt-3 space-y-2">
+          {activeOrders.filter(o => ACTIVE_STATUS_LABELS[o.status]).map(order => (
+            <motion.div
+              key={order.id}
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              onClick={() => navigate(`/tracking/${order.id}`)}
+              className="bg-gradient-to-r from-secondary/15 to-secondary/5 border border-secondary/30 rounded-xl p-3.5 flex items-center gap-3 cursor-pointer active:scale-[0.98] transition-transform"
+            >
+              <span className="text-2xl">{ACTIVE_STATUS_LABELS[order.status].emoji}</span>
+              <div className="flex-1 min-w-0">
+                <p className="font-heading text-xs text-secondary">{order.order_number}</p>
+                <p className="text-xs text-foreground truncate">{ACTIVE_STATUS_LABELS[order.status].label}</p>
+              </div>
+              <span className="text-xs text-secondary font-heading shrink-0">Track →</span>
+            </motion.div>
+          ))}
         </div>
       )}
 
