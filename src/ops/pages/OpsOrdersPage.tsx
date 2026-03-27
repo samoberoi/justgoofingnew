@@ -26,7 +26,7 @@ const OpsOrdersPage = () => {
 
   const fetchOrders = async () => {
     let query = supabase.from('orders').select('*').order('created_at', { ascending: false });
-    if (filter !== 'all') query = query.eq('status', filter);
+    if (filter !== 'all') query = query.eq('status', filter as any);
     if (role === 'store_manager' && storeId) query = query.eq('store_id', storeId);
     const { data } = await query;
     setOrders(data || []);
