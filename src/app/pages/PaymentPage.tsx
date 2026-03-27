@@ -14,7 +14,7 @@ const paymentMethods = [
 
 const PaymentPage = () => {
   const navigate = useNavigate();
-  const { cart, clearCart, userName, phoneNumber, savedAddresses, walletBalance, isFirstTime, spendPoints } = useAppStore();
+  const { cart, clearCart, userName, phoneNumber, savedAddresses, walletBalance, activeCampaigns, totalOrders, refreshUserData } = useAppStore();
   const [selected, setSelected] = useState('upi');
   const [processing, setProcessing] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -24,7 +24,18 @@ const PaymentPage = () => {
   const [usePoints, setUsePoints] = useState(false);
 
   const subtotal = cart.reduce((sum, c) => sum + c.price * c.quantity, 0);
-  const firstOrderDiscount = isFirstTime ? -Math.min(...cart.map(c => c.price)) : 0;
+
+  // Check for applicable 1+1 campaign
+  const freeItemCampaign = activeCampaigns.find(c =>
+    c.type === 'free_item' && c.is_active && c.auto_apply &&
+    (c.target_audience === 'all' || (c.target_audience === 'new_users' && totalOrders === 0)) &&
+    (c.category === 'first_order' ? totalOrders === 0 : true)
+  );
+
+  const firstOrderDiscount = freeItemCampaign && cart.length > 0
+    ? -Math.min(...cart.map(c => c.price))
+    : 0;
+
   const pointsDiscount = usePoints ? -Math.min(walletBalance, subtotal + firstOrderDiscount) : 0;
   const deliveryFee = subtotal > 500 ? 0 : 30;
   const total = Math.max(0, subtotal + firstOrderDiscount + pointsDiscount + deliveryFee);
@@ -38,6 +49,13 @@ const PaymentPage = () => {
       const { data: stores } = await supabase.from('stores').select('id').eq('is_active', true).limit(1);
       const storeId = stores?.[0]?.id;
       if (!storeId) { setProcessing(false); return; }
+
+      // Get points settings for earning
+      const { data: pointsSettings } = await supabase
+        .from('points_settings')
+        .select('*')
+        .limit(1)
+        .single() as any;
 
       // Create order
       const { data: order, error: orderError } = await supabase.from('orders').insert({
@@ -64,7 +82,7 @@ const PaymentPage = () => {
       // Create order items
       const orderItems = cart.map(item => ({
         order_id: order.id,
-        menu_item_id: item.id,
+        menu_item_id: item.id.includes('_') ? item.id.split('_')[0] : item.id,
         name: item.name,
         quantity: item.quantity,
         price: item.price,
@@ -72,9 +90,41 @@ const PaymentPage = () => {
 
       await supabase.from('order_items').insert(orderItems);
 
+      // Earn Biryan Points
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user && pointsSettings?.earning_enabled) {
+        const earnPercent = pointsSettings.earning_percent || 2.5;
+        let pointsEarned = Math.floor(total * earnPercent / 100);
+        if (pointsSettings.max_earn_per_order) {
+          pointsEarned = Math.min(pointsEarned, pointsSettings.max_earn_per_order);
+        }
+        if (pointsEarned > 0) {
+          const expiresAt = pointsSettings.expiry_days
+            ? new Date(Date.now() + pointsSettings.expiry_days * 86400000).toISOString()
+            : null;
+
+          await supabase.from('points_transactions').insert({
+            user_id: user.id,
+            type: 'earned',
+            amount: pointsEarned,
+            balance_after: walletBalance + pointsEarned,
+            description: `Earned from Order #${order.order_number}`,
+            order_id: order.id,
+            expires_at: expiresAt,
+          } as any);
+        }
+      }
+
       // Deduct points if used
-      if (usePoints && pointsDiscount < 0) {
-        spendPoints(Math.abs(pointsDiscount));
+      if (usePoints && pointsDiscount < 0 && user) {
+        await supabase.from('points_transactions').insert({
+          user_id: user.id,
+          type: 'spent',
+          amount: pointsDiscount, // negative
+          balance_after: walletBalance + pointsDiscount,
+          description: `Redeemed on Order #${order.order_number}`,
+          order_id: order.id,
+        } as any);
       }
 
       setOrderNumber(order.order_number);
@@ -82,6 +132,7 @@ const PaymentPage = () => {
       setProcessing(false);
       setSuccess(true);
       clearCart();
+      refreshUserData(); // Refresh wallet balance
     } catch (err) {
       console.error('Payment error:', err);
       setProcessing(false);
@@ -139,15 +190,6 @@ const PaymentPage = () => {
             rows={2}
             className="w-full px-3 py-2.5 bg-muted border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-secondary resize-none"
           />
-          {savedAddresses.length > 1 && (
-            <div className="flex gap-2 flex-wrap">
-              {savedAddresses.map((a, i) => (
-                <button key={i} onClick={() => setAddress(a)} className={`text-[10px] px-2 py-1 rounded-full border ${address === a ? 'border-secondary text-secondary' : 'border-border text-muted-foreground'}`}>
-                  📍 {a.slice(0, 25)}...
-                </button>
-              ))}
-            </div>
-          )}
         </div>
 
         {/* Order summary */}
@@ -176,7 +218,7 @@ const PaymentPage = () => {
             onClick={() => setUsePoints(!usePoints)}
             className={`w-full flex items-center justify-between p-3 rounded-xl border transition-colors ${usePoints ? 'bg-secondary/10 border-secondary/30' : 'bg-card border-border'}`}
           >
-            <span className="text-sm text-foreground">Use Biryani Points ({walletBalance} pts)</span>
+            <span className="text-sm text-foreground">Use Biryan Points ({walletBalance} pts)</span>
             <div className={`w-10 h-5 rounded-full transition-colors ${usePoints ? 'bg-secondary' : 'bg-muted'} flex items-center`}>
               <div className={`w-4 h-4 rounded-full bg-foreground transition-transform ${usePoints ? 'translate-x-5' : 'translate-x-0.5'}`} />
             </div>

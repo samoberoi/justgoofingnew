@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Check, Pause, Play } from 'lucide-react';
+import { ArrowLeft, Check, Pause } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { BIRYANI_MENU } from '../store';
+import { supabase } from '@/integrations/supabase/client';
 
 const mealOptions = [3, 5, 7];
 const slots = ['12:00 PM', '1:00 PM', '7:00 PM', '8:00 PM'];
@@ -11,12 +11,22 @@ const SubscriptionPage = () => {
   const navigate = useNavigate();
   const [plan, setPlan] = useState<'weekly' | 'monthly'>('weekly');
   const [meals, setMeals] = useState(3);
-  const [selectedBiryani, setSelectedBiryani] = useState(BIRYANI_MENU[0].id);
+  const [menuItems, setMenuItems] = useState<any[]>([]);
+  const [selectedBiryani, setSelectedBiryani] = useState('');
   const [selectedSlot, setSelectedSlot] = useState(slots[0]);
   const [subscribed, setSubscribed] = useState(false);
 
-  const basePrice = BIRYANI_MENU.find(b => b.id === selectedBiryani)?.price || 299;
-  const total = basePrice * meals * 0.9; // 10% discount
+  useEffect(() => {
+    const fetch = async () => {
+      const { data } = await supabase.from('menu_items').select('id, name, price, image_url').eq('is_active', true).limit(10);
+      setMenuItems(data || []);
+      if (data?.[0]) setSelectedBiryani(data[0].id);
+    };
+    fetch();
+  }, []);
+
+  const basePrice = menuItems.find(b => b.id === selectedBiryani)?.price || 299;
+  const total = basePrice * meals * 0.9;
 
   if (subscribed) {
     return (
@@ -29,7 +39,7 @@ const SubscriptionPage = () => {
             <button onClick={() => setSubscribed(false)} className="px-4 py-2 bg-muted rounded-lg text-xs font-heading text-foreground flex items-center gap-1">
               <Pause size={12} /> Pause
             </button>
-            <button onClick={() => navigate('/app')} className="px-4 py-2 bg-gradient-saffron rounded-lg text-xs font-heading text-primary-foreground">
+            <button onClick={() => navigate('/home')} className="px-4 py-2 bg-gradient-saffron rounded-lg text-xs font-heading text-primary-foreground">
               Go Home
             </button>
           </div>
@@ -48,46 +58,36 @@ const SubscriptionPage = () => {
       </header>
 
       <div className="px-4 pt-4 space-y-6">
-        {/* Plan toggle */}
         <div className="flex bg-muted rounded-xl p-1">
           {(['weekly', 'monthly'] as const).map(p => (
-            <button
-              key={p}
-              onClick={() => setPlan(p)}
-              className={`flex-1 py-2.5 rounded-lg text-xs font-heading capitalize transition-colors ${plan === p ? 'bg-gradient-saffron text-primary-foreground' : 'text-muted-foreground'}`}
-            >
+            <button key={p} onClick={() => setPlan(p)}
+              className={`flex-1 py-2.5 rounded-lg text-xs font-heading capitalize transition-colors ${plan === p ? 'bg-gradient-saffron text-primary-foreground' : 'text-muted-foreground'}`}>
               {p}
             </button>
           ))}
         </div>
 
-        {/* Meals */}
         <div>
           <p className="text-sm text-foreground font-semibold mb-2">Meals per {plan === 'weekly' ? 'week' : 'month'}</p>
           <div className="flex gap-2">
             {mealOptions.map(m => (
-              <button
-                key={m}
-                onClick={() => setMeals(m)}
-                className={`flex-1 py-3 rounded-xl border text-sm font-heading ${meals === m ? 'border-secondary bg-secondary/10 text-secondary' : 'border-border bg-card text-muted-foreground'}`}
-              >
+              <button key={m} onClick={() => setMeals(m)}
+                className={`flex-1 py-3 rounded-xl border text-sm font-heading ${meals === m ? 'border-secondary bg-secondary/10 text-secondary' : 'border-border bg-card text-muted-foreground'}`}>
                 {m}
               </button>
             ))}
           </div>
         </div>
 
-        {/* Biryani type */}
         <div>
           <p className="text-sm text-foreground font-semibold mb-2">Choose Biryani</p>
           <div className="space-y-2">
-            {BIRYANI_MENU.map(b => (
-              <button
-                key={b.id}
-                onClick={() => setSelectedBiryani(b.id)}
-                className={`w-full flex items-center gap-3 p-3 rounded-xl border ${selectedBiryani === b.id ? 'border-secondary bg-secondary/5' : 'border-border bg-card'}`}
-              >
-                <span className="text-2xl">{b.image}</span>
+            {menuItems.map(b => (
+              <button key={b.id} onClick={() => setSelectedBiryani(b.id)}
+                className={`w-full flex items-center gap-3 p-3 rounded-xl border ${selectedBiryani === b.id ? 'border-secondary bg-secondary/5' : 'border-border bg-card'}`}>
+                <div className="w-8 h-8 rounded bg-muted overflow-hidden shrink-0">
+                  {b.image_url ? <img src={b.image_url} className="w-full h-full object-cover" alt="" /> : <span className="text-lg flex items-center justify-center h-full">🍚</span>}
+                </div>
                 <span className="text-sm text-foreground flex-1 text-left">{b.name}</span>
                 {selectedBiryani === b.id && <Check size={16} className="text-secondary" />}
               </button>
@@ -95,23 +95,18 @@ const SubscriptionPage = () => {
           </div>
         </div>
 
-        {/* Delivery slot */}
         <div>
           <p className="text-sm text-foreground font-semibold mb-2">Delivery Slot</p>
           <div className="grid grid-cols-2 gap-2">
             {slots.map(s => (
-              <button
-                key={s}
-                onClick={() => setSelectedSlot(s)}
-                className={`py-2.5 rounded-xl border text-xs font-heading ${selectedSlot === s ? 'border-secondary bg-secondary/10 text-secondary' : 'border-border bg-card text-muted-foreground'}`}
-              >
+              <button key={s} onClick={() => setSelectedSlot(s)}
+                className={`py-2.5 rounded-xl border text-xs font-heading ${selectedSlot === s ? 'border-secondary bg-secondary/10 text-secondary' : 'border-border bg-card text-muted-foreground'}`}>
                 {s}
               </button>
             ))}
           </div>
         </div>
 
-        {/* Benefits */}
         <div className="bg-secondary/10 border border-secondary/20 rounded-xl p-4">
           <p className="font-heading text-sm text-secondary mb-2">Subscriber Benefits</p>
           {['10% cheaper on every order', 'Double points earned', 'Priority preparation', 'Pause / modify anytime'].map(b => (
@@ -123,11 +118,8 @@ const SubscriptionPage = () => {
       </div>
 
       <div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-xl border-t border-border p-4">
-        <motion.button
-          whileTap={{ scale: 0.97 }}
-          onClick={() => setSubscribed(true)}
-          className="w-full py-4 bg-gradient-saffron rounded-xl font-heading text-sm uppercase tracking-widest text-primary-foreground shadow-saffron"
-        >
+        <motion.button whileTap={{ scale: 0.97 }} onClick={() => setSubscribed(true)}
+          className="w-full py-4 bg-gradient-saffron rounded-xl font-heading text-sm uppercase tracking-widest text-primary-foreground shadow-saffron">
           Subscribe • ₹{Math.round(total)} / {plan === 'weekly' ? 'week' : 'month'}
         </motion.button>
       </div>

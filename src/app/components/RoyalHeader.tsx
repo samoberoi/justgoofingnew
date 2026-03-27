@@ -1,17 +1,10 @@
-import { Bell, Crown, Volume2, VolumeX } from 'lucide-react';
+import { Bell, Volume2, VolumeX } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store';
 import { useState, useRef, useCallback, useEffect } from 'react';
 
-const tierColors: Record<string, string> = {
-  Sipahi: 'bg-muted text-muted-foreground',
-  Wazir: 'bg-secondary/20 text-secondary',
-  Nawab: 'bg-primary/20 text-primary',
-  Sultan: 'bg-accent/20 text-accent',
-};
-
 const RoyalHeader = () => {
-  const { walletBalance, tier, musicEnabled, setMusicEnabled } = useAppStore();
+  const { walletBalance, musicEnabled, setMusicEnabled } = useAppStore();
   const navigate = useNavigate();
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -56,10 +49,6 @@ const RoyalHeader = () => {
             className="flex items-center gap-1.5 bg-secondary/10 px-3 py-1 rounded-full"
           >
             <span className="text-xs text-secondary font-semibold">💰 {walletBalance} pts</span>
-          </button>
-          <button className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold ${tierColors[tier]}`}>
-            <Crown size={12} />
-            {tier}
           </button>
           <button onClick={() => navigate('/notifications')} className="relative">
             <Bell size={20} className="text-muted-foreground" />

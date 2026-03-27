@@ -7,7 +7,7 @@ import { ArrowRight, Shield } from 'lucide-react';
 
 const LoginPage = () => {
   const navigate = useNavigate();
-  const { setLoggedIn, setPhoneNumber, isFirstTime } = useAppStore();
+  const { setLoggedIn, setPhoneNumber } = useAppStore();
   const [step, setStep] = useState<'phone' | 'otp' | 'success'>('phone');
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
@@ -90,7 +90,7 @@ const LoginPage = () => {
           } else {
             // Customer — route to customer app
             setLoggedIn(true);
-            navigate(isFirstTime ? '/welcome' : '/home');
+            navigate('/welcome');
           }
         }, 1500);
       }

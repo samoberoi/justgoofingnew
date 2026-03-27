@@ -1,17 +1,27 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Calendar, Clock, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { BIRYANI_MENU } from '../store';
+import { supabase } from '@/integrations/supabase/client';
 
 const timeSlots = ['12:00 PM', '1:00 PM', '2:00 PM', '7:00 PM', '8:00 PM', '9:00 PM'];
 
 const PreBookPage = () => {
   const navigate = useNavigate();
-  const [selectedBiryani, setSelectedBiryani] = useState(BIRYANI_MENU[0].id);
+  const [menuItems, setMenuItems] = useState<any[]>([]);
+  const [selectedBiryani, setSelectedBiryani] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
   const [booked, setBooked] = useState(false);
+
+  useEffect(() => {
+    const fetch = async () => {
+      const { data } = await supabase.from('menu_items').select('id, name, price, image_url').eq('is_active', true).limit(10);
+      setMenuItems(data || []);
+      if (data?.[0]) setSelectedBiryani(data[0].id);
+    };
+    fetch();
+  }, []);
 
   // Generate next 7 days
   const dates = Array.from({ length: 7 }, (_, i) => {
@@ -88,13 +98,15 @@ const PreBookPage = () => {
         <div>
           <p className="text-sm text-foreground font-semibold mb-2">Choose Biryani</p>
           <div className="space-y-2">
-            {BIRYANI_MENU.map(b => (
+            {menuItems.map(b => (
               <button
                 key={b.id}
                 onClick={() => setSelectedBiryani(b.id)}
                 className={`w-full flex items-center gap-3 p-3 rounded-xl border ${selectedBiryani === b.id ? 'border-secondary bg-secondary/5' : 'border-border bg-card'}`}
               >
-                <span className="text-2xl">{b.image}</span>
+                <div className="w-10 h-10 rounded-lg bg-muted overflow-hidden shrink-0">
+                  {b.image_url ? <img src={b.image_url} className="w-full h-full object-cover" alt="" /> : <span className="text-2xl flex items-center justify-center h-full">🍚</span>}
+                </div>
                 <div className="flex-1 text-left">
                   <span className="text-sm text-foreground">{b.name}</span>
                   <span className="block text-xs text-secondary">₹{b.price}</span>

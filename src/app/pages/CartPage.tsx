@@ -6,11 +6,22 @@ import { useState } from 'react';
 
 const CartPage = () => {
   const navigate = useNavigate();
-  const { cart, updateQuantity, removeFromCart, walletBalance, isFirstTime } = useAppStore();
+  const { cart, updateQuantity, removeFromCart, walletBalance, activeCampaigns, totalOrders } = useAppStore();
   const [usePoints, setUsePoints] = useState(false);
 
   const subtotal = cart.reduce((sum, c) => sum + c.price * c.quantity, 0);
-  const firstOrderDiscount = isFirstTime ? -Math.min(...cart.map(c => c.price)) : 0;
+
+  // Check for applicable 1+1 campaign
+  const freeItemCampaign = activeCampaigns.find(c =>
+    c.type === 'free_item' && c.is_active && c.auto_apply &&
+    (c.target_audience === 'all' || (c.target_audience === 'new_users' && totalOrders === 0)) &&
+    (c.category === 'first_order' ? totalOrders === 0 : true)
+  );
+
+  const firstOrderDiscount = freeItemCampaign && cart.length > 0
+    ? -Math.min(...cart.map(c => c.price))
+    : 0;
+
   const pointsDiscount = usePoints ? -Math.min(walletBalance, subtotal + firstOrderDiscount) : 0;
   const deliveryFee = subtotal > 500 ? 0 : 30;
   const total = subtotal + firstOrderDiscount + pointsDiscount + deliveryFee;
@@ -30,7 +41,6 @@ const CartPage = () => {
 
   return (
     <div className="min-h-screen bg-background pb-32">
-      {/* Header */}
       <header className="sticky top-0 z-40 bg-card/95 backdrop-blur-xl border-b border-border">
         <div className="flex items-center gap-3 px-4 h-14">
           <button onClick={() => navigate(-1)}><ArrowLeft size={20} className="text-foreground" /></button>
@@ -38,7 +48,6 @@ const CartPage = () => {
         </div>
       </header>
 
-      {/* Items */}
       <div className="px-4 pt-4 space-y-3">
         {cart.map(item => (
           <motion.div key={item.id} layout className="bg-card border border-border rounded-xl p-4 flex gap-4">
@@ -46,7 +55,7 @@ const CartPage = () => {
               {item.image?.startsWith('http') ? (
                 <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
               ) : (
-                <div className="text-3xl w-full h-full flex items-center justify-center">{item.image}</div>
+                <div className="text-3xl w-full h-full flex items-center justify-center">{item.image || '🍚'}</div>
               )}
             </div>
             <div className="flex-1 min-w-0">
@@ -67,12 +76,12 @@ const CartPage = () => {
         ))}
       </div>
 
-      {/* First order offer */}
-      {isFirstTime && (
+      {/* Campaign offer */}
+      {freeItemCampaign && firstOrderDiscount < 0 && (
         <div className="mx-4 mt-4 bg-secondary/10 border border-secondary/20 rounded-xl p-3 flex items-center gap-3">
           <Ticket size={18} className="text-secondary shrink-0" />
           <div>
-            <p className="text-xs font-semibold text-secondary">1+1 FREE Applied! 🎉</p>
+            <p className="text-xs font-semibold text-secondary">🎉 {freeItemCampaign.name}</p>
             <p className="text-[10px] text-muted-foreground">Cheapest biryani is free</p>
           </div>
         </div>
@@ -85,7 +94,7 @@ const CartPage = () => {
             onClick={() => setUsePoints(!usePoints)}
             className={`w-full flex items-center justify-between p-3 rounded-xl border transition-colors ${usePoints ? 'bg-secondary/10 border-secondary/30' : 'bg-card border-border'}`}
           >
-            <span className="text-sm text-foreground">Use Biryani Points ({walletBalance} pts)</span>
+            <span className="text-sm text-foreground">Use Biryan Points ({walletBalance} pts)</span>
             <div className={`w-10 h-5 rounded-full transition-colors ${usePoints ? 'bg-secondary' : 'bg-muted'} flex items-center`}>
               <div className={`w-4 h-4 rounded-full bg-foreground transition-transform ${usePoints ? 'translate-x-5' : 'translate-x-0.5'}`} />
             </div>
@@ -116,7 +125,6 @@ const CartPage = () => {
         </div>
       </div>
 
-      {/* CTA */}
       <div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-xl border-t border-border p-4">
         <motion.button
           whileTap={{ scale: 0.97 }}
