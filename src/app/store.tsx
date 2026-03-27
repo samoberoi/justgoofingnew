@@ -150,10 +150,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       })));
     }
 
-    // Fetch order count
-    const { count } = await supabase
+    // Fetch order count for THIS user only
+    const { count } = await (supabase
       .from('orders')
-      .select('id', { count: 'exact', head: true }) as any;
+      .select('id', { count: 'exact', head: true }) as any)
+      .eq('user_id', userId);
     setTotalOrders(count || 0);
 
     // Fetch badges
