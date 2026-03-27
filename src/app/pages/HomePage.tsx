@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Minus, ShoppingCart, Flame, Star, ChefHat, Sparkles, Gift, Package } from 'lucide-react';
+import { Plus, Minus, ShoppingCart, Flame, Star, ChefHat, Sparkles, Gift, Package, MapPin } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import RoyalHeader from '../components/RoyalHeader';
 import BottomNav from '../components/BottomNav';
 import { useAppStore } from '../store';
 import { useMenu, MenuItem } from '../hooks/useMenu';
+import { useStoreSelection } from '../hooks/useStoreSelection';
 import { supabase } from '@/integrations/supabase/client';
 
 const SpiceIndicator = ({ level }: { level: number }) => (
@@ -132,7 +133,8 @@ const ACTIVE_STATUS_LABELS: Record<string, { label: string; emoji: string }> = {
 const HomePage = () => {
   const navigate = useNavigate();
   const { cart, activeCampaigns, totalOrders, userId } = useAppStore();
-  const { categories, grouped, uncategorized, loading, items } = useMenu();
+  const { selectedStore, outOfArea, locationLoading } = useStoreSelection();
+  const { categories, grouped, uncategorized, loading, items } = useMenu(selectedStore?.id);
   const [vegFilter, setVegFilter] = useState<'all' | 'veg' | 'nonveg'>('all');
   const [activeOrders, setActiveOrders] = useState<any[]>([]);
 
