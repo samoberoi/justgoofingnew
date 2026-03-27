@@ -82,6 +82,9 @@ const SuperAdminDashboard = () => {
   // Top sellers
   const [topSellers, setTopSellers] = useState<any[]>([]);
 
+  // Top customers
+  const [topCustomers, setTopCustomers] = useState<{ name: string; phone: string; orders: number; spent: number }[]>([]);
+
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -95,7 +98,7 @@ const SuperAdminDashboard = () => {
 
   const fetchAll = async () => {
     setLoading(true);
-    await Promise.all([fetchOrderStats(), fetchMenuStats(), fetchTeamStats(), fetchStoreStats(), fetchTopSellers()]);
+    await Promise.all([fetchOrderStats(), fetchMenuStats(), fetchTeamStats(), fetchStoreStats(), fetchTopSellers(), fetchTopCustomers()]);
     setLoading(false);
   };
 
@@ -172,6 +175,19 @@ const SuperAdminDashboard = () => {
         .sort((a, b) => b.qty - a.qty)
         .slice(0, 5)
     );
+  };
+
+  const fetchTopCustomers = async () => {
+    const { data: orders } = await supabase.from('orders').select('customer_name, customer_phone, total');
+    if (!orders) return;
+    const map = new Map<string, { name: string; phone: string; orders: number; spent: number }>();
+    orders.forEach(o => {
+      const key = o.customer_phone || o.customer_name || 'unknown';
+      const existing = map.get(key);
+      if (existing) { existing.orders += 1; existing.spent += Number(o.total); }
+      else { map.set(key, { name: o.customer_name || 'Guest', phone: o.customer_phone || '-', orders: 1, spent: Number(o.total) }); }
+    });
+    setTopCustomers(Array.from(map.values()).sort((a, b) => b.spent - a.spent).slice(0, 10));
   };
 
   const selectedLabel = DATE_OPTIONS.find(d => d.key === dateRange)?.label || 'Today';
@@ -396,6 +412,43 @@ const SuperAdminDashboard = () => {
                   </div>
                   <div className="text-right">
                     <p className="text-sm font-heading text-secondary">₹{item.revenue.toLocaleString('en-IN')}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* ===== TOP CUSTOMERS ===== */}
+        <div>
+          <h2 className="font-heading text-xs text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
+            <Users size={12} /> Top 10 Customers
+          </h2>
+          {topCustomers.length === 0 ? (
+            <div className="bg-card border border-border rounded-xl p-6 text-center">
+              <p className="text-xs text-muted-foreground">No customer data yet</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {topCustomers.map((c, idx) => (
+                <motion.div
+                  key={c.phone}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.4 + idx * 0.05 }}
+                  className="bg-card border border-border rounded-xl p-3 flex items-center gap-3"
+                >
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-heading text-sm ${
+                    idx === 0 ? 'bg-secondary/20 text-secondary' : idx === 1 ? 'bg-muted text-foreground' : 'bg-muted text-muted-foreground'
+                  }`}>
+                    #{idx + 1}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{c.name}</p>
+                    <p className="text-[10px] text-muted-foreground">{c.phone} • {c.orders} orders</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-heading text-secondary">₹{c.spent.toLocaleString('en-IN')}</p>
                   </div>
                 </motion.div>
               ))}
