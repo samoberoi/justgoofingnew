@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Smartphone, CreditCard, Building2, Wallet, CheckCircle2, MapPin, Navigation, Loader2, Home } from 'lucide-react';
+import { ArrowLeft, Smartphone, CreditCard, Building2, Wallet, CheckCircle2, MapPin, Navigation, Loader2, Home, User, ChevronDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,6 +12,13 @@ const paymentMethods = [
   { id: 'cod', label: 'Cash on Delivery', icon: Wallet, desc: 'Pay when delivered' },
 ];
 
+interface SavedAddress {
+  id: string;
+  formatted_address: string;
+  house_number: string | null;
+  label: string | null;
+}
+
 const PaymentPage = () => {
   const navigate = useNavigate();
   const { cart, clearCart, userName, phoneNumber, savedAddresses, walletBalance, activeCampaigns, totalOrders, refreshUserData } = useAppStore();
@@ -20,25 +27,64 @@ const PaymentPage = () => {
   const [success, setSuccess] = useState(false);
   const [orderNumber, setOrderNumber] = useState('');
   const [orderId, setOrderId] = useState('');
-  const [address, setAddress] = useState(savedAddresses[0] || '');
+  const [address, setAddress] = useState('');
   const [houseNumber, setHouseNumber] = useState('');
+  const [customerName, setCustomerName] = useState(userName || '');
   const [usePoints, setUsePoints] = useState(false);
   const [locatingGPS, setLocatingGPS] = useState(false);
   const [locationDetected, setLocationDetected] = useState(false);
+
+  // Saved addresses from DB
+  const [dbAddresses, setDbAddresses] = useState<SavedAddress[]>([]);
+  const [showAddressPicker, setShowAddressPicker] = useState(false);
 
   // Delivery settings from DB
   const [deliveryFee, setDeliveryFee] = useState(30);
   const [freeDeliveryAbove, setFreeDeliveryAbove] = useState(500);
 
   useEffect(() => {
-    const fetchDeliverySettings = async () => {
-      const { data } = await supabase.from('delivery_settings' as any).select('*').limit(1).maybeSingle();
-      if (data) {
-        setDeliveryFee(Number((data as any).base_delivery_fee) || 30);
-        setFreeDeliveryAbove(Number((data as any).free_delivery_above) || 500);
+    const init = async () => {
+      const [deliveryRes, authRes] = await Promise.all([
+        supabase.from('delivery_settings' as any).select('*').limit(1).maybeSingle(),
+        supabase.auth.getUser(),
+      ]);
+
+      if (deliveryRes.data) {
+        setDeliveryFee(Number((deliveryRes.data as any).base_delivery_fee) || 30);
+        setFreeDeliveryAbove(Number((deliveryRes.data as any).free_delivery_above) || 500);
+      }
+
+      const user = authRes.data?.user;
+      if (user) {
+        // Fetch saved addresses
+        const { data: addrs } = await supabase
+          .from('addresses' as any)
+          .select('id, formatted_address, house_number, label')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+        if (addrs && addrs.length > 0) {
+          // Deduplicate by formatted_address
+          const seen = new Set<string>();
+          const unique = (addrs as SavedAddress[]).filter(a => {
+            if (seen.has(a.formatted_address)) return false;
+            seen.add(a.formatted_address);
+            return true;
+          });
+          setDbAddresses(unique);
+        }
+
+        // Fetch name from profile
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        if (profile?.full_name) {
+          setCustomerName(profile.full_name);
+        }
       }
     };
-    fetchDeliverySettings();
+    init();
   }, []);
 
   const subtotal = cart.reduce((sum, c) => sum + c.price * c.quantity, 0);
@@ -73,17 +119,22 @@ const PaymentPage = () => {
         setLocatingGPS(false);
         setLocationDetected(true);
       },
-      () => {
-        setLocatingGPS(false);
-      },
+      () => { setLocatingGPS(false); },
       { enableHighAccuracy: true, timeout: 10000 }
     );
+  };
+
+  const handleSelectSavedAddress = (addr: SavedAddress) => {
+    setAddress(addr.formatted_address);
+    setHouseNumber(addr.house_number || '');
+    setShowAddressPicker(false);
+    setLocationDetected(true);
   };
 
   const fullAddress = houseNumber ? `${houseNumber}, ${address}` : address;
 
   const handlePay = async () => {
-    if (!address.trim() || processing) return;
+    if (!address.trim() || !customerName.trim() || processing) return;
     setProcessing(true);
 
     try {
@@ -99,12 +150,11 @@ const PaymentPage = () => {
       const user = authRes.data?.user;
       const pointsSettings = (pointsRes.data as any) || null;
 
-      // Insert order with user_id
       const orderPayload = {
         store_id: storeId,
         user_id: user?.id || null,
-        customer_name: userName || 'Guest',
-        customer_phone: phoneNumber || null,
+        customer_name: customerName.trim(),
+        customer_phone: phoneNumber || user?.phone || null,
         customer_address: fullAddress,
         house_number: houseNumber || null,
         subtotal,
@@ -144,14 +194,22 @@ const PaymentPage = () => {
 
       await supabase.from('order_items').insert(orderItems);
 
-      // Save address for user
+      // Save address for user (avoid duplicates)
       if (user && address.trim()) {
-        await supabase.from('addresses' as any).insert({
-          user_id: user.id,
-          formatted_address: address,
-          house_number: houseNumber || null,
-          label: 'Delivery',
-        });
+        const alreadySaved = dbAddresses.some(a => a.formatted_address === address);
+        if (!alreadySaved) {
+          await supabase.from('addresses' as any).insert({
+            user_id: user.id,
+            formatted_address: address,
+            house_number: houseNumber || null,
+            label: 'Delivery',
+          });
+        }
+      }
+
+      // Save name to profile
+      if (user && customerName.trim()) {
+        await supabase.from('profiles').update({ full_name: customerName.trim() }).eq('user_id', user.id);
       }
 
       // Earn Biryan Points
@@ -230,10 +288,51 @@ const PaymentPage = () => {
       </header>
 
       <div className="px-4 pt-4 space-y-4">
-        {/* Delivery address with GPS + house number */}
+        {/* Customer Name */}
+        <div className="space-y-1.5">
+          <label className="text-xs font-medium text-muted-foreground flex items-center gap-1"><User size={12} /> Your Name</label>
+          <input
+            value={customerName}
+            onChange={e => setCustomerName(e.target.value)}
+            placeholder="Enter your full name"
+            className="w-full px-3 py-2.5 bg-muted border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-secondary"
+          />
+        </div>
+
+        {/* Delivery address */}
         <div className="space-y-2">
           <label className="text-xs font-medium text-muted-foreground flex items-center gap-1"><MapPin size={12} /> Delivery Address</label>
 
+          {/* Saved addresses */}
+          {dbAddresses.length > 0 && (
+            <div className="space-y-1.5">
+              <button
+                onClick={() => setShowAddressPicker(!showAddressPicker)}
+                className="w-full flex items-center justify-between p-3 bg-card border border-border rounded-xl text-sm text-foreground"
+              >
+                <span className="text-muted-foreground">📍 Saved Addresses ({dbAddresses.length})</span>
+                <ChevronDown size={14} className={`text-muted-foreground transition-transform ${showAddressPicker ? 'rotate-180' : ''}`} />
+              </button>
+              {showAddressPicker && (
+                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="space-y-1.5">
+                  {dbAddresses.map(addr => (
+                    <button
+                      key={addr.id}
+                      onClick={() => handleSelectSavedAddress(addr)}
+                      className="w-full text-left p-3 bg-muted/50 border border-border rounded-lg text-sm text-foreground hover:border-secondary/50 transition-colors"
+                    >
+                      <p className="font-medium text-xs">{addr.label || 'Delivery'}</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">
+                        {addr.house_number ? `${addr.house_number}, ` : ''}{addr.formatted_address}
+                      </p>
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </div>
+          )}
+
+          {/* Use current location button */}
           {!locationDetected && !address && (
             <motion.button initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} whileTap={{ scale: 0.97 }}
               onClick={handleUseCurrentLocation} disabled={locatingGPS}
@@ -246,12 +345,11 @@ const PaymentPage = () => {
             </motion.button>
           )}
 
-          <textarea value={address} onChange={e => { setAddress(e.target.value); }}
+          <textarea value={address} onChange={e => setAddress(e.target.value)}
             placeholder="Enter your full delivery address..."
             rows={2}
             className="w-full px-3 py-2.5 bg-muted border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-secondary resize-none" />
 
-          {/* House / Flat number input */}
           <div className="relative">
             <Home size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input
@@ -326,7 +424,7 @@ const PaymentPage = () => {
       </div>
 
       <div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-xl border-t border-border p-4">
-        <motion.button whileTap={{ scale: 0.97 }} onClick={handlePay} disabled={processing || !address.trim()}
+        <motion.button whileTap={{ scale: 0.97 }} onClick={handlePay} disabled={processing || !address.trim() || !customerName.trim()}
           className="w-full py-4 bg-gradient-saffron rounded-xl font-heading text-sm uppercase tracking-widest text-primary-foreground shadow-saffron disabled:opacity-60 flex items-center justify-center gap-2">
           {processing ? (
             <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }} className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full" />
