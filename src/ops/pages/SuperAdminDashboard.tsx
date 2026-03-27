@@ -98,7 +98,7 @@ const SuperAdminDashboard = () => {
 
   const fetchAll = async () => {
     setLoading(true);
-    await Promise.all([fetchOrderStats(), fetchMenuStats(), fetchTeamStats(), fetchStoreStats(), fetchTopSellers()]);
+    await Promise.all([fetchOrderStats(), fetchMenuStats(), fetchTeamStats(), fetchStoreStats(), fetchTopSellers(), fetchTopCustomers()]);
     setLoading(false);
   };
 
@@ -175,6 +175,19 @@ const SuperAdminDashboard = () => {
         .sort((a, b) => b.qty - a.qty)
         .slice(0, 5)
     );
+  };
+
+  const fetchTopCustomers = async () => {
+    const { data: orders } = await supabase.from('orders').select('customer_name, customer_phone, total');
+    if (!orders) return;
+    const map = new Map<string, { name: string; phone: string; orders: number; spent: number }>();
+    orders.forEach(o => {
+      const key = o.customer_phone || o.customer_name || 'unknown';
+      const existing = map.get(key);
+      if (existing) { existing.orders += 1; existing.spent += Number(o.total); }
+      else { map.set(key, { name: o.customer_name || 'Guest', phone: o.customer_phone || '-', orders: 1, spent: Number(o.total) }); }
+    });
+    setTopCustomers(Array.from(map.values()).sort((a, b) => b.spent - a.spent).slice(0, 10));
   };
 
   const selectedLabel = DATE_OPTIONS.find(d => d.key === dateRange)?.label || 'Today';
