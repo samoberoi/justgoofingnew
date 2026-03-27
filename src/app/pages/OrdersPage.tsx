@@ -77,7 +77,9 @@ const OrdersPage = () => {
 
             return (
               <motion.div key={order.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.08 }} className="bg-card border border-border rounded-xl p-4">
+                transition={{ delay: i * 0.08 }}
+                onClick={() => navigate(`/tracking/${order.id}`)}
+                className="bg-card border border-border rounded-xl p-4 cursor-pointer active:scale-[0.98] transition-transform">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Package size={16} className="text-secondary" />
@@ -97,7 +99,7 @@ const OrdersPage = () => {
                   <span className="font-heading text-sm text-secondary">₹{Number(order.total).toLocaleString()}</span>
                 </div>
                 {order.status === 'delivered' && (
-                  <button onClick={() => navigate('/home')}
+                  <button onClick={(e) => { e.stopPropagation(); navigate('/home'); }}
                     className="w-full mt-3 py-2 bg-muted rounded-lg text-xs font-heading text-foreground">
                     Reorder
                   </button>

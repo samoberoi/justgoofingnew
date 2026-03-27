@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Minus, ShoppingCart, Flame, Star, ChefHat, Sparkles, Gift } from 'lucide-react';
+import { Plus, Minus, ShoppingCart, Flame, Star, ChefHat, Sparkles, Gift, Package } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import RoyalHeader from '../components/RoyalHeader';
 import BottomNav from '../components/BottomNav';
 import { useAppStore } from '../store';
 import { useMenu, MenuItem } from '../hooks/useMenu';
+import { supabase } from '@/integrations/supabase/client';
 
 const SpiceIndicator = ({ level }: { level: number }) => (
   <div className="flex gap-0.5">
@@ -118,11 +119,44 @@ const ItemCard = ({ item, index }: { item: MenuItem; index: number }) => {
   );
 };
 
+const ACTIVE_STATUS_LABELS: Record<string, { label: string; emoji: string }> = {
+  new: { label: 'Order placed — waiting for kitchen', emoji: '📝' },
+  accepted: { label: 'Kitchen accepted your order!', emoji: '✅' },
+  preparing: { label: 'Your biryani is being prepared 🔥', emoji: '🔥' },
+  ready: { label: 'Your order is ready for pickup!', emoji: '✨' },
+  assigned: { label: 'A rider has been assigned', emoji: '🏇' },
+  picked_up: { label: 'Rider picked up your order', emoji: '📦' },
+  out_for_delivery: { label: 'Your food is on the way!', emoji: '🛵' },
+};
+
 const HomePage = () => {
   const navigate = useNavigate();
-  const { cart, activeCampaigns, totalOrders } = useAppStore();
+  const { cart, activeCampaigns, totalOrders, userId } = useAppStore();
   const { categories, grouped, uncategorized, loading, items } = useMenu();
   const [vegFilter, setVegFilter] = useState<'all' | 'veg' | 'nonveg'>('all');
+  const [activeOrder, setActiveOrder] = useState<any>(null);
+
+  // Fetch latest active order for this user
+  useEffect(() => {
+    if (!userId) return;
+    const fetchActive = async () => {
+      const { data } = await (supabase
+        .from('orders')
+        .select('id, order_number, status, created_at') as any)
+        .eq('user_id', userId)
+        .not('status', 'in', '("delivered","cancelled")')
+        .order('created_at', { ascending: false })
+        .limit(1);
+      setActiveOrder(data?.[0] || null);
+    };
+    fetchActive();
+
+    const channel = supabase
+      .channel('home-active-order')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => fetchActive())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [userId]);
 
   const cartCount = cart.reduce((sum, c) => sum + c.quantity, 0);
 
@@ -141,7 +175,26 @@ const HomePage = () => {
     <div className="min-h-screen bg-background pb-20">
       <RoyalHeader />
 
-      {/* Dynamic Campaign Banner */}
+      {/* Active Order Banner */}
+      {activeOrder && ACTIVE_STATUS_LABELS[activeOrder.status] && (
+        <div className="px-4 pt-3">
+          <motion.div
+            key={activeOrder.status}
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            onClick={() => navigate(`/tracking/${activeOrder.id}`)}
+            className="bg-gradient-to-r from-secondary/15 to-secondary/5 border border-secondary/30 rounded-xl p-3.5 flex items-center gap-3 cursor-pointer active:scale-[0.98] transition-transform"
+          >
+            <span className="text-2xl">{ACTIVE_STATUS_LABELS[activeOrder.status].emoji}</span>
+            <div className="flex-1 min-w-0">
+              <p className="font-heading text-xs text-secondary">{activeOrder.order_number}</p>
+              <p className="text-xs text-foreground truncate">{ACTIVE_STATUS_LABELS[activeOrder.status].label}</p>
+            </div>
+            <span className="text-xs text-secondary font-heading shrink-0">Track →</span>
+          </motion.div>
+        </div>
+      )}
+
       {applicableCampaign && (
         <div className="px-4 pt-4">
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
