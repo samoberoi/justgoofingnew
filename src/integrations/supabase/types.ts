@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      badges: {
+        Row: {
+          created_at: string
+          criteria_type: string
+          criteria_value: number
+          description: string | null
+          icon: string
+          id: string
+          is_active: boolean
+          name: string
+          tier_level: number
+        }
+        Insert: {
+          created_at?: string
+          criteria_type?: string
+          criteria_value?: number
+          description?: string | null
+          icon?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          tier_level?: number
+        }
+        Update: {
+          created_at?: string
+          criteria_type?: string
+          criteria_value?: number
+          description?: string | null
+          icon?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          tier_level?: number
+        }
+        Relationships: []
+      }
       coupons: {
         Row: {
           code: string
@@ -93,6 +129,93 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      loyalty_campaigns: {
+        Row: {
+          auto_apply: boolean
+          category: string
+          coupon_code: string | null
+          created_at: string
+          discount_value: number
+          free_item_id: string | null
+          id: string
+          is_active: boolean
+          max_discount: number | null
+          min_order_value: number | null
+          name: string
+          per_user_limit: number | null
+          reward_id: string | null
+          target_audience: string
+          target_badge_id: string | null
+          type: string
+          updated_at: string
+          usage_limit: number | null
+          used_count: number
+          valid_from: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          auto_apply?: boolean
+          category?: string
+          coupon_code?: string | null
+          created_at?: string
+          discount_value?: number
+          free_item_id?: string | null
+          id?: string
+          is_active?: boolean
+          max_discount?: number | null
+          min_order_value?: number | null
+          name: string
+          per_user_limit?: number | null
+          reward_id?: string | null
+          target_audience?: string
+          target_badge_id?: string | null
+          type?: string
+          updated_at?: string
+          usage_limit?: number | null
+          used_count?: number
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          auto_apply?: boolean
+          category?: string
+          coupon_code?: string | null
+          created_at?: string
+          discount_value?: number
+          free_item_id?: string | null
+          id?: string
+          is_active?: boolean
+          max_discount?: number | null
+          min_order_value?: number | null
+          name?: string
+          per_user_limit?: number | null
+          reward_id?: string | null
+          target_audience?: string
+          target_badge_id?: string | null
+          type?: string
+          updated_at?: string
+          usage_limit?: number | null
+          used_count?: number
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loyalty_campaigns_free_item_id_fkey"
+            columns: ["free_item_id"]
+            isOneToOne: false
+            referencedRelation: "menu_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loyalty_campaigns_reward_id_fkey"
+            columns: ["reward_id"]
+            isOneToOne: false
+            referencedRelation: "rewards"
             referencedColumns: ["id"]
           },
         ]
@@ -551,6 +674,89 @@ export type Database = {
           },
         ]
       }
+      points_settings: {
+        Row: {
+          earning_enabled: boolean
+          earning_percent: number
+          expiry_days: number | null
+          id: string
+          max_earn_per_order: number | null
+          max_redemption_percent: number
+          min_order_for_redemption: number | null
+          points_to_currency: number
+          redemption_enabled: boolean
+          updated_at: string
+        }
+        Insert: {
+          earning_enabled?: boolean
+          earning_percent?: number
+          expiry_days?: number | null
+          id?: string
+          max_earn_per_order?: number | null
+          max_redemption_percent?: number
+          min_order_for_redemption?: number | null
+          points_to_currency?: number
+          redemption_enabled?: boolean
+          updated_at?: string
+        }
+        Update: {
+          earning_enabled?: boolean
+          earning_percent?: number
+          expiry_days?: number | null
+          id?: string
+          max_earn_per_order?: number | null
+          max_redemption_percent?: number
+          min_order_for_redemption?: number | null
+          points_to_currency?: number
+          redemption_enabled?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      points_transactions: {
+        Row: {
+          amount: number
+          balance_after: number
+          created_at: string
+          description: string | null
+          expires_at: string | null
+          id: string
+          order_id: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          balance_after?: number
+          created_at?: string
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          order_id?: string | null
+          type?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          balance_after?: number
+          created_at?: string
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          order_id?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "points_transactions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           aadhaar_document_url: string | null
@@ -601,6 +807,124 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      referral_settings: {
+        Row: {
+          id: string
+          is_active: boolean
+          max_referrals_per_user: number | null
+          referee_discount_percent: number | null
+          referee_points: number
+          referrer_points: number
+          require_first_order: boolean
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          is_active?: boolean
+          max_referrals_per_user?: number | null
+          referee_discount_percent?: number | null
+          referee_points?: number
+          referrer_points?: number
+          require_first_order?: boolean
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          is_active?: boolean
+          max_referrals_per_user?: number | null
+          referee_discount_percent?: number | null
+          referee_points?: number
+          referrer_points?: number
+          require_first_order?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      referrals: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          id: string
+          points_awarded: number | null
+          referee_id: string | null
+          referee_order_id: string | null
+          referral_code: string
+          referrer_id: string
+          status: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          points_awarded?: number | null
+          referee_id?: string | null
+          referee_order_id?: string | null
+          referral_code: string
+          referrer_id: string
+          status?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          points_awarded?: number | null
+          referee_id?: string | null
+          referee_order_id?: string | null
+          referral_code?: string
+          referrer_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referrals_referee_order_id_fkey"
+            columns: ["referee_order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rewards: {
+        Row: {
+          created_at: string
+          description: string | null
+          free_item_id: string | null
+          id: string
+          is_active: boolean
+          name: string
+          type: string
+          value: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          free_item_id?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          type?: string
+          value?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          free_item_id?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          type?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rewards_free_item_id_fkey"
+            columns: ["free_item_id"]
+            isOneToOne: false
+            referencedRelation: "menu_items"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       stores: {
         Row: {
@@ -656,6 +980,82 @@ export type Database = {
         }
         Relationships: []
       }
+      streak_campaigns: {
+        Row: {
+          auto_reset: boolean
+          created_at: string
+          duration_weeks: number
+          grace_period_hours: number | null
+          id: string
+          is_active: boolean
+          min_orders_per_week: number
+          name: string
+          reward_id: string | null
+          type: string
+        }
+        Insert: {
+          auto_reset?: boolean
+          created_at?: string
+          duration_weeks?: number
+          grace_period_hours?: number | null
+          id?: string
+          is_active?: boolean
+          min_orders_per_week?: number
+          name: string
+          reward_id?: string | null
+          type?: string
+        }
+        Update: {
+          auto_reset?: boolean
+          created_at?: string
+          duration_weeks?: number
+          grace_period_hours?: number | null
+          id?: string
+          is_active?: boolean
+          min_orders_per_week?: number
+          name?: string
+          reward_id?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streak_campaigns_reward_id_fkey"
+            columns: ["reward_id"]
+            isOneToOne: false
+            referencedRelation: "rewards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_badges: {
+        Row: {
+          badge_id: string
+          earned_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          badge_id: string
+          earned_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          badge_id?: string
+          earned_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_badges_badge_id_fkey"
+            columns: ["badge_id"]
+            isOneToOne: false
+            referencedRelation: "badges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -687,6 +1087,56 @@ export type Database = {
             columns: ["store_id"]
             isOneToOne: false
             referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_streaks: {
+        Row: {
+          broken: boolean
+          completed: boolean
+          completed_at: string | null
+          created_at: string
+          current_week: number
+          id: string
+          last_order_at: string | null
+          orders_this_week: number
+          started_at: string
+          streak_campaign_id: string
+          user_id: string
+        }
+        Insert: {
+          broken?: boolean
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          current_week?: number
+          id?: string
+          last_order_at?: string | null
+          orders_this_week?: number
+          started_at?: string
+          streak_campaign_id: string
+          user_id: string
+        }
+        Update: {
+          broken?: boolean
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          current_week?: number
+          id?: string
+          last_order_at?: string | null
+          orders_this_week?: number
+          started_at?: string
+          streak_campaign_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_streaks_streak_campaign_id_fkey"
+            columns: ["streak_campaign_id"]
+            isOneToOne: false
+            referencedRelation: "streak_campaigns"
             referencedColumns: ["id"]
           },
         ]
