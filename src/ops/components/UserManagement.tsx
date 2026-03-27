@@ -44,11 +44,18 @@ const UserManagement = () => {
   useEffect(() => { fetchData(); }, []);
 
   const fetchData = async () => {
-    const [rolesRes, storesRes] = await Promise.all([
-      supabase.from('user_roles').select('*, profiles(full_name, phone)').order('created_at'),
+    const [rolesRes, storesRes, profilesRes] = await Promise.all([
+      supabase.from('user_roles').select('*').order('created_at'),
       supabase.from('stores').select('id, name').order('name'),
+      supabase.from('profiles').select('user_id, full_name, phone'),
     ]);
-    setUsers(rolesRes.data || []);
+    // Merge profiles into roles client-side (no FK relationship for PostgREST join)
+    const profileMap = new Map((profilesRes.data || []).map(p => [p.user_id, p]));
+    const merged = (rolesRes.data || []).map(r => ({
+      ...r,
+      profiles: profileMap.get(r.user_id) || { full_name: null, phone: null },
+    }));
+    setUsers(merged);
     setStores(storesRes.data || []);
   };
 
