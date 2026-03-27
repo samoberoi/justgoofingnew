@@ -1,6 +1,13 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
+export interface MenuVariant {
+  id: string;
+  name: string;
+  price: number;
+  prep_time_override: number | null;
+}
+
 export interface MenuItem {
   id: string;
   name: string;
@@ -17,6 +24,8 @@ export interface MenuItem {
   is_chefs_special: boolean;
   is_new: boolean;
   prep_time: number | null;
+  default_variant_id: string | null;
+  variants: MenuVariant[];
 }
 
 export interface MenuCategory {
@@ -34,11 +43,26 @@ export const useMenu = () => {
 
   useEffect(() => {
     const fetch = async () => {
-      const [itemsRes, catsRes] = await Promise.all([
+      const [itemsRes, catsRes, variantsRes] = await Promise.all([
         supabase.from('menu_items').select('*').eq('is_active', true).eq('is_available', true).order('display_order'),
         supabase.from('menu_categories').select('*').eq('is_active', true).order('display_order'),
+        supabase.from('menu_variants').select('*').eq('is_active', true).order('display_order'),
       ]);
-      setItems(itemsRes.data || []);
+
+      const variantsByItem = new Map<string, MenuVariant[]>();
+      (variantsRes.data || []).forEach(v => {
+        const list = variantsByItem.get(v.menu_item_id) || [];
+        list.push({ id: v.id, name: v.name, price: v.price, prep_time_override: v.prep_time_override });
+        variantsByItem.set(v.menu_item_id, list);
+      });
+
+      const enrichedItems: MenuItem[] = (itemsRes.data || []).map(item => ({
+        ...item,
+        default_variant_id: (item as any).default_variant_id || null,
+        variants: variantsByItem.get(item.id) || [],
+      }));
+
+      setItems(enrichedItems);
       setCategories(catsRes.data || []);
       setLoading(false);
     };

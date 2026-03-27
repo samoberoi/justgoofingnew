@@ -1,30 +1,91 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Smartphone, CreditCard, Building2, Wallet, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Smartphone, CreditCard, Building2, Wallet, CheckCircle2, MapPin } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store';
+import { supabase } from '@/integrations/supabase/client';
 
 const paymentMethods = [
   { id: 'upi', label: 'UPI', icon: Smartphone, desc: 'Google Pay, PhonePe, Paytm' },
   { id: 'card', label: 'Card', icon: CreditCard, desc: 'Credit or Debit Card' },
   { id: 'netbanking', label: 'Net Banking', icon: Building2, desc: 'All major banks' },
-  { id: 'wallet', label: 'Wallet', icon: Wallet, desc: 'Amazon Pay, Mobikwik' },
+  { id: 'cod', label: 'Cash on Delivery', icon: Wallet, desc: 'Pay when delivered' },
 ];
 
 const PaymentPage = () => {
   const navigate = useNavigate();
-  const { clearCart } = useAppStore();
+  const { cart, clearCart, userName, phoneNumber, savedAddresses, walletBalance, isFirstTime, spendPoints } = useAppStore();
   const [selected, setSelected] = useState('upi');
   const [processing, setProcessing] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [orderNumber, setOrderNumber] = useState('');
+  const [orderId, setOrderId] = useState('');
+  const [address, setAddress] = useState(savedAddresses[0] || '');
+  const [usePoints, setUsePoints] = useState(false);
 
-  const handlePay = () => {
+  const subtotal = cart.reduce((sum, c) => sum + c.price * c.quantity, 0);
+  const firstOrderDiscount = isFirstTime ? -Math.min(...cart.map(c => c.price)) : 0;
+  const pointsDiscount = usePoints ? -Math.min(walletBalance, subtotal + firstOrderDiscount) : 0;
+  const deliveryFee = subtotal > 500 ? 0 : 30;
+  const total = Math.max(0, subtotal + firstOrderDiscount + pointsDiscount + deliveryFee);
+
+  const handlePay = async () => {
+    if (!address.trim()) return;
     setProcessing(true);
-    setTimeout(() => {
+
+    try {
+      // Get first store
+      const { data: stores } = await supabase.from('stores').select('id').eq('is_active', true).limit(1);
+      const storeId = stores?.[0]?.id;
+      if (!storeId) { setProcessing(false); return; }
+
+      // Create order
+      const { data: order, error: orderError } = await supabase.from('orders').insert({
+        store_id: storeId,
+        customer_name: userName || 'Guest',
+        customer_phone: phoneNumber || null,
+        customer_address: address,
+        subtotal,
+        discount: Math.abs(firstOrderDiscount) + Math.abs(pointsDiscount),
+        tax: 0,
+        total,
+        payment_method: selected,
+        payment_status: selected === 'cod' ? 'pending' : 'paid',
+        status: 'new',
+        order_number: 'BRY-' + Math.floor(10000 + Math.random() * 90000),
+      } as any).select().single();
+
+      if (orderError || !order) {
+        console.error('Order creation failed:', orderError);
+        setProcessing(false);
+        return;
+      }
+
+      // Create order items
+      const orderItems = cart.map(item => ({
+        order_id: order.id,
+        menu_item_id: item.id,
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price,
+      }));
+
+      await supabase.from('order_items').insert(orderItems);
+
+      // Deduct points if used
+      if (usePoints && pointsDiscount < 0) {
+        spendPoints(Math.abs(pointsDiscount));
+      }
+
+      setOrderNumber(order.order_number);
+      setOrderId(order.id);
       setProcessing(false);
       setSuccess(true);
       clearCart();
-    }, 2000);
+    } catch (err) {
+      console.error('Payment error:', err);
+      setProcessing(false);
+    }
   };
 
   if (success) {
@@ -36,20 +97,16 @@ const PaymentPage = () => {
           transition={{ type: 'spring', damping: 12 }}
           className="text-center space-y-6"
         >
-          <motion.div
-            animate={{ rotate: [0, 360] }}
-            transition={{ duration: 1 }}
-            className="inline-block"
-          >
+          <motion.div animate={{ rotate: [0, 360] }} transition={{ duration: 1 }} className="inline-block">
             <CheckCircle2 size={80} className="text-secondary" />
           </motion.div>
           <h1 className="font-heading text-2xl text-gradient-gold leading-tight">
             Your Royal Dawat<br />Has Been Sealed
           </h1>
-          <p className="text-muted-foreground text-sm">Order #BRYN-{Date.now().toString().slice(-4)}</p>
+          <p className="text-muted-foreground text-sm">Order #{orderNumber}</p>
           <motion.button
             whileTap={{ scale: 0.97 }}
-            onClick={() => navigate('/tracking')}
+            onClick={() => navigate('/tracking', { state: { orderId } })}
             className="w-full py-4 bg-gradient-saffron rounded-xl font-heading text-sm uppercase tracking-widest text-primary-foreground"
           >
             Track My Biryani
@@ -67,46 +124,103 @@ const PaymentPage = () => {
       <header className="sticky top-0 z-40 bg-card/95 backdrop-blur-xl border-b border-border">
         <div className="flex items-center gap-3 px-4 h-14">
           <button onClick={() => navigate(-1)}><ArrowLeft size={20} className="text-foreground" /></button>
-          <h1 className="font-heading text-lg text-foreground">Payment</h1>
+          <h1 className="font-heading text-lg text-foreground">Checkout</h1>
         </div>
       </header>
 
-      <div className="px-4 pt-6 space-y-3">
-        <p className="text-sm text-muted-foreground mb-2">Choose payment method</p>
-        {paymentMethods.map(method => (
-          <motion.button
-            key={method.id}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => setSelected(method.id)}
-            className={`w-full flex items-center gap-4 p-4 rounded-xl border transition-colors ${
-              selected === method.id ? 'bg-secondary/10 border-secondary/30' : 'bg-card border-border'
-            }`}
+      <div className="px-4 pt-4 space-y-4">
+        {/* Delivery address */}
+        <div className="space-y-2">
+          <label className="text-xs font-medium text-muted-foreground flex items-center gap-1"><MapPin size={12} /> Delivery Address</label>
+          <textarea
+            value={address}
+            onChange={e => setAddress(e.target.value)}
+            placeholder="Enter your delivery address..."
+            rows={2}
+            className="w-full px-3 py-2.5 bg-muted border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-secondary resize-none"
+          />
+          {savedAddresses.length > 1 && (
+            <div className="flex gap-2 flex-wrap">
+              {savedAddresses.map((a, i) => (
+                <button key={i} onClick={() => setAddress(a)} className={`text-[10px] px-2 py-1 rounded-full border ${address === a ? 'border-secondary text-secondary' : 'border-border text-muted-foreground'}`}>
+                  📍 {a.slice(0, 25)}...
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Order summary */}
+        <div className="bg-card border border-border rounded-xl p-4 space-y-2">
+          <h3 className="text-xs font-medium text-muted-foreground">Order Summary</h3>
+          {cart.map(item => (
+            <div key={item.id} className="flex justify-between text-sm">
+              <span className="text-foreground">{item.name} x{item.quantity}</span>
+              <span className="text-foreground">₹{item.price * item.quantity}</span>
+            </div>
+          ))}
+          <div className="border-t border-border pt-2 space-y-1">
+            <div className="flex justify-between text-sm text-foreground"><span>Subtotal</span><span>₹{subtotal}</span></div>
+            {firstOrderDiscount < 0 && <div className="flex justify-between text-sm text-green-500"><span>1+1 FREE</span><span>₹{firstOrderDiscount}</span></div>}
+            {pointsDiscount < 0 && <div className="flex justify-between text-sm text-secondary"><span>Points</span><span>₹{pointsDiscount}</span></div>}
+            <div className="flex justify-between text-sm text-muted-foreground"><span>Delivery</span><span>{deliveryFee === 0 ? 'FREE' : `₹${deliveryFee}`}</span></div>
+            <div className="flex justify-between font-heading text-base text-foreground pt-1 border-t border-border">
+              <span>Total</span><span className="text-secondary">₹{total}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Points toggle */}
+        {walletBalance > 0 && (
+          <button
+            onClick={() => setUsePoints(!usePoints)}
+            className={`w-full flex items-center justify-between p-3 rounded-xl border transition-colors ${usePoints ? 'bg-secondary/10 border-secondary/30' : 'bg-card border-border'}`}
           >
-            <method.icon size={22} className={selected === method.id ? 'text-secondary' : 'text-muted-foreground'} />
-            <div className="text-left">
-              <p className="text-sm font-semibold text-foreground">{method.label}</p>
-              <p className="text-xs text-muted-foreground">{method.desc}</p>
+            <span className="text-sm text-foreground">Use Biryani Points ({walletBalance} pts)</span>
+            <div className={`w-10 h-5 rounded-full transition-colors ${usePoints ? 'bg-secondary' : 'bg-muted'} flex items-center`}>
+              <div className={`w-4 h-4 rounded-full bg-foreground transition-transform ${usePoints ? 'translate-x-5' : 'translate-x-0.5'}`} />
             </div>
-            <div className={`ml-auto w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-              selected === method.id ? 'border-secondary' : 'border-muted-foreground/30'
-            }`}>
-              {selected === method.id && <div className="w-2.5 h-2.5 rounded-full bg-secondary" />}
-            </div>
-          </motion.button>
-        ))}
+          </button>
+        )}
+
+        {/* Payment method */}
+        <div className="space-y-2">
+          <p className="text-xs font-medium text-muted-foreground">Payment Method</p>
+          {paymentMethods.map(method => (
+            <motion.button
+              key={method.id}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setSelected(method.id)}
+              className={`w-full flex items-center gap-4 p-4 rounded-xl border transition-colors ${
+                selected === method.id ? 'bg-secondary/10 border-secondary/30' : 'bg-card border-border'
+              }`}
+            >
+              <method.icon size={22} className={selected === method.id ? 'text-secondary' : 'text-muted-foreground'} />
+              <div className="text-left">
+                <p className="text-sm font-semibold text-foreground">{method.label}</p>
+                <p className="text-xs text-muted-foreground">{method.desc}</p>
+              </div>
+              <div className={`ml-auto w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                selected === method.id ? 'border-secondary' : 'border-muted-foreground/30'
+              }`}>
+                {selected === method.id && <div className="w-2.5 h-2.5 rounded-full bg-secondary" />}
+              </div>
+            </motion.button>
+          ))}
+        </div>
       </div>
 
       <div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-xl border-t border-border p-4">
         <motion.button
           whileTap={{ scale: 0.97 }}
           onClick={handlePay}
-          disabled={processing}
+          disabled={processing || !address.trim()}
           className="w-full py-4 bg-gradient-saffron rounded-xl font-heading text-sm uppercase tracking-widest text-primary-foreground shadow-saffron disabled:opacity-60 flex items-center justify-center gap-2"
         >
           {processing ? (
             <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }} className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full" />
           ) : (
-            'Seal the Dawat'
+            `Place Order • ₹${total}`
           )}
         </motion.button>
       </div>
