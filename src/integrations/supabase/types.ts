@@ -321,6 +321,7 @@ export type Database = {
           created_at: string
           default_prep_time: number | null
           delivery_radius: number | null
+          google_maps_url: string | null
           id: string
           is_active: boolean
           latitude: number | null
@@ -337,6 +338,7 @@ export type Database = {
           created_at?: string
           default_prep_time?: number | null
           delivery_radius?: number | null
+          google_maps_url?: string | null
           id?: string
           is_active?: boolean
           latitude?: number | null
@@ -353,6 +355,7 @@ export type Database = {
           created_at?: string
           default_prep_time?: number | null
           delivery_radius?: number | null
+          google_maps_url?: string | null
           id?: string
           is_active?: boolean
           latitude?: number | null
