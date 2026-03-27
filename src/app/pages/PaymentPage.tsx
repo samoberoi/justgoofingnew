@@ -122,8 +122,8 @@ const PaymentPage = () => {
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert(orderPayload)
-        .select()
-        .single();
+        .select('id, order_number')
+        .maybeSingle();
 
       if (orderError || !order) {
         console.error('PLACE_ORDER: Order insert failed', orderError);
