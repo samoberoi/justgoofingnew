@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Minus, ShoppingCart, Flame, Star, ChefHat, Sparkles, Gift, Package } from 'lucide-react';
+import { Plus, Minus, ShoppingCart, Flame, Star, ChefHat, Sparkles, Gift, Package, MapPin } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import RoyalHeader from '../components/RoyalHeader';
 import BottomNav from '../components/BottomNav';
 import { useAppStore } from '../store';
 import { useMenu, MenuItem } from '../hooks/useMenu';
+import { useStoreSelection } from '../hooks/useStoreSelection';
 import { supabase } from '@/integrations/supabase/client';
 
 const SpiceIndicator = ({ level }: { level: number }) => (
@@ -132,7 +133,8 @@ const ACTIVE_STATUS_LABELS: Record<string, { label: string; emoji: string }> = {
 const HomePage = () => {
   const navigate = useNavigate();
   const { cart, activeCampaigns, totalOrders, userId } = useAppStore();
-  const { categories, grouped, uncategorized, loading, items } = useMenu();
+  const { selectedStore, outOfArea, locationLoading } = useStoreSelection();
+  const { categories, grouped, uncategorized, loading, items } = useMenu(selectedStore?.id);
   const [vegFilter, setVegFilter] = useState<'all' | 'veg' | 'nonveg'>('all');
   const [activeOrders, setActiveOrders] = useState<any[]>([]);
 
@@ -169,6 +171,35 @@ const HomePage = () => {
     if (vegFilter === 'all') return list;
     return list.filter(i => vegFilter === 'veg' ? i.is_veg : !i.is_veg);
   };
+
+  if (locationLoading) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-8">
+        <div className="w-10 h-10 border-2 border-secondary border-t-transparent rounded-full animate-spin mb-4" />
+        <p className="text-sm text-muted-foreground">Detecting your location…</p>
+      </div>
+    );
+  }
+
+  if (outOfArea) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-8 text-center">
+        <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
+          <MapPin size={56} className="text-secondary mx-auto mb-4" />
+          <h2 className="font-heading text-xl text-foreground mb-2">We're Not in Your Area Yet</h2>
+          <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+            Biryaan is currently not delivering to your location. We're expanding fast — check back soon!
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-6 px-6 py-3 bg-gradient-saffron rounded-xl font-heading text-sm text-primary-foreground"
+          >
+            Retry Location
+          </button>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background pb-20">
