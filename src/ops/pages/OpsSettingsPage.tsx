@@ -13,6 +13,8 @@ interface StoreForm {
   delivery_radius: string;
   default_prep_time: string;
   tax_percent: string;
+  latitude: string;
+  longitude: string;
   is_active: boolean;
 }
 
@@ -25,6 +27,8 @@ const defaultForm: StoreForm = {
   delivery_radius: '5',
   default_prep_time: '30',
   tax_percent: '5',
+  latitude: '',
+  longitude: '',
   is_active: true,
 };
 
@@ -74,6 +78,16 @@ const StoreFormFields = ({ form, setForm, onSave, onCancel, saving, submitLabel 
       <div>
         <label className={labelClass}>GST %</label>
         <input type="number" min="0" max="28" step="0.5" value={form.tax_percent} onChange={e => setForm(p => ({ ...p, tax_percent: e.target.value }))} className={inputClass} />
+      </div>
+    </div>
+    <div className="grid grid-cols-2 gap-3">
+      <div>
+        <label className={labelClass}>Latitude</label>
+        <input type="number" step="any" value={form.latitude} onChange={e => setForm(p => ({ ...p, latitude: e.target.value }))} placeholder="e.g. 12.9716" className={inputClass} />
+      </div>
+      <div>
+        <label className={labelClass}>Longitude</label>
+        <input type="number" step="any" value={form.longitude} onChange={e => setForm(p => ({ ...p, longitude: e.target.value }))} placeholder="e.g. 77.5946" className={inputClass} />
       </div>
     </div>
     <div className="flex items-center justify-between py-1">
@@ -127,6 +141,8 @@ const OpsSettingsPage = () => {
     delivery_radius: parseFloat(form.delivery_radius) || 5,
     default_prep_time: parseInt(form.default_prep_time) || 30,
     tax_percent: parseFloat(form.tax_percent) || 5,
+    latitude: form.latitude ? parseFloat(form.latitude) : null,
+    longitude: form.longitude ? parseFloat(form.longitude) : null,
     is_active: form.is_active,
   });
 
@@ -152,6 +168,8 @@ const OpsSettingsPage = () => {
       delivery_radius: String(store.delivery_radius ?? 5),
       default_prep_time: String(store.default_prep_time ?? 30),
       tax_percent: String(store.tax_percent ?? 5),
+      latitude: store.latitude ? String(store.latitude) : '',
+      longitude: store.longitude ? String(store.longitude) : '',
       is_active: store.is_active,
     });
   };
