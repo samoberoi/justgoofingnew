@@ -152,7 +152,6 @@ const OpsSettingsPage = () => {
     const { data } = await supabase.from('stores').select('*').order('created_at');
     setStores(data || []);
   };
-  };
 
   const storePayload = (form: StoreForm) => ({
     name: form.name.trim(),
