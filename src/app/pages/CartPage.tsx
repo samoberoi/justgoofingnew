@@ -42,7 +42,13 @@ const CartPage = () => {
       <div className="px-4 pt-4 space-y-3">
         {cart.map(item => (
           <motion.div key={item.id} layout className="bg-card border border-border rounded-xl p-4 flex gap-4">
-            <div className="text-3xl w-12 h-12 flex items-center justify-center bg-muted rounded-lg shrink-0">{item.image}</div>
+            <div className="w-12 h-12 rounded-lg shrink-0 overflow-hidden bg-muted">
+              {item.image?.startsWith('http') ? (
+                <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+              ) : (
+                <div className="text-3xl w-full h-full flex items-center justify-center">{item.image}</div>
+              )}
+            </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between">
                 <h3 className="font-heading text-sm text-foreground">{item.name}</h3>
