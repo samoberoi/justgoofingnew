@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '../hooks/useAuth';
 import OpsBottomNav from '../components/OpsBottomNav';
-import { Plus, Store, Users, Clock, MapPin, Phone, ChevronDown, ChevronUp, Pencil, ExternalLink } from 'lucide-react';
+import UserManagement from '../components/UserManagement';
+import { Plus, Store, Clock, MapPin, Phone, ChevronDown, ChevronUp, Pencil, ExternalLink } from 'lucide-react';
 
 interface StoreForm {
   name: string;
