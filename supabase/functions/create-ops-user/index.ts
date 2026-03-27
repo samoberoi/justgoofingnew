@@ -2,7 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 Deno.serve(async (req) => {
@@ -11,39 +11,59 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Verify the caller is a super_admin
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("No authorization header");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "No authorization header" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const anonKey = Deno.env.get("SUPABASE_PUBLISHABLE_KEY")!;
 
-    // Verify caller's role using their JWT
-    const callerClient = createClient(supabaseUrl, anonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
-    const { data: { user: caller } } = await callerClient.auth.getUser();
-    if (!caller) throw new Error("Unauthorized");
+    if (!supabaseUrl || !serviceRoleKey) {
+      console.error("Missing env vars", { supabaseUrl: !!supabaseUrl, serviceRoleKey: !!serviceRoleKey });
+      return new Response(JSON.stringify({ error: "Server misconfiguration" }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
+
+    // Extract user from JWT via admin client
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user: caller }, error: authErr } = await adminClient.auth.getUser(token);
+    
+    if (authErr || !caller) {
+      console.error("Auth error:", authErr?.message);
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     // Check caller is super_admin
     const { data: hasRole } = await adminClient.rpc("has_role", {
       _user_id: caller.id,
       _role: "super_admin",
     });
-    if (!hasRole) throw new Error("Only super admins can create users");
+    
+    if (!hasRole) {
+      return new Response(JSON.stringify({ error: "Only super admins can create users" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const { full_name, phone, password, role, store_id } = await req.json();
 
     if (!full_name?.trim() || !phone?.trim()) {
-      throw new Error("Name and phone are required");
+      return new Response(JSON.stringify({ error: "Name and phone are required" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const email = `${phone.replace(/\D/g, "")}@ops.biryaan.app`;
 
-    // Create user with admin API (doesn't affect caller's session)
+    // Create user with admin API
     const { data: authData, error: createErr } = await adminClient.auth.admin.createUser({
       email,
       password: password || "111111",
@@ -51,13 +71,15 @@ Deno.serve(async (req) => {
     });
 
     if (createErr) {
+      console.error("Create user error:", createErr.message);
       if (createErr.message?.includes("already been registered")) {
-        return new Response(
-          JSON.stringify({ error: "User with this phone already exists" }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return new Response(JSON.stringify({ error: "User with this phone already exists" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
-      throw createErr;
+      return new Response(JSON.stringify({ error: createErr.message }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const userId = authData.user.id;
@@ -68,7 +90,7 @@ Deno.serve(async (req) => {
       phone: phone.trim(),
     }).eq("user_id", userId);
 
-    // Remove any auto-assigned role from trigger
+    // Remove any auto-assigned role
     await adminClient.from("user_roles").delete().eq("user_id", userId);
 
     // Insert correct role
@@ -84,9 +106,10 @@ Deno.serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
+    console.error("Unexpected error:", err);
     return new Response(
-      JSON.stringify({ error: err.message }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ error: err.message || "Unknown error" }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
