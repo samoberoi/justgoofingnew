@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Minus, ShoppingCart, Flame, Star, ChefHat, Sparkles, Gift } from 'lucide-react';
+import { Plus, Minus, ShoppingCart, Flame, Star, ChefHat, Sparkles, Gift, Package } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import RoyalHeader from '../components/RoyalHeader';
 import BottomNav from '../components/BottomNav';
 import { useAppStore } from '../store';
 import { useMenu, MenuItem } from '../hooks/useMenu';
+import { supabase } from '@/integrations/supabase/client';
 
 const SpiceIndicator = ({ level }: { level: number }) => (
   <div className="flex gap-0.5">
@@ -118,11 +119,44 @@ const ItemCard = ({ item, index }: { item: MenuItem; index: number }) => {
   );
 };
 
+const ACTIVE_STATUS_LABELS: Record<string, { label: string; emoji: string }> = {
+  new: { label: 'Order placed — waiting for kitchen', emoji: '📝' },
+  accepted: { label: 'Kitchen accepted your order!', emoji: '✅' },
+  preparing: { label: 'Your biryani is being prepared 🔥', emoji: '🔥' },
+  ready: { label: 'Your order is ready for pickup!', emoji: '✨' },
+  assigned: { label: 'A rider has been assigned', emoji: '🏇' },
+  picked_up: { label: 'Rider picked up your order', emoji: '📦' },
+  out_for_delivery: { label: 'Your food is on the way!', emoji: '🛵' },
+};
+
 const HomePage = () => {
   const navigate = useNavigate();
-  const { cart, activeCampaigns, totalOrders } = useAppStore();
+  const { cart, activeCampaigns, totalOrders, userId } = useAppStore();
   const { categories, grouped, uncategorized, loading, items } = useMenu();
   const [vegFilter, setVegFilter] = useState<'all' | 'veg' | 'nonveg'>('all');
+  const [activeOrder, setActiveOrder] = useState<any>(null);
+
+  // Fetch latest active order for this user
+  useEffect(() => {
+    if (!userId) return;
+    const fetchActive = async () => {
+      const { data } = await (supabase
+        .from('orders')
+        .select('id, order_number, status, created_at') as any)
+        .eq('user_id', userId)
+        .not('status', 'in', '("delivered","cancelled")')
+        .order('created_at', { ascending: false })
+        .limit(1);
+      setActiveOrder(data?.[0] || null);
+    };
+    fetchActive();
+
+    const channel = supabase
+      .channel('home-active-order')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => fetchActive())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [userId]);
 
   const cartCount = cart.reduce((sum, c) => sum + c.quantity, 0);
 
