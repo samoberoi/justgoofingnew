@@ -62,11 +62,43 @@ const PaymentPage = () => {
           .select('id, formatted_address, house_number, label')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false });
-        if (addrs && addrs.length > 0) {
+
+        // Also fetch unique addresses from past orders and backfill any missing ones
+        const { data: pastOrders } = await supabase
+          .from('orders')
+          .select('customer_address, house_number')
+          .eq('user_id', user.id)
+          .not('customer_address', 'is', null);
+
+        const existingKeys = new Set(
+          ((addrs as unknown as SavedAddress[]) || []).map(a => `${a.formatted_address}||${a.house_number || ''}`)
+        );
+
+        const toInsert: { user_id: string; formatted_address: string; house_number: string | null; label: string }[] = [];
+        const seenOrderKeys = new Set<string>();
+        for (const o of (pastOrders || []) as { customer_address: string; house_number: string | null }[]) {
+          if (!o.customer_address) continue;
+          const key = `${o.customer_address}||${o.house_number || ''}`;
+          if (!existingKeys.has(key) && !seenOrderKeys.has(key)) {
+            seenOrderKeys.add(key);
+            toInsert.push({ user_id: user.id, formatted_address: o.customer_address, house_number: o.house_number || null, label: 'Delivery' });
+          }
+        }
+        if (toInsert.length > 0) {
+          await supabase.from('addresses' as any).insert(toInsert);
+        }
+
+        // Re-fetch all addresses after backfill
+        const { data: allAddrs } = toInsert.length > 0
+          ? await supabase.from('addresses' as any).select('id, formatted_address, house_number, label').eq('user_id', user.id).order('created_at', { ascending: false })
+          : { data: addrs };
+
+        if (allAddrs && (allAddrs as any[]).length > 0) {
           const seen = new Set<string>();
-          const unique = (addrs as unknown as SavedAddress[]).filter(a => {
-            if (seen.has(a.formatted_address)) return false;
-            seen.add(a.formatted_address);
+          const unique = (allAddrs as unknown as SavedAddress[]).filter(a => {
+            const key = `${a.formatted_address}||${a.house_number || ''}`;
+            if (seen.has(key)) return false;
+            seen.add(key);
             return true;
           });
           setDbAddresses(unique);
