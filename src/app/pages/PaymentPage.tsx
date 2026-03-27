@@ -84,21 +84,27 @@ const PaymentPage = () => {
   };
 
   const handlePay = async () => {
-    if (!address.trim()) return;
+    if (!address.trim() || processing) return;
     setProcessing(true);
 
     try {
-      const { data: stores } = await supabase.from('stores').select('id').eq('is_active', true).limit(1);
-      const storeId = stores?.[0]?.id;
-      if (!storeId) { console.error('No active store found'); setProcessing(false); return; }
+      // Parallel fetch of settings + store
+      const [storesRes, pointsRes] = await Promise.all([
+        supabase.from('stores').select('id').eq('is_active', true).limit(1),
+        supabase.from('points_settings').select('*').limit(1).maybeSingle(),
+      ]);
 
-      const { data: pointsSettings } = await supabase
-        .from('points_settings')
-        .select('*')
-        .limit(1)
-        .maybeSingle() as any;
+      const storeId = storesRes.data?.[0]?.id;
+      if (!storeId) {
+        console.error('PLACE_ORDER: No active store found', storesRes.error);
+        setProcessing(false);
+        return;
+      }
 
-      const { data: order, error: orderError } = await supabase.from('orders').insert({
+      const pointsSettings = (pointsRes.data as any) || null;
+
+      // Insert order
+      const orderPayload = {
         store_id: storeId,
         customer_name: userName || 'Guest',
         customer_phone: phoneNumber || null,
@@ -109,26 +115,39 @@ const PaymentPage = () => {
         total,
         payment_method: selected,
         payment_status: selected === 'cod' ? 'pending' : 'paid',
-        status: 'new',
+        status: 'new' as const,
         order_number: 'BRY-' + Math.floor(10000 + Math.random() * 90000),
-      } as any).select().single();
+      };
+
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .insert(orderPayload)
+        .select()
+        .single();
 
       if (orderError || !order) {
-        console.error('Order creation failed:', orderError);
+        console.error('PLACE_ORDER: Order insert failed', orderError);
         setProcessing(false);
         return;
       }
 
-      const orderItems = cart.map(item => ({
-        order_id: order.id,
-        menu_item_id: item.id.includes('_') ? item.id.split('_')[0] : item.id,
-        name: item.name,
-        quantity: item.quantity,
-        price: item.price,
-      }));
+      // Insert order items — use menu_item_id only if it's a valid UUID
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      const orderItems = cart.map(item => {
+        const rawId = item.id.includes('_') ? item.id.split('_')[0] : item.id;
+        return {
+          order_id: order.id,
+          menu_item_id: uuidRegex.test(rawId) ? rawId : null,
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price,
+        };
+      });
 
-      await supabase.from('order_items').insert(orderItems);
+      const { error: itemsError } = await supabase.from('order_items').insert(orderItems);
+      if (itemsError) console.error('PLACE_ORDER: Items insert failed', itemsError);
 
+      // Earn Biryan Points
       const { data: { user } } = await supabase.auth.getUser();
       if (user && pointsSettings?.earning_enabled) {
         const earnPercent = pointsSettings.earning_percent || 2.5;
@@ -152,6 +171,7 @@ const PaymentPage = () => {
         }
       }
 
+      // Deduct points if used
       if (usePoints && pointsDiscount < 0 && user) {
         await supabase.from('points_transactions').insert({
           user_id: user.id,
