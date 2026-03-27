@@ -24,7 +24,6 @@ import ProfilePage from "./app/pages/ProfilePage";
 import NotificationsPage from "./app/pages/NotificationsPage";
 
 // Ops pages
-import OpsLoginPage from "./ops/pages/OpsLoginPage";
 import SuperAdminDashboard from "./ops/pages/SuperAdminDashboard";
 import StoreManagerDashboard from "./ops/pages/StoreManagerDashboard";
 import OpsOrdersPage from "./ops/pages/OpsOrdersPage";
@@ -37,96 +36,108 @@ import DeliveryView from "./ops/pages/DeliveryView";
 
 const queryClient = new QueryClient();
 
-const OpsRouter = () => {
+// Ops route guard component
+const OpsRoute = ({ children, allowedRoles }: { children: React.ReactNode; allowedRoles: string[] }) => {
   const { user, role, loading } = useAuth();
 
   if (loading) {
-    return <div className="fixed inset-0 bg-background flex items-center justify-center">
-      <div className="w-8 h-8 border-2 border-secondary border-t-transparent rounded-full animate-spin" />
-    </div>;
+    return (
+      <div className="fixed inset-0 bg-background flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-secondary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
   }
 
-  if (!user) return <OpsLoginPage />;
+  if (!user || !role) return <Navigate to="/login" replace />;
+  if (!allowedRoles.includes(role)) return <Navigate to="/login" replace />;
 
-  if (!role) {
-    return <div className="fixed inset-0 bg-background flex flex-col items-center justify-center gap-4 px-6 text-center">
-      <p className="text-foreground font-heading">No Role Assigned</p>
-      <p className="text-muted-foreground text-sm">Contact your admin to get access.</p>
-    </div>;
-  }
-
-  // Role-based default route
-  const defaultRoute = {
-    super_admin: '/ops/dashboard',
-    store_manager: '/ops/dashboard',
-    kitchen_manager: '/ops/kitchen',
-    delivery_partner: '/ops/deliveries',
-  }[role];
-
-  return (
-    <Routes>
-      <Route path="/" element={<Navigate to={defaultRoute} replace />} />
-      {/* Super Admin & Store Manager */}
-      {(role === 'super_admin' || role === 'store_manager') && (
-        <>
-          <Route path="/dashboard" element={role === 'super_admin' ? <SuperAdminDashboard /> : <StoreManagerDashboard />} />
-          <Route path="/orders" element={<OpsOrdersPage />} />
-          <Route path="/menu" element={<OpsMenuPage />} />
-          <Route path="/customers" element={<OpsCustomersPage />} />
-        </>
-      )}
-      {/* Super Admin only */}
-      {role === 'super_admin' && (
-        <>
-          <Route path="/analytics" element={<OpsAnalyticsPage />} />
-          <Route path="/settings" element={<OpsSettingsPage />} />
-        </>
-      )}
-      {/* Kitchen Manager */}
-      {role === 'kitchen_manager' && <Route path="/kitchen" element={<KitchenView />} />}
-      {/* Delivery Partner */}
-      {role === 'delivery_partner' && <Route path="/deliveries" element={<DeliveryView />} />}
-      {/* Catch-all */}
-      <Route path="*" element={<Navigate to={defaultRoute} replace />} />
-    </Routes>
-  );
+  return <>{children}</>;
 };
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <AppProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<SplashScreen />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/welcome" element={<WelcomePage />} />
-            <Route path="/home" element={<HomePage />} />
-            <Route path="/cart" element={<CartPage />} />
-            <Route path="/payment" element={<PaymentPage />} />
-            <Route path="/tracking" element={<OrderTrackingPage />} />
-            <Route path="/wallet" element={<WalletPage />} />
-            <Route path="/orders" element={<OrdersPage />} />
-            <Route path="/tiers" element={<TiersPage />} />
-            <Route path="/streak" element={<StreakPage />} />
-            <Route path="/spin" element={<SpinWheelPage />} />
-            <Route path="/flash-dawats" element={<FlashDawatsPage />} />
-            <Route path="/subscription" element={<SubscriptionPage />} />
-            <Route path="/pre-book" element={<PreBookPage />} />
-            <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/notifications" element={<NotificationsPage />} />
-            <Route path="/ops/*" element={
-              <OpsAuthProvider>
-                <OpsRouter />
-              </OpsAuthProvider>
-            } />
-          </Routes>
-        </BrowserRouter>
+        <OpsAuthProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              {/* Shared entry */}
+              <Route path="/" element={<SplashScreen />} />
+              <Route path="/login" element={<LoginPage />} />
+
+              {/* Customer routes */}
+              <Route path="/welcome" element={<WelcomePage />} />
+              <Route path="/home" element={<HomePage />} />
+              <Route path="/cart" element={<CartPage />} />
+              <Route path="/payment" element={<PaymentPage />} />
+              <Route path="/tracking" element={<OrderTrackingPage />} />
+              <Route path="/wallet" element={<WalletPage />} />
+              <Route path="/orders" element={<OrdersPage />} />
+              <Route path="/tiers" element={<TiersPage />} />
+              <Route path="/streak" element={<StreakPage />} />
+              <Route path="/spin" element={<SpinWheelPage />} />
+              <Route path="/flash-dawats" element={<FlashDawatsPage />} />
+              <Route path="/subscription" element={<SubscriptionPage />} />
+              <Route path="/pre-book" element={<PreBookPage />} />
+              <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/notifications" element={<NotificationsPage />} />
+
+              {/* Ops routes — role-guarded */}
+              <Route path="/dashboard" element={
+                <OpsRoute allowedRoles={['super_admin', 'store_manager']}>
+                  <DashboardSwitch />
+                </OpsRoute>
+              } />
+              <Route path="/ops-orders" element={
+                <OpsRoute allowedRoles={['super_admin', 'store_manager']}>
+                  <OpsOrdersPage />
+                </OpsRoute>
+              } />
+              <Route path="/menu" element={
+                <OpsRoute allowedRoles={['super_admin', 'store_manager']}>
+                  <OpsMenuPage />
+                </OpsRoute>
+              } />
+              <Route path="/customers" element={
+                <OpsRoute allowedRoles={['super_admin', 'store_manager']}>
+                  <OpsCustomersPage />
+                </OpsRoute>
+              } />
+              <Route path="/analytics" element={
+                <OpsRoute allowedRoles={['super_admin']}>
+                  <OpsAnalyticsPage />
+                </OpsRoute>
+              } />
+              <Route path="/settings" element={
+                <OpsRoute allowedRoles={['super_admin']}>
+                  <OpsSettingsPage />
+                </OpsRoute>
+              } />
+              <Route path="/kitchen" element={
+                <OpsRoute allowedRoles={['kitchen_manager']}>
+                  <KitchenView />
+                </OpsRoute>
+              } />
+              <Route path="/deliveries" element={
+                <OpsRoute allowedRoles={['delivery_partner']}>
+                  <DeliveryView />
+                </OpsRoute>
+              } />
+            </Routes>
+          </BrowserRouter>
+        </OpsAuthProvider>
       </AppProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
+
+// Switches dashboard based on role
+const DashboardSwitch = () => {
+  const { role } = useAuth();
+  if (role === 'super_admin') return <SuperAdminDashboard />;
+  return <StoreManagerDashboard />;
+};
 
 export default App;

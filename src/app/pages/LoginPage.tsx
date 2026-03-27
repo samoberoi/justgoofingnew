@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { supabase } from '@/integrations/supabase/client';
 import { useAppStore } from '../store';
 import { ArrowRight, Shield } from 'lucide-react';
 
@@ -10,31 +11,89 @@ const LoginPage = () => {
   const [step, setStep] = useState<'phone' | 'otp' | 'success'>('phone');
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const [error, setError] = useState('');
+  const [sending, setSending] = useState(false);
+
+  // Mock email from phone for dev auth
+  const mockEmail = (p: string) => `${p}@ops.biryaan.app`;
 
   const handlePhoneSubmit = () => {
-    if (phone.length >= 10) {
-      setPhoneNumber(phone);
+    if (phone.length < 10) return;
+    setSending(true);
+    setError('');
+    setPhoneNumber(phone);
+    setTimeout(() => {
+      setSending(false);
       setStep('otp');
-    }
+    }, 500);
   };
 
-  const handleOtpChange = (index: number, value: string) => {
+  const handleOtpChange = async (index: number, value: string) => {
     if (value.length > 1) return;
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
+
     if (value && index < 5) {
-      const next = document.getElementById(`otp-${index + 1}`);
-      next?.focus();
+      document.getElementById(`otp-${index + 1}`)?.focus();
     }
+
     if (newOtp.every(d => d !== '')) {
-      setTimeout(() => {
-        setStep('success');
+      setError('');
+      const password = newOtp.join('');
+      const email = mockEmail(phone);
+
+      // Try sign in first
+      const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
+
+      if (signInErr) {
+        // User doesn't exist — sign up
+        const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({ email, password });
+        if (signUpErr) {
+          setError(signUpErr.message);
+          setOtp(['', '', '', '', '', '']);
+          document.getElementById('otp-0')?.focus();
+          return;
+        }
+        // Auto-confirmed, sign in
+        const { error: retryErr } = await supabase.auth.signInWithPassword({ email, password });
+        if (retryErr) {
+          setError('Account created but login failed. Try again.');
+          setOtp(['', '', '', '', '', '']);
+          document.getElementById('otp-0')?.focus();
+          return;
+        }
+      }
+
+      // Success — check role and route
+      setStep('success');
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: roleData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .eq('is_active', true)
+          .limit(1)
+          .single();
+
         setTimeout(() => {
-          setLoggedIn(true);
-          navigate(isFirstTime ? '/welcome' : '/home');
-        }, 2000);
-      }, 500);
+          if (roleData?.role) {
+            // Ops user — route to role dashboard
+            const roleRoutes: Record<string, string> = {
+              super_admin: '/dashboard',
+              store_manager: '/dashboard',
+              kitchen_manager: '/kitchen',
+              delivery_partner: '/deliveries',
+            };
+            navigate(roleRoutes[roleData.role] || '/dashboard');
+          } else {
+            // Customer — route to customer app
+            setLoggedIn(true);
+            navigate(isFirstTime ? '/welcome' : '/home');
+          }
+        }, 1500);
+      }
     }
   };
 
@@ -66,18 +125,26 @@ const LoginPage = () => {
                   className="w-full pl-14 pr-4 py-4 bg-card border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-secondary transition-colors text-lg tracking-wider"
                 />
               </div>
+
+              {error && <p className="text-destructive text-sm">{error}</p>}
+
               <motion.button
                 whileTap={{ scale: 0.97 }}
                 onClick={handlePhoneSubmit}
-                disabled={phone.length < 10}
+                disabled={phone.length < 10 || sending}
                 className="w-full py-4 bg-gradient-saffron rounded-lg font-heading text-sm uppercase tracking-widest text-primary-foreground disabled:opacity-40 flex items-center justify-center gap-2"
               >
-                Send OTP <ArrowRight size={16} />
+                {sending ? 'Sending...' : 'Send OTP'} <ArrowRight size={16} />
               </motion.button>
             </div>
 
             <div className="flex items-center justify-center gap-2 text-muted-foreground text-xs">
               <Shield size={12} /> Your number is safe with the Sultanat
+            </div>
+
+            <div className="bg-card/50 border border-border rounded-lg p-3 text-xs text-muted-foreground">
+              <p className="font-semibold text-foreground mb-1">🔑 Dev Login</p>
+              <p>Admin: <span className="text-secondary font-bold">8373914073</span> | OTP: <span className="text-secondary font-bold">111111</span></p>
             </div>
           </motion.div>
         )}
@@ -109,8 +176,10 @@ const LoginPage = () => {
               ))}
             </div>
 
+            {error && <p className="text-destructive text-sm">{error}</p>}
+
             <p className="text-muted-foreground text-xs">
-              Didn't receive? <button className="text-secondary underline">Resend OTP</button>
+              Wrong number? <button onClick={() => { setStep('phone'); setOtp(['','','','','','']); setError(''); }} className="text-secondary underline">Go back</button>
             </p>
           </motion.div>
         )}
