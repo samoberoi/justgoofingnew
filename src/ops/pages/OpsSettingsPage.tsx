@@ -139,7 +139,6 @@ const StoreFormFields = ({ form, setForm, onSave, onCancel, saving, submitLabel 
 const OpsSettingsPage = () => {
   const { role } = useAuth();
   const [stores, setStores] = useState<any[]>([]);
-  const [roles, setRoles] = useState<any[]>([]);
   const [showStoreForm, setShowStoreForm] = useState(false);
   const [storeForm, setStoreForm] = useState<StoreForm>(defaultForm);
   const [editingStoreId, setEditingStoreId] = useState<string | null>(null);
@@ -150,12 +149,9 @@ const OpsSettingsPage = () => {
   useEffect(() => { fetchData(); }, []);
 
   const fetchData = async () => {
-    const [storesRes, rolesRes] = await Promise.all([
-      supabase.from('stores').select('*').order('created_at'),
-      supabase.from('user_roles').select('*, profiles(full_name, phone)').order('created_at'),
-    ]);
-    setStores(storesRes.data || []);
-    setRoles(rolesRes.data || []);
+    const { data } = await supabase.from('stores').select('*').order('created_at');
+    setStores(data || []);
+  };
   };
 
   const storePayload = (form: StoreForm) => ({
