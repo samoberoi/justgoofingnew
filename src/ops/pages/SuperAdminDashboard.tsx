@@ -75,7 +75,7 @@ const SuperAdminDashboard = () => {
   const [teamStats, setTeamStats] = useState({ superAdmins: 0, storeManagers: 0, kitchenManagers: 0, deliveryPartners: 0 });
   const [storeCount, setStoreCount] = useState(0);
   const [topSellers, setTopSellers] = useState<any[]>([]);
-  const [topCustomers, setTopCustomers] = useState<{ name: string; phone: string; orders: number; spent: number }[]>([]);
+  const [topCustomers, setTopCustomers] = useState<{ name: string; phone: string; orders: number; spent: number; userId: string | null }[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -172,14 +172,14 @@ const SuperAdminDashboard = () => {
   };
 
   const fetchTopCustomers = async () => {
-    const { data: orders } = await supabase.from('orders').select('customer_name, customer_phone, total');
+    const { data: orders } = await supabase.from('orders').select('customer_name, customer_phone, total, user_id');
     if (!orders) return;
-    const map = new Map<string, { name: string; phone: string; orders: number; spent: number }>();
+    const map = new Map<string, { name: string; phone: string; orders: number; spent: number; userId: string | null }>();
     orders.forEach(o => {
       const key = o.customer_phone || o.customer_name || 'unknown';
       const existing = map.get(key);
       if (existing) { existing.orders += 1; existing.spent += Number(o.total); }
-      else { map.set(key, { name: o.customer_name || 'Guest', phone: o.customer_phone || '-', orders: 1, spent: Number(o.total) }); }
+      else { map.set(key, { name: o.customer_name || 'Guest', phone: o.customer_phone || '-', orders: 1, spent: Number(o.total), userId: o.user_id }); }
     });
     setTopCustomers(Array.from(map.values()).sort((a, b) => b.spent - a.spent).slice(0, 10));
   };
@@ -415,7 +415,8 @@ const SuperAdminDashboard = () => {
             <div className="space-y-2">
               {topCustomers.map((c, idx) => (
                 <motion.div key={c.phone} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 + idx * 0.05 }}
-                  className="bg-card border border-border rounded-xl p-3 flex items-center gap-3">
+                  onClick={() => navigate('/customers', { state: { openCustomer: c } })}
+                  className="bg-card border border-border rounded-xl p-3 flex items-center gap-3 cursor-pointer active:scale-[0.98] transition-transform">
                   <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-heading text-sm ${
                     idx === 0 ? 'bg-secondary/20 text-secondary' : idx === 1 ? 'bg-muted text-foreground' : 'bg-muted text-muted-foreground'
                   }`}>

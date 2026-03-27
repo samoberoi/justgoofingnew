@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import OpsBottomNav from '../components/OpsBottomNav';
 import { Users, Phone, ShoppingBag, Search, Crown, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 interface Customer {
   name: string;
@@ -15,15 +15,28 @@ interface Customer {
 
 const OpsCustomersPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [customerOrders, setCustomerOrders] = useState<any[]>([]);
+  const [customerAddresses, setCustomerAddresses] = useState<any[]>([]);
 
   useEffect(() => {
     fetchCustomers();
   }, []);
+
+  // Auto-open customer from navigation state (e.g. from dashboard top 10)
+  useEffect(() => {
+    const state = location.state as any;
+    if (state?.openCustomer && customers.length > 0) {
+      const match = customers.find(c => c.phone === state.openCustomer.phone);
+      if (match) viewCustomer(match);
+      // Clear the state
+      window.history.replaceState({}, document.title);
+    }
+  }, [customers, location.state]);
 
   const fetchCustomers = async () => {
     const { data: orders } = await supabase
@@ -57,13 +70,12 @@ const OpsCustomersPage = () => {
 
   const viewCustomer = async (customer: Customer) => {
     setSelectedCustomer(customer);
-    const { data } = await supabase
-      .from('orders')
-      .select('*')
-      .eq('customer_phone', customer.phone)
-      .order('created_at', { ascending: false })
-      .limit(20);
-    setCustomerOrders(data || []);
+    const [ordersRes, addrsRes] = await Promise.all([
+      supabase.from('orders').select('*').eq('customer_phone', customer.phone).order('created_at', { ascending: false }).limit(20),
+      supabase.from('addresses').select('*').eq('user_id', (await supabase.from('orders').select('user_id').eq('customer_phone', customer.phone).limit(1)).data?.[0]?.user_id || '').order('created_at', { ascending: false }),
+    ]);
+    setCustomerOrders(ordersRes.data || []);
+    setCustomerAddresses(addrsRes.data || []);
   };
 
   const filtered = customers.filter(c =>
@@ -111,6 +123,23 @@ const OpsCustomersPage = () => {
               </div>
             </div>
           </div>
+
+          {/* Saved Addresses */}
+          {customerAddresses.length > 0 && (
+            <div>
+              <h2 className="font-heading text-xs text-muted-foreground uppercase tracking-wider mb-2">Saved Addresses</h2>
+              <div className="space-y-2">
+                {customerAddresses.map((addr: any) => (
+                  <div key={addr.id} className="bg-card border border-border rounded-lg p-3">
+                    <p className="text-xs font-medium text-foreground">{addr.label || 'Delivery'}</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      {addr.house_number ? `${addr.house_number}, ` : ''}{addr.formatted_address}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Order history */}
           <div>

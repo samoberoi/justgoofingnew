@@ -293,9 +293,14 @@ const PaymentPage = () => {
           <input
             value={customerName}
             onChange={e => setCustomerName(e.target.value)}
-            placeholder="Enter your full name"
-            className="w-full px-3 py-2.5 bg-muted border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-secondary"
+            placeholder="Enter your full name *"
+            className={`w-full px-3 py-2.5 bg-muted border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-secondary ${
+              !customerName.trim() ? 'border-destructive/50' : 'border-border'
+            }`}
           />
+          {!customerName.trim() && (
+            <p className="text-[11px] text-destructive">Name is required to place an order</p>
+          )}
         </div>
 
         {/* Delivery address */}
