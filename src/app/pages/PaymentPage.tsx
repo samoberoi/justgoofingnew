@@ -31,7 +31,7 @@ const PaymentPage = () => {
 
   useEffect(() => {
     const fetchDeliverySettings = async () => {
-      const { data } = await supabase.from('delivery_settings' as any).select('*').limit(1).single();
+      const { data } = await supabase.from('delivery_settings' as any).select('*').limit(1).maybeSingle();
       if (data) {
         setDeliveryFee(Number((data as any).base_delivery_fee) || 30);
         setFreeDeliveryAbove(Number((data as any).free_delivery_above) || 500);
@@ -96,7 +96,7 @@ const PaymentPage = () => {
         .from('points_settings')
         .select('*')
         .limit(1)
-        .single() as any;
+        .maybeSingle() as any;
 
       const { data: order, error: orderError } = await supabase.from('orders').insert({
         store_id: storeId,
