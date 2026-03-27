@@ -1,0 +1,1 @@
+ALTER TABLE public.menu_items ADD COLUMN default_variant_id uuid REFERENCES public.menu_variants(id) ON DELETE SET NULL;

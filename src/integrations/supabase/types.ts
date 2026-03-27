@@ -235,6 +235,7 @@ export type Database = {
           category: string | null
           category_id: string | null
           created_at: string
+          default_variant_id: string | null
           description: string | null
           discounted_price: number | null
           display_order: number
@@ -260,6 +261,7 @@ export type Database = {
           category?: string | null
           category_id?: string | null
           created_at?: string
+          default_variant_id?: string | null
           description?: string | null
           discounted_price?: number | null
           display_order?: number
@@ -285,6 +287,7 @@ export type Database = {
           category?: string | null
           category_id?: string | null
           created_at?: string
+          default_variant_id?: string | null
           description?: string | null
           discounted_price?: number | null
           display_order?: number
@@ -310,6 +313,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "menu_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_items_default_variant_id_fkey"
+            columns: ["default_variant_id"]
+            isOneToOne: false
+            referencedRelation: "menu_variants"
             referencedColumns: ["id"]
           },
           {
