@@ -175,7 +175,26 @@ const HomePage = () => {
     <div className="min-h-screen bg-background pb-20">
       <RoyalHeader />
 
-      {/* Dynamic Campaign Banner */}
+      {/* Active Order Banner */}
+      {activeOrder && ACTIVE_STATUS_LABELS[activeOrder.status] && (
+        <div className="px-4 pt-3">
+          <motion.div
+            key={activeOrder.status}
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            onClick={() => navigate(`/tracking/${activeOrder.id}`)}
+            className="bg-gradient-to-r from-secondary/15 to-secondary/5 border border-secondary/30 rounded-xl p-3.5 flex items-center gap-3 cursor-pointer active:scale-[0.98] transition-transform"
+          >
+            <span className="text-2xl">{ACTIVE_STATUS_LABELS[activeOrder.status].emoji}</span>
+            <div className="flex-1 min-w-0">
+              <p className="font-heading text-xs text-secondary">{activeOrder.order_number}</p>
+              <p className="text-xs text-foreground truncate">{ACTIVE_STATUS_LABELS[activeOrder.status].label}</p>
+            </div>
+            <span className="text-xs text-secondary font-heading shrink-0">Track →</span>
+          </motion.div>
+        </div>
+      )}
+
       {applicableCampaign && (
         <div className="px-4 pt-4">
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
