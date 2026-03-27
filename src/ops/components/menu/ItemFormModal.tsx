@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { X, ChevronRight, ChevronLeft, Leaf, Drumstick, Upload, Plus, Trash2 } from 'lucide-react';
+import { X, ChevronRight, ChevronLeft, Leaf, Drumstick, Upload, Plus, Trash2, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const inputClass = 'w-full px-3 py-2.5 bg-muted border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-secondary transition-colors';
@@ -17,7 +17,7 @@ interface Props {
   onSaved: () => void;
 }
 
-const STEPS = ['Basic Info', 'Pricing & Ops', 'Variants', 'Add-ons', 'Media & Tags'];
+const STEPS = ['Basic Info', 'Variants & Pricing', 'Add-ons', 'Media & Tags'];
 
 const VARIANT_PRESETS = [
   { name: 'Half', description: 'Half portion serving' },
@@ -26,6 +26,10 @@ const VARIANT_PRESETS = [
   { name: 'Mini', description: 'Small / starter size' },
   { name: 'Large', description: 'Extra large serving' },
   { name: 'Party Pack', description: 'Serves 6-8 people' },
+  { name: '250g', description: '250 gram serving' },
+  { name: '500g', description: '500 gram serving' },
+  { name: '750g', description: '750 gram serving' },
+  { name: '1kg', description: '1 kilogram serving' },
 ];
 
 const ALL_TAGS = [
@@ -56,18 +60,15 @@ const ItemFormModal = ({ item, categories, addonGroups, onClose, onSaved }: Prop
   const [categoryId, setCategoryId] = useState(item?.category_id || '');
   const [isVeg, setIsVeg] = useState(item?.is_veg ?? false);
   const [spiceLevel, setSpiceLevel] = useState(item?.spice_level ?? 1);
-
-  // Pricing
-  const [basePrice, setBasePrice] = useState(item?.base_price?.toString() || item?.price?.toString() || '');
-  const [discountedPrice, setDiscountedPrice] = useState(item?.discounted_price?.toString() || '');
   const [prepTime, setPrepTime] = useState(item?.prep_time?.toString() || '15');
   const [isAvailable, setIsAvailable] = useState(item?.is_available ?? true);
   const [isActive, setIsActive] = useState(item?.is_active ?? true);
 
   // Variants
-  const [variants, setVariants] = useState<{ id?: string; name: string; price: string; prep_time_override: string }[]>([]);
+  const [variants, setVariants] = useState<{ id?: string; name: string; price: string; prep_time_override: string; isDefault: boolean }[]>([]);
   const [showCustomVariant, setShowCustomVariant] = useState(false);
   const [customVariantName, setCustomVariantName] = useState('');
+  const [defaultVariantId, setDefaultVariantId] = useState<string | null>(item?.default_variant_id || null);
 
   // Add-ons
   const [selectedAddonGroups, setSelectedAddonGroups] = useState<string[]>([]);
@@ -75,9 +76,6 @@ const ItemFormModal = ({ item, categories, addonGroups, onClose, onSaved }: Prop
 
   // Media & Tags
   const [imageUrl, setImageUrl] = useState(item?.image_url || '');
-  const [isBestseller, setIsBestseller] = useState(item?.is_bestseller ?? false);
-  const [isChefsSpecial, setIsChefsSpecial] = useState(item?.is_chefs_special ?? false);
-  const [isNew, setIsNew] = useState(item?.is_new ?? false);
   const [selectedTags, setSelectedTags] = useState<string[]>(item?.tags || []);
 
   useEffect(() => {
@@ -91,7 +89,13 @@ const ItemFormModal = ({ item, categories, addonGroups, onClose, onSaved }: Prop
   const loadVariants = async () => {
     if (!item) return;
     const { data } = await supabase.from('menu_variants').select('*').eq('menu_item_id', item.id).order('display_order');
-    if (data) setVariants(data.map(v => ({ id: v.id, name: v.name, price: v.price.toString(), prep_time_override: v.prep_time_override?.toString() || '' })));
+    if (data) setVariants(data.map(v => ({
+      id: v.id,
+      name: v.name,
+      price: v.price.toString(),
+      prep_time_override: v.prep_time_override?.toString() || '',
+      isDefault: v.id === item.default_variant_id,
+    })));
   };
 
   const loadAddonLinks = async () => {
@@ -126,17 +130,31 @@ const ItemFormModal = ({ item, categories, addonGroups, onClose, onSaved }: Prop
 
   const addPresetVariant = (preset: { name: string }) => {
     if (variants.some(v => v.name === preset.name)) return;
-    setVariants(p => [...p, { name: preset.name, price: basePrice || '', prep_time_override: '' }]);
+    const isFirst = variants.length === 0;
+    setVariants(p => [...p, { name: preset.name, price: '', prep_time_override: '', isDefault: isFirst }]);
   };
 
   const addCustomVariant = () => {
     if (!customVariantName.trim()) return;
-    setVariants(p => [...p, { name: customVariantName.trim(), price: '', prep_time_override: '' }]);
+    const isFirst = variants.length === 0;
+    setVariants(p => [...p, { name: customVariantName.trim(), price: '', prep_time_override: '', isDefault: isFirst }]);
     setCustomVariantName('');
     setShowCustomVariant(false);
   };
 
-  const removeVariant = (idx: number) => setVariants(p => p.filter((_, i) => i !== idx));
+  const removeVariant = (idx: number) => {
+    const wasDefault = variants[idx].isDefault;
+    setVariants(p => {
+      const next = p.filter((_, i) => i !== idx);
+      if (wasDefault && next.length > 0) next[0].isDefault = true;
+      return next;
+    });
+  };
+
+  const setDefaultVariant = (idx: number) => {
+    setVariants(p => p.map((v, i) => ({ ...v, isDefault: i === idx })));
+  };
+
   const updateVariant = (idx: number, key: string, val: string) => setVariants(p => p.map((v, i) => i === idx ? { ...v, [key]: val } : v));
 
   const toggleAddonGroup = (gid: string) => {
@@ -151,9 +169,10 @@ const ItemFormModal = ({ item, categories, addonGroups, onClose, onSaved }: Prop
     if (!name.trim()) return;
     setSaving(true);
 
-    const price = parseFloat(basePrice) || 0;
+    // Use default variant price as the item price, or first variant
+    const defaultVariant = variants.find(v => v.isDefault) || variants[0];
+    const price = defaultVariant ? parseFloat(defaultVariant.price) || 0 : 0;
 
-    // Map tag keys to boolean fields
     const tagBestseller = selectedTags.includes('bestseller');
     const tagChefsSpecial = selectedTags.includes('chefs_special');
     const tagNew = selectedTags.includes('new');
@@ -167,7 +186,7 @@ const ItemFormModal = ({ item, categories, addonGroups, onClose, onSaved }: Prop
       spice_level: spiceLevel,
       price,
       base_price: price,
-      discounted_price: discountedPrice ? parseFloat(discountedPrice) : null,
+      discounted_price: null,
       prep_time: parseInt(prepTime) || 15,
       is_available: isAvailable,
       is_active: isActive,
@@ -188,8 +207,11 @@ const ItemFormModal = ({ item, categories, addonGroups, onClose, onSaved }: Prop
     }
 
     if (itemId) {
+      // Save variants
       if (item) await supabase.from('menu_variants').delete().eq('menu_item_id', itemId);
       const validVariants = variants.filter(v => v.name.trim() && v.price);
+      let savedDefaultVariantId: string | null = null;
+
       if (validVariants.length > 0) {
         const variantRows = validVariants.map((v, i) => ({
           menu_item_id: itemId!,
@@ -198,9 +220,19 @@ const ItemFormModal = ({ item, categories, addonGroups, onClose, onSaved }: Prop
           prep_time_override: v.prep_time_override ? parseInt(v.prep_time_override) : null,
           display_order: i,
         }));
-        await supabase.from('menu_variants').insert(variantRows);
+        const { data: savedVariants } = await supabase.from('menu_variants').insert(variantRows).select('id, name');
+
+        if (savedVariants) {
+          const defaultVarName = (variants.find(v => v.isDefault) || variants[0])?.name;
+          const found = savedVariants.find(sv => sv.name === defaultVarName);
+          savedDefaultVariantId = found?.id || savedVariants[0]?.id || null;
+        }
       }
 
+      // Update default_variant_id on the item
+      await supabase.from('menu_items').update({ default_variant_id: savedDefaultVariantId } as any).eq('id', itemId);
+
+      // Save addon links
       if (item) await supabase.from('menu_item_addon_groups').delete().eq('menu_item_id', itemId);
       if (selectedAddonGroups.length > 0) {
         await supabase.from('menu_item_addon_groups').insert(selectedAddonGroups.map(gid => ({
@@ -214,7 +246,7 @@ const ItemFormModal = ({ item, categories, addonGroups, onClose, onSaved }: Prop
     onSaved();
   };
 
-  const canProceed = step === 0 ? name.trim().length > 0 : true;
+  const canProceed = step === 0 ? name.trim().length > 0 : step === 1 ? variants.length > 0 && variants.some(v => v.price) : true;
 
   return (
     <div className="fixed inset-0 z-[55] bg-background/95 flex flex-col">
@@ -277,41 +309,39 @@ const ItemFormModal = ({ item, categories, addonGroups, onClose, onSaved }: Prop
                     ))}
                   </div>
                 </div>
+                <div>
+                  <label className={labelClass}>Prep Time (minutes)</label>
+                  <input type="number" value={prepTime} onChange={e => setPrepTime(e.target.value)} placeholder="15" className={inputClass} />
+                </div>
+
+                {/* Quick toggles */}
+                <div className="border-t border-border pt-4 space-y-3">
+                  <label className={labelClass}>Visibility & Availability</label>
+                  <div className="flex items-center justify-between py-2">
+                    <div>
+                      <span className="text-sm text-foreground">Available for ordering</span>
+                      <p className="text-[10px] text-muted-foreground">Customers can add this to cart</p>
+                    </div>
+                    <button onClick={() => setIsAvailable(!isAvailable)} className={`relative w-12 h-6 rounded-full transition-colors ${isAvailable ? 'bg-green-500' : 'bg-muted-foreground/30'}`}>
+                      <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${isAvailable ? 'translate-x-6' : 'translate-x-0.5'}`} />
+                    </button>
+                  </div>
+                  <div className="flex items-center justify-between py-2">
+                    <div>
+                      <span className="text-sm text-foreground">Visible on menu</span>
+                      <p className="text-[10px] text-muted-foreground">Show/hide from customer menu</p>
+                    </div>
+                    <button onClick={() => setIsActive(!isActive)} className={`relative w-12 h-6 rounded-full transition-colors ${isActive ? 'bg-green-500' : 'bg-muted-foreground/30'}`}>
+                      <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${isActive ? 'translate-x-6' : 'translate-x-0.5'}`} />
+                    </button>
+                  </div>
+                </div>
               </>
             )}
 
             {step === 1 && (
               <>
-                <div>
-                  <label className={labelClass}>Base Price (₹) *</label>
-                  <input type="number" value={basePrice} onChange={e => setBasePrice(e.target.value)} placeholder="e.g. 299" className={inputClass} />
-                </div>
-                <div>
-                  <label className={labelClass}>Discounted Price (₹)</label>
-                  <input type="number" value={discountedPrice} onChange={e => setDiscountedPrice(e.target.value)} placeholder="Leave empty if no discount" className={inputClass} />
-                </div>
-                <div>
-                  <label className={labelClass}>Prep Time (minutes)</label>
-                  <input type="number" value={prepTime} onChange={e => setPrepTime(e.target.value)} placeholder="15" className={inputClass} />
-                </div>
-                <div className="flex items-center justify-between py-2">
-                  <label className="text-sm text-foreground">Available</label>
-                  <button onClick={() => setIsAvailable(!isAvailable)} className={`relative w-12 h-6 rounded-full transition-colors ${isAvailable ? 'bg-green-500' : 'bg-muted-foreground/30'}`}>
-                    <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${isAvailable ? 'translate-x-6' : 'translate-x-0.5'}`} />
-                  </button>
-                </div>
-                <div className="flex items-center justify-between py-2">
-                  <label className="text-sm text-foreground">Active (visible on menu)</label>
-                  <button onClick={() => setIsActive(!isActive)} className={`relative w-12 h-6 rounded-full transition-colors ${isActive ? 'bg-green-500' : 'bg-muted-foreground/30'}`}>
-                    <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${isActive ? 'translate-x-6' : 'translate-x-0.5'}`} />
-                  </button>
-                </div>
-              </>
-            )}
-
-            {step === 2 && (
-              <>
-                <p className="text-xs text-muted-foreground">Choose from preset sizes or create a custom variant</p>
+                <p className="text-xs text-muted-foreground">Add variants with prices. Each variant (e.g. Half, Full, Family Pack) has its own price. Mark one as the default — it will show on the menu.</p>
 
                 {/* Preset dropdown */}
                 <div>
@@ -343,7 +373,7 @@ const ItemFormModal = ({ item, categories, addonGroups, onClose, onSaved }: Prop
                     <input
                       value={customVariantName}
                       onChange={e => setCustomVariantName(e.target.value)}
-                      placeholder="e.g. Jumbo, Kids Meal"
+                      placeholder="e.g. Jumbo, Kids Meal, 2kg"
                       className={inputClass}
                       onKeyDown={e => e.key === 'Enter' && addCustomVariant()}
                     />
@@ -355,25 +385,44 @@ const ItemFormModal = ({ item, categories, addonGroups, onClose, onSaved }: Prop
                 {/* Added variants list */}
                 {variants.length > 0 && (
                   <div className="space-y-2 mt-2">
-                    <label className={labelClass}>Added Variants ({variants.length})</label>
+                    <label className={labelClass}>Variants ({variants.length}) — tap ⭐ to set default</label>
                     {variants.map((v, idx) => (
-                      <div key={idx} className="bg-card border border-border rounded-lg p-3 space-y-2">
+                      <div key={idx} className={`bg-card border rounded-lg p-3 space-y-2 ${v.isDefault ? 'border-secondary' : 'border-border'}`}>
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-medium text-foreground">{v.name}</span>
+                          <div className="flex items-center gap-2">
+                            <button onClick={() => setDefaultVariant(idx)} title="Set as default">
+                              <Star size={16} className={v.isDefault ? 'text-secondary fill-secondary' : 'text-muted-foreground'} />
+                            </button>
+                            <span className="text-xs font-medium text-foreground">{v.name}</span>
+                            {v.isDefault && <span className="text-[10px] px-2 py-0.5 bg-secondary/20 text-secondary rounded-full">Default</span>}
+                          </div>
                           <button onClick={() => removeVariant(idx)} className="text-muted-foreground hover:text-destructive"><Trash2 size={14} /></button>
                         </div>
                         <div className="grid grid-cols-2 gap-2">
-                          <input type="number" value={v.price} onChange={e => updateVariant(idx, 'price', e.target.value)} placeholder="Price ₹" className={inputClass} />
-                          <input type="number" value={v.prep_time_override} onChange={e => updateVariant(idx, 'prep_time_override', e.target.value)} placeholder="Prep time (opt)" className={inputClass} />
+                          <div>
+                            <label className="text-[10px] text-muted-foreground">Price (₹) *</label>
+                            <input type="number" value={v.price} onChange={e => updateVariant(idx, 'price', e.target.value)} placeholder="Price ₹" className={inputClass} />
+                          </div>
+                          <div>
+                            <label className="text-[10px] text-muted-foreground">Prep time (min)</label>
+                            <input type="number" value={v.prep_time_override} onChange={e => updateVariant(idx, 'prep_time_override', e.target.value)} placeholder="Optional" className={inputClass} />
+                          </div>
                         </div>
                       </div>
                     ))}
                   </div>
                 )}
+
+                {variants.length === 0 && (
+                  <div className="text-center py-8 border border-dashed border-border rounded-xl">
+                    <p className="text-sm text-muted-foreground">No variants added yet</p>
+                    <p className="text-[10px] text-muted-foreground mt-1">Add at least one variant with a price</p>
+                  </div>
+                )}
               </>
             )}
 
-            {step === 3 && (
+            {step === 2 && (
               <>
                 <p className="text-xs text-muted-foreground">
                   Link add-on groups to this item. Add-on groups let customers customize their order — e.g. choose extra toppings, pick a drink, or add a side dish.
@@ -412,7 +461,7 @@ const ItemFormModal = ({ item, categories, addonGroups, onClose, onSaved }: Prop
               </>
             )}
 
-            {step === 4 && (
+            {step === 3 && (
               <>
                 <div>
                   <label className={labelClass}>Item Image</label>
@@ -428,12 +477,12 @@ const ItemFormModal = ({ item, categories, addonGroups, onClose, onSaved }: Prop
                   <p className="text-[10px] text-muted-foreground mb-2">Select all tags that apply to this item</p>
                   <div className="flex flex-wrap gap-2">
                     {ALL_TAGS.map(t => {
-                      const isActive = selectedTags.includes(t.key);
+                      const active = selectedTags.includes(t.key);
                       return (
                         <button
                           key={t.key}
                           onClick={() => toggleTag(t.key)}
-                          className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors ${isActive ? 'bg-secondary/20 text-secondary border border-secondary' : 'bg-muted text-muted-foreground border border-border'}`}
+                          className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors ${active ? 'bg-secondary/20 text-secondary border border-secondary' : 'bg-muted text-muted-foreground border border-border'}`}
                         >
                           {t.label}
                         </button>

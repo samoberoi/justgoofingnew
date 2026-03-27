@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Minus, ShoppingCart, Leaf, Drumstick, Flame, Star, ChefHat, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -16,14 +17,21 @@ const SpiceIndicator = ({ level }: { level: number }) => (
 
 const ItemCard = ({ item, index }: { item: MenuItem; index: number }) => {
   const { cart, addToCart, updateQuantity } = useAppStore();
-  const qty = cart.find(c => c.id === item.id)?.quantity || 0;
+
+  // Determine which variant to show by default
+  const defaultVariant = item.variants.find(v => v.id === item.default_variant_id) || item.variants[0];
+  const [selectedVariant, setSelectedVariant] = useState(defaultVariant || null);
+
+  const displayPrice = selectedVariant?.price || item.discounted_price || item.price;
+  const cartKey = selectedVariant ? `${item.id}_${selectedVariant.id}` : item.id;
+  const qty = cart.find(c => c.id === cartKey)?.quantity || 0;
 
   const handleAdd = () => {
     addToCart({
-      id: item.id,
-      name: item.name,
+      id: cartKey,
+      name: selectedVariant ? `${item.name} (${selectedVariant.name})` : item.name,
       description: item.description || '',
-      price: item.discounted_price || item.price,
+      price: displayPrice,
       image: item.image_url || '',
       tags: item.tags || [],
     });
@@ -55,26 +63,38 @@ const ItemCard = ({ item, index }: { item: MenuItem; index: number }) => {
             <span className="text-[10px] px-2 py-0.5 rounded-full bg-secondary/10 text-secondary font-medium flex items-center gap-0.5"><Star size={8} />Bestseller</span>
           )}
           {item.is_chefs_special && (
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent/20 text-accent-foreground font-medium flex items-center gap-0.5"><ChefHat size={8} />Chef's Special</span>
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent/20 text-accent-foreground font-medium flex items-center gap-0.5"><ChefHat size={8} />Chef's</span>
           )}
           {item.is_new && (
             <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium flex items-center gap-0.5"><Sparkles size={8} />New</span>
           )}
-          {(item.tags || []).filter(t => !['Bestseller', 'Non-Veg', 'Veg', 'New'].includes(t)).map(tag => (
-            <span key={tag} className="text-[10px] px-2 py-0.5 rounded-full bg-secondary/10 text-secondary font-medium">{tag}</span>
-          ))}
         </div>
         {item.spice_level && item.spice_level > 0 && (
           <div className="mt-1"><SpiceIndicator level={item.spice_level} /></div>
         )}
         <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{item.description}</p>
-        <div className="flex items-center justify-between mt-3">
-          <div className="flex items-center gap-2">
-            <span className="font-heading text-base text-secondary">₹{item.discounted_price || item.price}</span>
-            {item.discounted_price && item.discounted_price < item.price && (
-              <span className="text-xs text-muted-foreground line-through">₹{item.price}</span>
-            )}
+
+        {/* Variant selector */}
+        {item.variants.length > 1 && (
+          <div className="flex gap-1.5 mt-2 overflow-x-auto no-scrollbar">
+            {item.variants.map(v => (
+              <button
+                key={v.id}
+                onClick={() => setSelectedVariant(v)}
+                className={`px-2 py-1 rounded-md text-[10px] font-medium whitespace-nowrap border transition-colors ${
+                  selectedVariant?.id === v.id
+                    ? 'border-secondary bg-secondary/10 text-secondary'
+                    : 'border-border text-muted-foreground'
+                }`}
+              >
+                {v.name} · ₹{v.price}
+              </button>
+            ))}
           </div>
+        )}
+
+        <div className="flex items-center justify-between mt-3">
+          <span className="font-heading text-base text-secondary">₹{displayPrice}</span>
           {qty === 0 ? (
             <motion.button
               whileTap={{ scale: 0.95 }}
@@ -85,9 +105,9 @@ const ItemCard = ({ item, index }: { item: MenuItem; index: number }) => {
             </motion.button>
           ) : (
             <div className="flex items-center gap-3 bg-muted rounded-lg">
-              <button onClick={() => updateQuantity(item.id, qty - 1)} className="p-2 text-secondary"><Minus size={14} /></button>
+              <button onClick={() => updateQuantity(cartKey, qty - 1)} className="p-2 text-secondary"><Minus size={14} /></button>
               <span className="font-bold text-sm text-foreground w-4 text-center">{qty}</span>
-              <button onClick={() => updateQuantity(item.id, qty + 1)} className="p-2 text-secondary"><Plus size={14} /></button>
+              <button onClick={() => updateQuantity(cartKey, qty + 1)} className="p-2 text-secondary"><Plus size={14} /></button>
             </div>
           )}
         </div>
