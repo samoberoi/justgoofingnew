@@ -139,10 +139,7 @@ const LoginPage = () => {
       document.getElementById(`otp-${index + 1}`)?.focus();
     }
 
-    // Check if all filled using ref (always up-to-date)
-    if (otpRef.current.every(d => d !== '')) {
-      doLogin(otpRef.current.join(''));
-    }
+    // Don't auto-submit — let user click Verify button
   };
 
   const handleOtpKeyDown = (index: number, e: React.KeyboardEvent) => {
@@ -246,7 +243,7 @@ const LoginPage = () => {
             <motion.button
               whileTap={{ scale: 0.97 }}
               onClick={handleManualVerify}
-              disabled={otp.some(d => d === '') || verifying}
+              disabled={verifying}
               className="w-full py-4 bg-gradient-saffron rounded-lg font-heading text-sm uppercase tracking-widest text-primary-foreground disabled:opacity-40 flex items-center justify-center gap-2"
             >
               {verifying ? <><Loader2 size={16} className="animate-spin" /> Verifying...</> : <>Verify <ArrowRight size={16} /></>}
