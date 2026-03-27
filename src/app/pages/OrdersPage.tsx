@@ -19,25 +19,16 @@ const OrdersPage = () => {
   }, [userId]);
 
   const fetchOrders = async () => {
-    // Get user's phone from profile to match orders
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('phone')
-      .eq('user_id', userId!)
-      .single();
-
-    if (!profile?.phone) { setLoading(false); return; }
-
+    // Query orders by user_id directly
     const { data } = await supabase
       .from('orders')
       .select('*')
-      .eq('customer_phone', profile.phone)
+      .eq('user_id' as any, userId!)
       .order('created_at', { ascending: false });
 
     const fetchedOrders = data || [];
     setOrders(fetchedOrders);
 
-    // Fetch items for all orders
     if (fetchedOrders.length > 0) {
       const ids = fetchedOrders.map(o => o.id);
       const { data: items } = await supabase
@@ -85,13 +76,8 @@ const OrdersPage = () => {
               : 'bg-secondary/10 text-secondary';
 
             return (
-              <motion.div
-                key={order.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.08 }}
-                className="bg-card border border-border rounded-xl p-4"
-              >
+              <motion.div key={order.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.08 }} className="bg-card border border-border rounded-xl p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Package size={16} className="text-secondary" />
@@ -104,19 +90,15 @@ const OrdersPage = () => {
                 <div className="mt-2">
                   {items.length > 0 ? items.map(it => (
                     <p key={it.id} className="text-xs text-muted-foreground">{it.name} x{it.quantity}</p>
-                  )) : (
-                    <p className="text-xs text-muted-foreground">Order items</p>
-                  )}
+                  )) : <p className="text-xs text-muted-foreground">Loading...</p>}
                 </div>
                 <div className="flex items-center justify-between mt-3 pt-2 border-t border-border">
                   <span className="text-[10px] text-muted-foreground">{formatDate(order.created_at)}</span>
                   <span className="font-heading text-sm text-secondary">₹{Number(order.total).toLocaleString()}</span>
                 </div>
                 {order.status === 'delivered' && (
-                  <button
-                    onClick={() => navigate('/home')}
-                    className="w-full mt-3 py-2 bg-muted rounded-lg text-xs font-heading text-foreground"
-                  >
+                  <button onClick={() => navigate('/home')}
+                    className="w-full mt-3 py-2 bg-muted rounded-lg text-xs font-heading text-foreground">
                     Reorder
                   </button>
                 )}
