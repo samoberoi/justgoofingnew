@@ -96,7 +96,7 @@ const PaymentPage = () => {
         .from('points_settings')
         .select('*')
         .limit(1)
-        .single() as any;
+        .maybeSingle() as any;
 
       const { data: order, error: orderError } = await supabase.from('orders').insert({
         store_id: storeId,
