@@ -26,7 +26,7 @@ const OpsMenuPage = () => {
   const [filterVeg, setFilterVeg] = useState<'all' | 'veg' | 'nonveg'>('all');
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [analytics, setAnalytics] = useState<any[]>([]);
+  
 
   const fetchAll = useCallback(async () => {
     const [itemsRes, catsRes, addonsRes, variantsRes] = await Promise.all([
@@ -70,24 +70,7 @@ const OpsMenuPage = () => {
     await supabase.from('menu_items').update({ is_available: !current }).eq('id', id);
   };
 
-  const loadAnalytics = async () => {
-    // Fetch basic order analytics per menu item
-    const { data } = await supabase.from('order_items').select('menu_item_id, quantity, price');
-    const map = new Map<string, { orders: number; revenue: number }>();
-    (data || []).forEach(oi => {
-      if (!oi.menu_item_id) return;
-      const existing = map.get(oi.menu_item_id) || { orders: 0, revenue: 0 };
-      existing.orders += oi.quantity;
-      existing.revenue += Number(oi.price) * oi.quantity;
-      map.set(oi.menu_item_id, existing);
-    });
-    setAnalytics(Array.from(map.entries()).map(([id, stats]) => ({
-      item: items.find(i => i.id === id),
-      ...stats,
-    })).filter(a => a.item).sort((a, b) => b.revenue - a.revenue));
-  };
-
-  useEffect(() => { if (tab === 'analytics') loadAnalytics(); }, [tab, items]);
+  
 
   const toggleSelect = (id: string) => {
     setSelectedIds(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id]);
@@ -119,7 +102,6 @@ const OpsMenuPage = () => {
     { key: 'items', label: 'Items' },
     { key: 'categories', label: 'Categories' },
     { key: 'addons', label: 'Add-ons' },
-    { key: 'analytics', label: 'Analytics' },
   ];
 
   return (
@@ -241,32 +223,7 @@ const OpsMenuPage = () => {
           <AddonManager onRefresh={fetchAll} />
         )}
 
-        {tab === 'analytics' && (
-          <div>
-            <h3 className="text-sm font-heading text-foreground mb-3 flex items-center gap-2"><BarChart3 size={16} /> Menu Performance</h3>
-            {analytics.length === 0 ? (
-              <p className="text-center text-sm text-muted-foreground py-6">No order data yet</p>
-            ) : (
-              <div className="space-y-2">
-                {analytics.map((a, idx) => (
-                  <div key={a.item.id} className="bg-card border border-border rounded-lg p-3 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs font-bold text-muted-foreground w-5">#{idx + 1}</span>
-                      <div>
-                        <p className="text-sm font-medium text-foreground">{a.item.name}</p>
-                        <p className="text-[10px] text-muted-foreground">{a.orders} orders</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-bold text-secondary">₹{a.revenue.toLocaleString('en-IN')}</p>
-                      <p className="text-[10px] text-muted-foreground">revenue</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+        
       </div>
 
       {/* Item Form Modal */}
