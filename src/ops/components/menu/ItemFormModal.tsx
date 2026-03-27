@@ -318,7 +318,7 @@ const ItemFormModal = ({ item, categories, addonGroups, onClose, onSaved }: Prop
       </div>
 
       {/* Footer nav */}
-      <div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-xl border-t border-border px-4 py-3 flex gap-3 z-10">
+      <div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-xl border-t border-border px-4 py-3 flex gap-3 z-[60]">
         {step > 0 && (
           <button onClick={() => setStep(s => s - 1)} className="flex items-center gap-1 px-4 py-2.5 border border-border rounded-lg text-xs font-medium text-muted-foreground">
             <ChevronLeft size={14} /> Back
