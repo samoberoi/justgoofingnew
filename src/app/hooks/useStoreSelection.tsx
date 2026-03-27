@@ -99,7 +99,7 @@ export const StoreSelectionProvider = ({ children }: { children: ReactNode }) =>
           setSelectedStore(stores[0] as Store);
           setLocationLoading(false);
         },
-        { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
+        { enableHighAccuracy: false, timeout: 30000, maximumAge: 600000 }
       );
     };
 
