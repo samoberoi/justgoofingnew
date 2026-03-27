@@ -109,6 +109,8 @@ const UserManagement = () => {
 
   const startEdit = (user: any) => {
     setEditingId(user.id);
+    setEditName(user.profiles?.full_name || '');
+    setEditPhone(user.profiles?.phone || '');
     setEditRole(user.role);
     setEditStoreId(user.store_id || '');
     setEditIsActive(user.is_active);
