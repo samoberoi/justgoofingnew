@@ -8,7 +8,7 @@ import AddonManager from '../components/menu/AddonManager';
 import MenuItemCard from '../components/menu/MenuItemCard';
 import ItemFormModal from '../components/menu/ItemFormModal';
 import BulkActions from '../components/menu/BulkActions';
-import { Plus, Search, Filter, CheckSquare, X, BarChart3, Leaf, Drumstick } from 'lucide-react';
+import { Plus, Search, CheckSquare, X, Leaf, Drumstick } from 'lucide-react';
 
 type Tab = 'items' | 'categories' | 'addons';
 
