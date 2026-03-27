@@ -82,6 +82,9 @@ const SuperAdminDashboard = () => {
   // Top sellers
   const [topSellers, setTopSellers] = useState<any[]>([]);
 
+  // Top customers
+  const [topCustomers, setTopCustomers] = useState<{ name: string; phone: string; orders: number; spent: number }[]>([]);
+
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
