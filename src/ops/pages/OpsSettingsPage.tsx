@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '../hooks/useAuth';
 import OpsBottomNav from '../components/OpsBottomNav';
-import { Plus, Store, Users, Clock, MapPin, Phone, ChevronDown, ChevronUp, Pencil } from 'lucide-react';
+import { Plus, Store, Users, Clock, MapPin, Phone, ChevronDown, ChevronUp, Pencil, ExternalLink } from 'lucide-react';
 
 interface StoreForm {
   name: string;
@@ -90,6 +90,25 @@ const StoreFormFields = ({ form, setForm, onSave, onCancel, saving, submitLabel 
         <input type="number" step="any" value={form.longitude} onChange={e => setForm(p => ({ ...p, longitude: e.target.value }))} placeholder="e.g. 77.5946" className={inputClass} />
       </div>
     </div>
+    {form.latitude && form.longitude && (
+      <div className="space-y-2">
+        <div className="rounded-lg overflow-hidden border border-border">
+          <iframe
+            src={`https://www.openstreetmap.org/export/embed.html?bbox=${parseFloat(form.longitude) - 0.005},${parseFloat(form.latitude) - 0.003},${parseFloat(form.longitude) + 0.005},${parseFloat(form.latitude) + 0.003}&layer=mapnik&marker=${form.latitude},${form.longitude}`}
+            className="w-full h-36"
+            style={{ border: 0 }}
+          />
+        </div>
+        <a
+          href={`https://www.google.com/maps?q=${form.latitude},${form.longitude}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-1.5 text-xs text-secondary font-medium"
+        >
+          <ExternalLink size={12} /> Open in Google Maps
+        </a>
+      </div>
+    )}
     <div className="flex items-center justify-between py-1">
       <label className="text-sm text-foreground">Store Status</label>
       <button
@@ -251,6 +270,25 @@ const OpsSettingsPage = () => {
                           <div className="text-muted-foreground">Prep: {store.default_prep_time || 30} min</div>
                           <div className="text-muted-foreground">GST: {store.tax_percent || 5}%</div>
                         </div>
+                        {store.latitude && store.longitude && (
+                          <div className="space-y-2">
+                            <div className="rounded-lg overflow-hidden border border-border">
+                              <iframe
+                                src={`https://www.openstreetmap.org/export/embed.html?bbox=${store.longitude - 0.005},${store.latitude - 0.003},${store.longitude + 0.005},${store.latitude + 0.003}&layer=mapnik&marker=${store.latitude},${store.longitude}`}
+                                className="w-full h-36"
+                                style={{ border: 0 }}
+                              />
+                            </div>
+                            <a
+                              href={`https://www.google.com/maps?q=${store.latitude},${store.longitude}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1.5 text-xs text-secondary font-medium"
+                            >
+                              <ExternalLink size={12} /> Open in Google Maps
+                            </a>
+                          </div>
+                        )}
                         <div className="flex items-center justify-between pt-2">
                           <button onClick={() => startEdit(store)} className="flex items-center gap-1.5 text-xs text-secondary font-medium">
                             <Pencil size={13} /> Edit Store
