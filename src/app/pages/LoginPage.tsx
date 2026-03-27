@@ -1,20 +1,24 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useAppStore } from '../store';
-import { ArrowRight, Shield } from 'lucide-react';
+import { ArrowRight, Shield, Loader2 } from 'lucide-react';
+
+const OTP_LENGTH = 6;
 
 const LoginPage = () => {
   const navigate = useNavigate();
   const { setLoggedIn, setPhoneNumber } = useAppStore();
   const [step, setStep] = useState<'phone' | 'otp' | 'success'>('phone');
   const [phone, setPhone] = useState('');
-  const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const [otp, setOtp] = useState(Array(OTP_LENGTH).fill(''));
   const [error, setError] = useState('');
   const [sending, setSending] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const otpRef = useRef(Array(OTP_LENGTH).fill(''));
+  const isSubmittingRef = useRef(false);
 
-  // Mock email from phone for dev auth
   const mockEmail = (p: string) => `${p}@ops.biryaan.app`;
 
   const handlePhoneSubmit = () => {
@@ -28,72 +32,131 @@ const LoginPage = () => {
     }, 500);
   };
 
-  const handleOtpChange = async (index: number, value: string) => {
-    if (value.length > 1) return;
-    const newOtp = [...otp];
-    newOtp[index] = value;
-    setOtp(newOtp);
+  const doLogin = useCallback(async (password: string) => {
+    if (isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
+    setVerifying(true);
+    setError('');
 
-    if (value && index < 5) {
-      document.getElementById(`otp-${index + 1}`)?.focus();
-    }
-
-    if (newOtp.every(d => d !== '')) {
-      setError('');
-      const password = newOtp.join('');
+    try {
       const email = mockEmail(phone);
 
-      // Try sign in first
-      const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
+      // Try sign in
+      const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
+
+      let userId: string | null = signInData?.user?.id ?? null;
 
       if (signInErr) {
-        // User doesn't exist — sign up
+        // Try sign up
         const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({ email, password });
         if (signUpErr) {
           setError(signUpErr.message);
-          setOtp(['', '', '', '', '', '']);
-          document.getElementById('otp-0')?.focus();
+          resetOtp();
           return;
         }
-        // Auto-confirmed, sign in
-        const { error: retryErr } = await supabase.auth.signInWithPassword({ email, password });
-        if (retryErr) {
-          setError('Account created but login failed. Try again.');
-          setOtp(['', '', '', '', '', '']);
-          document.getElementById('otp-0')?.focus();
-          return;
-        }
-      }
+        userId = signUpData?.user?.id ?? null;
 
-      // Success — check role and route
-      setStep('success');
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: roleData } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', user.id)
-          .eq('is_active', true)
-          .limit(1)
-          .maybeSingle();
-
-        setTimeout(() => {
-          if (roleData?.role) {
-            // Ops user — route to role dashboard
-            const roleRoutes: Record<string, string> = {
-              super_admin: '/dashboard',
-              store_manager: '/dashboard',
-              kitchen_manager: '/kitchen',
-              delivery_partner: '/deliveries',
-            };
-            navigate(roleRoutes[roleData.role] || '/dashboard');
-          } else {
-            // Customer — route to customer app
-            setLoggedIn(true);
-            navigate('/welcome');
+        // Sign in after signup if needed
+        if (!signUpData?.session) {
+          const { data: retryData, error: retryErr } = await supabase.auth.signInWithPassword({ email, password });
+          if (retryErr) {
+            setError('Account created but login failed. Try again.');
+            resetOtp();
+            return;
           }
-        }, 1500);
+          userId = retryData?.user?.id ?? null;
+        }
       }
+
+      if (!userId) {
+        setError('Could not get user info. Try again.');
+        resetOtp();
+        return;
+      }
+
+      // Success — show animation
+      setStep('success');
+
+      // Check role
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .eq('is_active', true)
+        .limit(1)
+        .maybeSingle();
+
+      setTimeout(() => {
+        if (roleData?.role) {
+          const roleRoutes: Record<string, string> = {
+            super_admin: '/dashboard',
+            store_manager: '/dashboard',
+            kitchen_manager: '/kitchen',
+            delivery_partner: '/deliveries',
+          };
+          navigate(roleRoutes[roleData.role] || '/dashboard');
+        } else {
+          setLoggedIn(true);
+          navigate('/welcome');
+        }
+      }, 1500);
+    } catch (err: any) {
+      console.error('Login error:', err);
+      setError(err?.message || 'Something went wrong. Try again.');
+      setStep('otp');
+      resetOtp();
+    } finally {
+      setVerifying(false);
+      isSubmittingRef.current = false;
+    }
+  }, [phone, navigate, setLoggedIn]);
+
+  const resetOtp = () => {
+    otpRef.current = Array(OTP_LENGTH).fill('');
+    setOtp(Array(OTP_LENGTH).fill(''));
+    setTimeout(() => document.getElementById('otp-0')?.focus(), 100);
+  };
+
+  const handleOtpChange = (index: number, value: string) => {
+    if (value.length > 1) {
+      // Handle paste: distribute digits across boxes
+      const digits = value.replace(/\D/g, '').split('').slice(0, OTP_LENGTH);
+      const newOtp = Array(OTP_LENGTH).fill('');
+      digits.forEach((d, i) => { newOtp[i] = d; });
+      otpRef.current = newOtp;
+      setOtp([...newOtp]);
+      if (digits.length === OTP_LENGTH) {
+        doLogin(newOtp.join(''));
+      }
+      return;
+    }
+
+    const digit = value.replace(/\D/g, '');
+    otpRef.current[index] = digit;
+    setOtp([...otpRef.current]);
+
+    if (digit && index < OTP_LENGTH - 1) {
+      document.getElementById(`otp-${index + 1}`)?.focus();
+    }
+
+    // Check if all filled using ref (always up-to-date)
+    if (otpRef.current.every(d => d !== '')) {
+      doLogin(otpRef.current.join(''));
+    }
+  };
+
+  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent) => {
+    if (e.key === 'Backspace' && !otpRef.current[index] && index > 0) {
+      otpRef.current[index - 1] = '';
+      setOtp([...otpRef.current]);
+      document.getElementById(`otp-${index - 1}`)?.focus();
+    }
+  };
+
+  const handleManualVerify = () => {
+    const password = otpRef.current.join('');
+    if (password.length === OTP_LENGTH) {
+      doLogin(password);
     }
   };
 
@@ -168,9 +231,11 @@ const LoginPage = () => {
                   key={i}
                   id={`otp-${i}`}
                   type="tel"
-                  maxLength={1}
+                  inputMode="numeric"
+                  maxLength={i === 0 ? OTP_LENGTH : 1}
                   value={digit}
                   onChange={e => handleOtpChange(i, e.target.value)}
+                  onKeyDown={e => handleOtpKeyDown(i, e)}
                   className="w-12 h-14 text-center text-xl font-bold bg-card border border-border rounded-lg text-foreground focus:outline-none focus:border-secondary transition-colors"
                 />
               ))}
@@ -178,8 +243,17 @@ const LoginPage = () => {
 
             {error && <p className="text-destructive text-sm">{error}</p>}
 
+            <motion.button
+              whileTap={{ scale: 0.97 }}
+              onClick={handleManualVerify}
+              disabled={otp.some(d => d === '') || verifying}
+              className="w-full py-4 bg-gradient-saffron rounded-lg font-heading text-sm uppercase tracking-widest text-primary-foreground disabled:opacity-40 flex items-center justify-center gap-2"
+            >
+              {verifying ? <><Loader2 size={16} className="animate-spin" /> Verifying...</> : <>Verify <ArrowRight size={16} /></>}
+            </motion.button>
+
             <p className="text-muted-foreground text-xs">
-              Wrong number? <button onClick={() => { setStep('phone'); setOtp(['','','','','','']); setError(''); }} className="text-secondary underline">Go back</button>
+              Wrong number? <button onClick={() => { setStep('phone'); resetOtp(); setError(''); }} className="text-secondary underline">Go back</button>
             </p>
           </motion.div>
         )}
