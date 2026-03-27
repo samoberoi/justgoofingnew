@@ -63,9 +63,8 @@ const PaymentPage = () => {
           .eq('user_id', user.id)
           .order('created_at', { ascending: false });
         if (addrs && addrs.length > 0) {
-          // Deduplicate by formatted_address
           const seen = new Set<string>();
-          const unique = (addrs as SavedAddress[]).filter(a => {
+          const unique = (addrs as unknown as SavedAddress[]).filter(a => {
             if (seen.has(a.formatted_address)) return false;
             seen.add(a.formatted_address);
             return true;
