@@ -323,6 +323,8 @@ export type Database = {
           delivery_radius: number | null
           id: string
           is_active: boolean
+          latitude: number | null
+          longitude: number | null
           name: string
           opening_time: string | null
           phone: string | null
@@ -337,6 +339,8 @@ export type Database = {
           delivery_radius?: number | null
           id?: string
           is_active?: boolean
+          latitude?: number | null
+          longitude?: number | null
           name: string
           opening_time?: string | null
           phone?: string | null
@@ -351,6 +355,8 @@ export type Database = {
           delivery_radius?: number | null
           id?: string
           is_active?: boolean
+          latitude?: number | null
+          longitude?: number | null
           name?: string
           opening_time?: string | null
           phone?: string | null
