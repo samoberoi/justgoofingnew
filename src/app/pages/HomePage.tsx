@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Minus, ShoppingCart, Leaf, Drumstick, Flame, Star, ChefHat, Sparkles } from 'lucide-react';
+import { Plus, Minus, ShoppingCart, Leaf, Drumstick, Flame, Star, ChefHat, Sparkles, Gift } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import RoyalHeader from '../components/RoyalHeader';
 import BottomNav from '../components/BottomNav';
@@ -18,7 +18,6 @@ const SpiceIndicator = ({ level }: { level: number }) => (
 const ItemCard = ({ item, index }: { item: MenuItem; index: number }) => {
   const { cart, addToCart, updateQuantity } = useAppStore();
 
-  // Determine which variant to show by default
   const defaultVariant = item.variants.find(v => v.id === item.default_variant_id) || item.variants[0];
   const [selectedVariant, setSelectedVariant] = useState(defaultVariant || null);
 
@@ -74,7 +73,6 @@ const ItemCard = ({ item, index }: { item: MenuItem; index: number }) => {
         )}
         <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{item.description}</p>
 
-        {/* Variant selector */}
         {item.variants.length > 1 && (
           <div className="flex gap-1.5 mt-2 overflow-x-auto no-scrollbar">
             {item.variants.map(v => (
@@ -118,26 +116,42 @@ const ItemCard = ({ item, index }: { item: MenuItem; index: number }) => {
 
 const HomePage = () => {
   const navigate = useNavigate();
-  const { cart } = useAppStore();
+  const { cart, activeCampaigns, totalOrders } = useAppStore();
   const { categories, grouped, uncategorized, loading } = useMenu();
 
   const cartCount = cart.reduce((sum, c) => sum + c.quantity, 0);
+
+  // Find applicable campaign for this user
+  const applicableCampaign = activeCampaigns.find(c => {
+    if (c.category === 'first_order' && totalOrders > 0) return false;
+    if (c.target_audience === 'new_users' && totalOrders > 0) return false;
+    return true;
+  });
 
   return (
     <div className="min-h-screen bg-background pb-20">
       <RoyalHeader />
 
-      {/* Banner */}
-      <div className="px-4 pt-4">
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-r from-secondary/20 to-primary/20 border border-secondary/20 rounded-xl p-4"
-        >
-          <p className="font-heading text-sm text-secondary">🔥 1+1 FREE on your first order!</p>
-          <p className="text-xs text-muted-foreground mt-1">Auto-applied at checkout</p>
-        </motion.div>
-      </div>
+      {/* Dynamic Campaign Banner */}
+      {applicableCampaign && (
+        <div className="px-4 pt-4">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-gradient-to-r from-secondary/20 to-primary/20 border border-secondary/20 rounded-xl p-4"
+          >
+            <div className="flex items-center gap-2">
+              <Gift size={18} className="text-secondary shrink-0" />
+              <div>
+                <p className="font-heading text-sm text-secondary">{applicableCampaign.name}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {applicableCampaign.auto_apply ? 'Auto-applied at checkout' : `Use code: ${applicableCampaign.coupon_code}`}
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
 
       {/* Menu */}
       <div className="px-4 pt-6 pb-2">
@@ -181,7 +195,6 @@ const HomePage = () => {
         </div>
       )}
 
-      {/* Floating Cart Button */}
       {cartCount > 0 && (
         <motion.button
           initial={{ y: 100 }}

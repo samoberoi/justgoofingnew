@@ -1,26 +1,23 @@
 import { motion } from 'framer-motion';
-import { ArrowLeft, Crown, Flame, Gift, MapPin, Copy, ChevronRight, Volume2, VolumeX, Bell, BellOff, LogOut } from 'lucide-react';
+import { ArrowLeft, Copy, ChevronRight, Volume2, VolumeX, Bell, BellOff, LogOut, Award } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store';
 import BottomNav from '../components/BottomNav';
+import { supabase } from '@/integrations/supabase/client';
 
 const ProfilePage = () => {
   const navigate = useNavigate();
   const {
-    userName, tier, currentStreak, longestStreak, freeDawatsEarned,
-    walletBalance, isSubscriber, referralCode, savedAddresses,
+    userName, walletBalance, totalOrders, referralCode,
     musicEnabled, setMusicEnabled, notificationsEnabled, setNotificationsEnabled,
-    setLoggedIn,
+    setLoggedIn, badges,
   } = useAppStore();
 
-  const menuItems = [
-    { label: 'Royalty Tiers', icon: Crown, path: '/tiers', color: 'text-secondary' },
-    { label: 'Sultan\'s Streak', icon: Flame, path: '/streak', color: 'text-primary' },
-    { label: 'Spin the Wheel', icon: Gift, path: '/spin', color: 'text-accent' },
-    { label: 'Flash Dawats', icon: Flame, path: '/flash-dawats', color: 'text-primary' },
-    { label: 'Subscription', icon: Crown, path: '/subscription', color: 'text-secondary' },
-    { label: 'Pre-Book Order', icon: MapPin, path: '/pre-book', color: 'text-secondary' },
-  ];
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setLoggedIn(false);
+    navigate('/');
+  };
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -40,17 +37,16 @@ const ProfilePage = () => {
         >
           <div className="w-16 h-16 rounded-full bg-secondary/20 flex items-center justify-center text-3xl mx-auto">👑</div>
           <p className="font-heading text-lg text-foreground mt-3">{userName}</p>
-          <p className="text-xs text-secondary font-medium">{tier} Tier</p>
+          <p className="text-xs text-muted-foreground">{totalOrders} orders placed</p>
         </motion.div>
       </div>
 
       {/* Stats */}
-      <div className="px-4 pt-4 grid grid-cols-2 gap-2">
+      <div className="px-4 pt-4 grid grid-cols-3 gap-2">
         {[
-          { label: 'Current Streak', value: `${currentStreak} weeks`, icon: '🔥' },
-          { label: 'Longest Streak', value: `${longestStreak} weeks`, icon: '⚡' },
-          { label: 'Free Dawats', value: freeDawatsEarned.toString(), icon: '🎁' },
-          { label: 'Wallet', value: `${walletBalance} pts`, icon: '💰' },
+          { label: 'Orders', value: totalOrders.toString(), icon: '📦' },
+          { label: 'Biryan Points', value: `${walletBalance}`, icon: '💰' },
+          { label: 'Badges', value: badges.length.toString(), icon: '🏅' },
         ].map((stat, i) => (
           <div key={i} className="bg-card border border-border rounded-xl p-3 text-center">
             <p className="text-lg">{stat.icon}</p>
@@ -59,6 +55,23 @@ const ProfilePage = () => {
           </div>
         ))}
       </div>
+
+      {/* Badges */}
+      {badges.length > 0 && (
+        <div className="px-4 pt-4">
+          <p className="text-sm text-foreground font-semibold mb-2 flex items-center gap-1.5">
+            <Award size={14} className="text-secondary" /> Earned Badges
+          </p>
+          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+            {badges.map(b => (
+              <div key={b.id} className="bg-card border border-border rounded-xl p-3 text-center min-w-[80px] shrink-0">
+                <span className="text-2xl">{b.icon}</span>
+                <p className="text-[10px] font-medium text-foreground mt-1">{b.name}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Referral */}
       <div className="px-4 pt-4">
@@ -70,40 +83,22 @@ const ProfilePage = () => {
               <Copy size={14} className="text-secondary" />
             </button>
           </div>
-          <p className="text-[10px] text-muted-foreground mt-2">Earn 100 points per successful referral</p>
+          <p className="text-[10px] text-muted-foreground mt-2">Earn Biryan Points per successful referral</p>
         </div>
-      </div>
-
-      {/* Subscription badge */}
-      <div className="px-4 pt-4">
-        <div className="bg-card border border-border rounded-xl p-3 flex items-center justify-between">
-          <span className="text-sm text-foreground">Subscription</span>
-          <span className={`text-xs px-2 py-1 rounded-full font-medium ${isSubscriber ? 'bg-secondary/20 text-secondary' : 'bg-muted text-muted-foreground'}`}>
-            {isSubscriber ? '📦 Active' : 'Not Subscribed'}
-          </span>
-        </div>
-      </div>
-
-      {/* Saved addresses */}
-      <div className="px-4 pt-4">
-        <p className="text-sm text-foreground font-semibold mb-2">Saved Addresses</p>
-        {savedAddresses.map((addr, i) => (
-          <div key={i} className="bg-card border border-border rounded-xl p-3 mb-2 flex items-center gap-2">
-            <MapPin size={14} className="text-secondary shrink-0" />
-            <span className="text-xs text-muted-foreground">{addr}</span>
-          </div>
-        ))}
       </div>
 
       {/* Quick links */}
       <div className="px-4 pt-4 space-y-1">
-        {menuItems.map(item => (
+        {[
+          { label: 'Biryan Points Wallet', path: '/wallet', icon: '💰' },
+          { label: 'Order History', path: '/orders', icon: '📦' },
+        ].map(item => (
           <button
             key={item.path}
             onClick={() => navigate(item.path)}
             className="w-full flex items-center gap-3 p-3 bg-card border border-border rounded-xl"
           >
-            <item.icon size={16} className={item.color} />
+            <span className="text-base">{item.icon}</span>
             <span className="text-sm text-foreground flex-1 text-left">{item.label}</span>
             <ChevronRight size={14} className="text-muted-foreground" />
           </button>
@@ -142,7 +137,7 @@ const ProfilePage = () => {
       {/* Logout */}
       <div className="px-4 pt-6 pb-8">
         <button
-          onClick={() => { setLoggedIn(false); navigate('/'); }}
+          onClick={handleLogout}
           className="w-full py-3 border border-accent/30 rounded-xl text-accent text-sm font-heading flex items-center justify-center gap-2"
         >
           <LogOut size={14} /> Leave the Sultanat

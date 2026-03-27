@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface BiryaniItem {
   id: string;
@@ -28,29 +29,36 @@ export interface WalletTransaction {
   date: string;
 }
 
-export type RoyalTier = 'Sipahi' | 'Wazir' | 'Nawab' | 'Sultan';
+export interface LoyaltyCampaign {
+  id: string;
+  name: string;
+  type: string; // flat, percentage, free_item
+  category: string;
+  coupon_code: string | null;
+  auto_apply: boolean;
+  discount_value: number;
+  min_order_value: number | null;
+  target_audience: string;
+  is_active: boolean;
+}
 
 interface AppState {
   isLoggedIn: boolean;
-  isFirstTime: boolean;
+  userId: string | null;
   phoneNumber: string;
   userName: string;
   walletBalance: number;
-  tier: RoyalTier;
   totalOrders: number;
-  currentStreak: number;
-  longestStreak: number;
-  freeDawatsEarned: number;
   cart: CartItem[];
   transactions: WalletTransaction[];
   musicEnabled: boolean;
   notificationsEnabled: boolean;
-  isSubscriber: boolean;
   referralCode: string;
   savedAddresses: string[];
+  activeCampaigns: LoyaltyCampaign[];
+  badges: { id: string; name: string; icon: string; description: string | null; earned_at?: string }[];
 
   setLoggedIn: (v: boolean) => void;
-  setFirstTime: (v: boolean) => void;
   setPhoneNumber: (v: string) => void;
   setUserName: (v: string) => void;
   addToCart: (item: BiryaniItem) => void;
@@ -59,25 +67,8 @@ interface AppState {
   clearCart: () => void;
   setMusicEnabled: (v: boolean) => void;
   setNotificationsEnabled: (v: boolean) => void;
-  spendPoints: (amount: number) => void;
-  earnPoints: (amount: number, desc: string) => void;
+  refreshUserData: () => Promise<void>;
 }
-
-import badshahiImg from '@/assets/biryani-badshahi-murgh.jpg';
-import nawabiImg from '@/assets/biryani-nawabi-gosht.jpg';
-import zaffraniImg from '@/assets/biryani-zaffrani-sabz.jpg';
-import sehatSabzImg from '@/assets/biryani-sehat-sabz.jpg';
-import sehatMurghImg from '@/assets/biryani-sehat-murgh.jpg';
-
-const BIRYANI_MENU: BiryaniItem[] = [
-  { id: '1', name: 'Badshahi Murgh Biryani', description: 'The emperor\'s recipe. Slow-cooked chicken layered with aged basmati, saffron & royal spices.', price: 349, image: badshahiImg, tags: ['Bestseller', 'Non-Veg'] },
-  { id: '2', name: 'Nawabi Gosht Biryani', description: 'Tender mutton pieces marinated for 24 hours in secret Nawabi masala, sealed with dum.', price: 449, image: nawabiImg, tags: ['Premium', 'Non-Veg'] },
-  { id: '3', name: 'Zaffrani Sabz Biryani', description: 'Garden-fresh vegetables kissed by real Kashmiri saffron & slow-cooked with paneer.', price: 299, image: zaffraniImg, tags: ['Zafran', 'Veg'] },
-  { id: '4', name: 'Sehat Sabz Biryani', description: 'Low-oil, high-fiber vegetarian biryani for the health-conscious royal. 18g protein.', price: 279, image: sehatSabzImg, tags: ['Healthy', 'Veg', '18g Protein'] },
-  { id: '5', name: 'Sehat Murgh Biryani', description: 'Lean chicken breast biryani with quinoa blend. The warrior\'s choice. 32g protein.', price: 329, image: sehatMurghImg, tags: ['Healthy', 'Non-Veg', '32g Protein'] },
-];
-
-export { BIRYANI_MENU };
 
 const AppContext = createContext<AppState | null>(null);
 
@@ -89,27 +80,97 @@ export const useAppStore = () => {
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [isLoggedIn, setLoggedIn] = useState(false);
-  const [isFirstTime, setFirstTime] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [userName, setUserName] = useState('Royal Guest');
-  const [walletBalance, setWalletBalance] = useState(150);
-  const [tier] = useState<RoyalTier>('Wazir');
-  const [totalOrders] = useState(12);
-  const [currentStreak] = useState(2);
-  const [longestStreak] = useState(4);
-  const [freeDawatsEarned] = useState(2);
+  const [walletBalance, setWalletBalance] = useState(0);
+  const [totalOrders, setTotalOrders] = useState(0);
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [transactions, setTransactions] = useState<WalletTransaction[]>([
-    { id: '1', type: 'earned', amount: 50, description: 'Google Review Bonus', date: '2026-02-25' },
-    { id: '2', type: 'earned', amount: 100, description: 'Referral Bonus', date: '2026-02-20' },
-    { id: '3', type: 'spent', amount: -50, description: 'Order #1042', date: '2026-02-18' },
-    { id: '4', type: 'bonus', amount: 50, description: 'Wazir Tier Bonus', date: '2026-02-15' },
-  ]);
+  const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
   const [musicEnabled, setMusicEnabled] = useState(true);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [isSubscriber] = useState(false);
-  const [referralCode] = useState('BIRYAAN-ROYAL-7K2X');
-  const [savedAddresses] = useState(['123, Royal Palace Road, Hyderabad', '45, Nawab Street, Lucknow']);
+  const [referralCode, setReferralCode] = useState('');
+  const [savedAddresses] = useState<string[]>([]);
+  const [activeCampaigns, setActiveCampaigns] = useState<LoyaltyCampaign[]>([]);
+  const [badges, setBadges] = useState<any[]>([]);
+
+  // Listen for auth state changes
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        setUserId(session.user.id);
+        // Generate referral code from user id
+        setReferralCode('BIRYAAN-' + session.user.id.slice(0, 6).toUpperCase());
+      } else {
+        setUserId(null);
+        setWalletBalance(0);
+        setTotalOrders(0);
+        setTransactions([]);
+        setBadges([]);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Fetch user data when userId changes
+  useEffect(() => {
+    if (userId) refreshUserData();
+  }, [userId]);
+
+  // Fetch active campaigns on mount
+  useEffect(() => {
+    const fetchCampaigns = async () => {
+      const { data } = await supabase
+        .from('loyalty_campaigns')
+        .select('*')
+        .eq('is_active', true) as any;
+      setActiveCampaigns(data || []);
+    };
+    fetchCampaigns();
+  }, []);
+
+  const refreshUserData = async () => {
+    if (!userId) return;
+
+    // Fetch points balance from transactions
+    const { data: ptsTx } = await supabase
+      .from('points_transactions')
+      .select('amount, type, description, created_at, id')
+      .order('created_at', { ascending: false }) as any;
+
+    if (ptsTx) {
+      const balance = ptsTx.reduce((sum: number, tx: any) => sum + Number(tx.amount), 0);
+      setWalletBalance(Math.max(0, balance));
+      setTransactions(ptsTx.map((tx: any) => ({
+        id: tx.id,
+        type: Number(tx.amount) >= 0 ? (tx.type === 'bonus' || tx.type === 'referral' ? 'bonus' : 'earned') : 'spent',
+        amount: Number(tx.amount),
+        description: tx.description || '',
+        date: tx.created_at?.split('T')[0] || '',
+      })));
+    }
+
+    // Fetch order count
+    const { count } = await supabase
+      .from('orders')
+      .select('id', { count: 'exact', head: true }) as any;
+    setTotalOrders(count || 0);
+
+    // Fetch badges
+    const { data: userBadges } = await supabase
+      .from('user_badges')
+      .select('badge_id, earned_at, badges(name, icon, description)')
+      .eq('user_id', userId) as any;
+    if (userBadges) {
+      setBadges(userBadges.map((ub: any) => ({
+        id: ub.badge_id,
+        name: ub.badges?.name || '',
+        icon: ub.badges?.icon || '🏅',
+        description: ub.badges?.description || '',
+        earned_at: ub.earned_at,
+      })));
+    }
+  };
 
   const addToCart = (item: BiryaniItem) => {
     setCart(prev => {
@@ -126,23 +187,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
   const clearCart = () => setCart([]);
 
-  const spendPoints = (amount: number) => {
-    setWalletBalance(prev => prev - amount);
-    setTransactions(prev => [{ id: Date.now().toString(), type: 'spent', amount: -amount, description: 'Points Redeemed', date: new Date().toISOString().split('T')[0] }, ...prev]);
-  };
-
-  const earnPoints = (amount: number, desc: string) => {
-    setWalletBalance(prev => prev + amount);
-    setTransactions(prev => [{ id: Date.now().toString(), type: 'earned', amount, description: desc, date: new Date().toISOString().split('T')[0] }, ...prev]);
-  };
-
   return (
     <AppContext.Provider value={{
-      isLoggedIn, isFirstTime, phoneNumber, userName, walletBalance, tier, totalOrders,
-      currentStreak, longestStreak, freeDawatsEarned, cart, transactions, musicEnabled,
-      notificationsEnabled, isSubscriber, referralCode, savedAddresses,
-      setLoggedIn, setFirstTime, setPhoneNumber, setUserName, addToCart, removeFromCart,
-      updateQuantity, clearCart, setMusicEnabled, setNotificationsEnabled, spendPoints, earnPoints,
+      isLoggedIn, userId, phoneNumber, userName, walletBalance, totalOrders,
+      cart, transactions, musicEnabled, notificationsEnabled, referralCode,
+      savedAddresses, activeCampaigns, badges,
+      setLoggedIn, setPhoneNumber, setUserName, addToCart, removeFromCart,
+      updateQuantity, clearCart, setMusicEnabled, setNotificationsEnabled, refreshUserData,
     }}>
       {children}
     </AppContext.Provider>
