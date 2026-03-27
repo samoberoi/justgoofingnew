@@ -8,23 +8,23 @@ import {
 
 const navConfig: Record<AppRole, { path: string; icon: any; label: string }[]> = {
   super_admin: [
-    { path: '/ops/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { path: '/ops/orders', icon: ShoppingBag, label: 'Orders' },
-    { path: '/ops/menu', icon: UtensilsCrossed, label: 'Menu' },
-    { path: '/ops/analytics', icon: BarChart3, label: 'Analytics' },
-    { path: '/ops/settings', icon: Settings, label: 'Settings' },
+    { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+    { path: '/ops-orders', icon: ShoppingBag, label: 'Orders' },
+    { path: '/menu', icon: UtensilsCrossed, label: 'Menu' },
+    { path: '/analytics', icon: BarChart3, label: 'Analytics' },
+    { path: '/settings', icon: Settings, label: 'Settings' },
   ],
   store_manager: [
-    { path: '/ops/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { path: '/ops/orders', icon: ShoppingBag, label: 'Orders' },
-    { path: '/ops/menu', icon: UtensilsCrossed, label: 'Menu' },
-    { path: '/ops/customers', icon: Users, label: 'Customers' },
+    { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+    { path: '/ops-orders', icon: ShoppingBag, label: 'Orders' },
+    { path: '/menu', icon: UtensilsCrossed, label: 'Menu' },
+    { path: '/customers', icon: Users, label: 'Customers' },
   ],
   kitchen_manager: [
-    { path: '/ops/kitchen', icon: UtensilsCrossed, label: 'Orders' },
+    { path: '/kitchen', icon: UtensilsCrossed, label: 'Orders' },
   ],
   delivery_partner: [
-    { path: '/ops/deliveries', icon: Truck, label: 'Deliveries' },
+    { path: '/deliveries', icon: Truck, label: 'Deliveries' },
   ],
 };
 
@@ -35,6 +35,11 @@ const OpsBottomNav = () => {
 
   if (!role) return null;
   const tabs = navConfig[role];
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate('/login');
+  };
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card/95 backdrop-blur-xl">
@@ -61,7 +66,7 @@ const OpsBottomNav = () => {
           );
         })}
         <button
-          onClick={signOut}
+          onClick={handleLogout}
           className="flex flex-col items-center gap-0.5 px-3 py-2"
         >
           <LogOut size={20} className="text-muted-foreground" />
