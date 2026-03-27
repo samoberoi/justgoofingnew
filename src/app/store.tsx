@@ -82,7 +82,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [isLoggedIn, setLoggedIn] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [userName, setUserName] = useState('Royal Guest');
+  const [userName, setUserName] = useState('');
   const [walletBalance, setWalletBalance] = useState(0);
   const [totalOrders, setTotalOrders] = useState(0);
   const [cart, setCart] = useState<CartItem[]>([]);
