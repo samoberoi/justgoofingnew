@@ -12,9 +12,11 @@ const tiers = [
 
 const TiersPage = () => {
   const navigate = useNavigate();
-  const { totalOrders, tier } = useAppStore();
+  const { totalOrders } = useAppStore();
 
-  const currentTierIndex = tiers.findIndex(t => t.name === tier);
+  // Determine current tier based on order count
+  const currentTierIndex = totalOrders >= 50 ? 3 : totalOrders >= 25 ? 2 : totalOrders >= 10 ? 1 : 0;
+  const currentTier = tiers[currentTierIndex];
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -25,15 +27,14 @@ const TiersPage = () => {
         </div>
       </header>
 
-      {/* Current progress */}
       <div className="px-4 pt-6">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           className="bg-card border border-secondary/20 rounded-2xl p-6 text-center"
         >
-          <p className="text-4xl mb-2">{tiers[currentTierIndex]?.icon}</p>
-          <p className="font-heading text-xl text-gradient-gold">{tier}</p>
+          <p className="text-4xl mb-2">{currentTier.icon}</p>
+          <p className="font-heading text-xl text-gradient-gold">{currentTier.name}</p>
           <p className="text-xs text-muted-foreground mt-2">{totalOrders} orders completed</p>
 
           {currentTierIndex < 3 && (
@@ -54,11 +55,10 @@ const TiersPage = () => {
         </motion.div>
       </div>
 
-      {/* All tiers */}
       <div className="px-4 pt-6 space-y-3">
         {tiers.map((t, i) => {
           const isUnlocked = i <= currentTierIndex;
-          const isCurrent = t.name === tier;
+          const isCurrent = i === currentTierIndex;
           return (
             <motion.div
               key={t.name}
@@ -87,15 +87,6 @@ const TiersPage = () => {
             </motion.div>
           );
         })}
-      </div>
-
-      {/* Elite Sultan note */}
-      <div className="px-4 pt-6 pb-8">
-        <div className="bg-card border border-accent/20 rounded-xl p-4 text-center">
-          <p className="text-2xl mb-1">🏆</p>
-          <p className="font-heading text-sm text-accent">Elite Sultan</p>
-          <p className="text-[10px] text-muted-foreground mt-1">Maintain Sultan tier for 3 streak cycles to unlock</p>
-        </div>
       </div>
     </div>
   );

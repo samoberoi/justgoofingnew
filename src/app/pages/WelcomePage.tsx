@@ -1,19 +1,15 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { useAppStore } from '../store';
 
 const WelcomePage = () => {
   const navigate = useNavigate();
-  const { setFirstTime } = useAppStore();
 
   const handleContinue = () => {
-    setFirstTime(false);
     navigate('/home');
   };
 
   return (
     <div className="fixed inset-0 bg-background flex flex-col items-center justify-center px-6 overflow-hidden">
-      {/* Confetti-like particles */}
       {[...Array(20)].map((_, i) => (
         <motion.div
           key={i}
@@ -31,11 +27,7 @@ const WelcomePage = () => {
         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         className="relative z-10 text-center space-y-8 max-w-sm"
       >
-        <motion.div
-          animate={{ y: [0, -8, 0] }}
-          transition={{ duration: 2, repeat: Infinity }}
-          className="text-7xl"
-        >
+        <motion.div animate={{ y: [0, -8, 0] }} transition={{ duration: 2, repeat: Infinity }} className="text-7xl">
           👑
         </motion.div>
 
@@ -43,9 +35,7 @@ const WelcomePage = () => {
           <h1 className="font-heading text-2xl md:text-3xl text-gradient-gold leading-tight">
             Welcome to the<br />Sultanat of Biryani
           </h1>
-          <p className="text-muted-foreground text-sm">
-            Your royal feast awaits. Every bite, a coronation.
-          </p>
+          <p className="text-muted-foreground text-sm">Your royal feast awaits. Every bite, a coronation.</p>
         </div>
 
         <motion.div

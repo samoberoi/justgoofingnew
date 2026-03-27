@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { motion, useAnimation } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import { useAppStore } from '../store';
 
 const segments = [
@@ -20,7 +21,7 @@ const SEG_ANGLE = 360 / SEGMENT_COUNT;
 
 const SpinWheelPage = () => {
   const navigate = useNavigate();
-  const { earnPoints } = useAppStore();
+  const { walletBalance, refreshUserData } = useAppStore();
   const [spinning, setSpinning] = useState(false);
   const [result, setResult] = useState<typeof segments[0] | null>(null);
   const [spinsLeft, setSpinsLeft] = useState(1);
@@ -32,7 +33,6 @@ const SpinWheelPage = () => {
     setSpinning(true);
     setResult(null);
 
-    // Pick weighted random (FREE Biryani is rare)
     const weights = [20, 10, 15, 10, 8, 2, 20, 15];
     const totalWeight = weights.reduce((a, b) => a + b, 0);
     let rand = Math.random() * totalWeight;
@@ -56,24 +56,28 @@ const SpinWheelPage = () => {
     setSpinning(false);
     setSpinsLeft(prev => prev - 1);
 
-    // Credit rewards
-    if (won.type === 'points') {
-      earnPoints(won.value, `Spin Wheel: Won ${won.label}`);
-    } else if (won.type === 'addon') {
-      earnPoints(0, 'Spin Wheel: Free Raita on next order');
-    } else if (won.type === 'double') {
-      earnPoints(0, 'Spin Wheel: 2× Points on next order');
-    } else if (won.type === 'biryani') {
-      earnPoints(0, 'Spin Wheel: 🎉 FREE Biryani on next order!');
+    // Credit points to backend
+    if (won.type === 'points' && won.value > 0) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from('points_transactions').insert({
+          user_id: user.id,
+          type: 'bonus',
+          amount: won.value,
+          balance_after: walletBalance + won.value,
+          description: `Spin Wheel: Won ${won.label}`,
+        } as any);
+        refreshUserData();
+      }
     }
-  }, [spinning, spinsLeft, controls, earnPoints, totalRotation]);
+  }, [spinning, spinsLeft, controls, totalRotation, walletBalance, refreshUserData]);
 
   const getResultMessage = () => {
     if (!result) return '';
     switch (result.type) {
-      case 'points': return `${result.value} Sultanat Points added to your wallet!`;
+      case 'points': return `${result.value} Biryan Points added to your wallet!`;
       case 'addon': return 'Free Raita will be added to your next order!';
-      case 'double': return 'Your next order earns 2× Sultanat Points!';
+      case 'double': return 'Your next order earns 2× Biryan Points!';
       case 'biryani': return 'A FREE Biryani has been unlocked! 🎉';
       default: return '';
     }
@@ -93,19 +97,9 @@ const SpinWheelPage = () => {
           {spinsLeft > 0 ? `${spinsLeft} spin${spinsLeft > 1 ? 's' : ''} available` : 'Come back next week for more spins!'}
         </p>
 
-        {/* Wheel */}
         <div className="relative w-72 h-72">
-          {/* Pointer */}
           <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10 w-0 h-0 border-l-[14px] border-l-transparent border-r-[14px] border-r-transparent border-t-[24px] border-t-secondary drop-shadow-lg" />
-
-          <motion.svg
-            animate={controls}
-            width="288"
-            height="288"
-            viewBox="0 0 288 288"
-            style={{ transformOrigin: 'center center' }}
-            className="drop-shadow-2xl"
-          >
+          <motion.svg animate={controls} width="288" height="288" viewBox="0 0 288 288" style={{ transformOrigin: 'center center' }} className="drop-shadow-2xl">
             {segments.map((seg, i) => {
               const startAngle = (i * SEG_ANGLE - 90) * (Math.PI / 180);
               const endAngle = ((i + 1) * SEG_ANGLE - 90) * (Math.PI / 180);
@@ -120,37 +114,20 @@ const SpinWheelPage = () => {
               const lx = cx + labelR * Math.cos(midAngle);
               const ly = cy + labelR * Math.sin(midAngle);
               const textRotation = (i + 0.5) * SEG_ANGLE;
-
               return (
                 <g key={i}>
-                  <path
-                    d={`M${cx},${cy} L${x1},${y1} A${r},${r} 0 0,1 ${x2},${y2} Z`}
-                    fill={seg.color}
-                    stroke="hsl(0 0% 10%)"
-                    strokeWidth="1"
-                  />
-                  <text
-                    x={lx}
-                    y={ly}
-                    fill="white"
-                    fontSize="10"
-                    fontWeight="bold"
-                    textAnchor="middle"
-                    dominantBaseline="middle"
-                    transform={`rotate(${textRotation}, ${lx}, ${ly})`}
-                  >
+                  <path d={`M${cx},${cy} L${x1},${y1} A${r},${r} 0 0,1 ${x2},${y2} Z`} fill={seg.color} stroke="hsl(0 0% 10%)" strokeWidth="1" />
+                  <text x={lx} y={ly} fill="white" fontSize="10" fontWeight="bold" textAnchor="middle" dominantBaseline="middle" transform={`rotate(${textRotation}, ${lx}, ${ly})`}>
                     {seg.label}
                   </text>
                 </g>
               );
             })}
-            {/* Center circle */}
             <circle cx="144" cy="144" r="28" fill="hsl(0 0% 8%)" stroke="hsl(43 80% 55%)" strokeWidth="3" />
             <text x="144" y="148" fill="hsl(43 80% 55%)" fontSize="20" textAnchor="middle" dominantBaseline="middle">👑</text>
           </motion.svg>
         </div>
 
-        {/* Spin button */}
         <motion.button
           whileTap={{ scale: 0.95 }}
           onClick={handleSpin}
@@ -160,7 +137,6 @@ const SpinWheelPage = () => {
           {spinning ? 'Spinning…' : spinsLeft > 0 ? 'Spin Now' : 'No Spins Left'}
         </motion.button>
 
-        {/* Result */}
         {result && (
           <motion.div
             initial={{ scale: 0, opacity: 0 }}
@@ -168,11 +144,7 @@ const SpinWheelPage = () => {
             transition={{ type: 'spring', damping: 15 }}
             className="mt-6 bg-secondary/10 border border-secondary/20 rounded-xl p-5 text-center w-full max-w-sm"
           >
-            <motion.p
-              animate={{ scale: [1, 1.2, 1] }}
-              transition={{ duration: 0.5 }}
-              className="text-3xl mb-2"
-            >🎉</motion.p>
+            <motion.p animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 0.5 }} className="text-3xl mb-2">🎉</motion.p>
             <p className="font-heading text-lg text-secondary">{result.label}</p>
             <p className="text-xs text-muted-foreground mt-2">{getResultMessage()}</p>
           </motion.div>
