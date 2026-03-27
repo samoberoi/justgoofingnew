@@ -11,6 +11,7 @@ const navConfig: Record<AppRole, { path: string; icon: any; label: string }[]> =
     { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/ops-orders', icon: ShoppingBag, label: 'Orders' },
     { path: '/menu', icon: UtensilsCrossed, label: 'Menu' },
+    { path: '/loyalty', icon: Crown, label: 'Loyalty' },
     { path: '/customers', icon: Users, label: 'Customers' },
     { path: '/settings', icon: Settings, label: 'Settings' },
   ],
