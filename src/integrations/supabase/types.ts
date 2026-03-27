@@ -319,33 +319,42 @@ export type Database = {
           address: string | null
           closing_time: string | null
           created_at: string
+          default_prep_time: number | null
+          delivery_radius: number | null
           id: string
           is_active: boolean
           name: string
           opening_time: string | null
           phone: string | null
+          tax_percent: number | null
           updated_at: string
         }
         Insert: {
           address?: string | null
           closing_time?: string | null
           created_at?: string
+          default_prep_time?: number | null
+          delivery_radius?: number | null
           id?: string
           is_active?: boolean
           name: string
           opening_time?: string | null
           phone?: string | null
+          tax_percent?: number | null
           updated_at?: string
         }
         Update: {
           address?: string | null
           closing_time?: string | null
           created_at?: string
+          default_prep_time?: number | null
+          delivery_radius?: number | null
           id?: string
           is_active?: boolean
           name?: string
           opening_time?: string | null
           phone?: string | null
+          tax_percent?: number | null
           updated_at?: string
         }
         Relationships: []
