@@ -22,7 +22,6 @@ Deno.serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
     if (!supabaseUrl || !serviceRoleKey) {
-      console.error("Missing env vars", { supabaseUrl: !!supabaseUrl, serviceRoleKey: !!serviceRoleKey });
       return new Response(JSON.stringify({ error: "Server misconfiguration" }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -30,18 +29,15 @@ Deno.serve(async (req) => {
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
-    // Extract user from JWT via admin client
     const token = authHeader.replace("Bearer ", "");
     const { data: { user: caller }, error: authErr } = await adminClient.auth.getUser(token);
     
     if (authErr || !caller) {
-      console.error("Auth error:", authErr?.message);
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Check caller is super_admin
     const { data: hasRole } = await adminClient.rpc("has_role", {
       _user_id: caller.id,
       _role: "super_admin",
@@ -53,7 +49,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { full_name, phone, password, role, store_id } = await req.json();
+    const { full_name, phone, password, role, store_id, designation, pan_number, aadhaar_number, start_date, salary } = await req.json();
 
     if (!full_name?.trim() || !phone?.trim()) {
       return new Response(JSON.stringify({ error: "Name and phone are required" }), {
@@ -63,7 +59,6 @@ Deno.serve(async (req) => {
 
     const email = `${phone.replace(/\D/g, "")}@ops.biryaan.app`;
 
-    // Create user with admin API
     const { data: authData, error: createErr } = await adminClient.auth.admin.createUser({
       email,
       password: password || "111111",
@@ -71,7 +66,6 @@ Deno.serve(async (req) => {
     });
 
     if (createErr) {
-      console.error("Create user error:", createErr.message);
       if (createErr.message?.includes("already been registered")) {
         return new Response(JSON.stringify({ error: "User with this phone already exists" }), {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -84,10 +78,15 @@ Deno.serve(async (req) => {
 
     const userId = authData.user.id;
 
-    // Update profile
+    // Update profile with all fields
     await adminClient.from("profiles").update({
       full_name: full_name.trim(),
       phone: phone.trim(),
+      designation: designation?.trim() || null,
+      pan_number: pan_number?.trim() || null,
+      aadhaar_number: aadhaar_number?.trim() || null,
+      start_date: start_date || null,
+      salary: salary || null,
     }).eq("user_id", userId);
 
     // Remove any auto-assigned role
