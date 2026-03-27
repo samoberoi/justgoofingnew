@@ -172,6 +172,35 @@ const HomePage = () => {
     return list.filter(i => vegFilter === 'veg' ? i.is_veg : !i.is_veg);
   };
 
+  if (locationLoading) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-8">
+        <div className="w-10 h-10 border-2 border-secondary border-t-transparent rounded-full animate-spin mb-4" />
+        <p className="text-sm text-muted-foreground">Detecting your location…</p>
+      </div>
+    );
+  }
+
+  if (outOfArea) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-8 text-center">
+        <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
+          <MapPin size={56} className="text-secondary mx-auto mb-4" />
+          <h2 className="font-heading text-xl text-foreground mb-2">We're Not in Your Area Yet</h2>
+          <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+            Biryaan is currently not delivering to your location. We're expanding fast — check back soon!
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-6 px-6 py-3 bg-gradient-saffron rounded-xl font-heading text-sm text-primary-foreground"
+          >
+            Retry Location
+          </button>
+        </motion.div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background pb-20">
       <RoyalHeader />
