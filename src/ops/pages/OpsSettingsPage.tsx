@@ -288,7 +288,7 @@ const OpsSettingsPage = () => {
                               />
                             </div>
                             <a
-                              href={`https://www.google.com/maps?q=${store.latitude},${store.longitude}`}
+                              href={store.google_maps_url || `https://www.google.com/maps?q=${store.latitude},${store.longitude}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="flex items-center gap-1.5 text-xs text-secondary font-medium"
