@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Package } from 'lucide-react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { ArrowLeft, Package, Phone } from 'lucide-react';
+import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import BottomNav from '../components/BottomNav';
 
 const STAGES = [
   { status: 'new', label: 'Order Placed', emoji: '📝', desc: 'Your dawat request has been received' },
@@ -15,11 +16,25 @@ const STAGES = [
   { status: 'delivered', label: 'Delivered', emoji: '👑', desc: 'Enjoy your dawat!' },
 ];
 
+const STATUS_MESSAGES: Record<string, string> = {
+  new: 'Your order has been placed!',
+  accepted: 'Order accepted by the kitchen!',
+  preparing: 'Your biryani is being prepared 🔥',
+  ready: 'Your order is ready for pickup!',
+  assigned: 'A rider has been assigned!',
+  picked_up: 'Rider has picked up your order!',
+  out_for_delivery: 'Your food is on the way! 🛵',
+  delivered: 'Order delivered! Enjoy your meal 👑',
+  cancelled: 'This order was cancelled',
+};
+
 const OrderTrackingPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const orderId = (location.state as any)?.orderId;
+  const params = useParams();
+  const orderId = params.orderId || (location.state as any)?.orderId;
   const [order, setOrder] = useState<any>(null);
+  const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -28,6 +43,10 @@ const OrderTrackingPage = () => {
     const fetchOrder = async () => {
       const { data } = await supabase.from('orders').select('*').eq('id', orderId).single();
       setOrder(data);
+      if (data) {
+        const { data: orderItems } = await supabase.from('order_items').select('*').eq('order_id', data.id);
+        setItems(orderItems || []);
+      }
       setLoading(false);
     };
     fetchOrder();
