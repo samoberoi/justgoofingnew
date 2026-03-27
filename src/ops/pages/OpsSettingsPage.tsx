@@ -146,7 +146,34 @@ const OpsSettingsPage = () => {
   const [expandedStore, setExpandedStore] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => { fetchData(); }, []);
+  // Delivery settings
+  const [deliveryFee, setDeliveryFee] = useState('30');
+  const [freeAbove, setFreeAbove] = useState('500');
+  const [deliverySettingsId, setDeliverySettingsId] = useState<string | null>(null);
+  const [savingDelivery, setSavingDelivery] = useState(false);
+
+  useEffect(() => { fetchData(); fetchDeliverySettings(); }, []);
+
+  const fetchDeliverySettings = async () => {
+    const { data } = await supabase.from('delivery_settings' as any).select('*').limit(1).single();
+    if (data) {
+      setDeliverySettingsId((data as any).id);
+      setDeliveryFee(String((data as any).base_delivery_fee ?? 30));
+      setFreeAbove(String((data as any).free_delivery_above ?? 500));
+    }
+  };
+
+  const saveDeliverySettings = async () => {
+    setSavingDelivery(true);
+    const payload = { base_delivery_fee: parseFloat(deliveryFee) || 30, free_delivery_above: parseFloat(freeAbove) || 500 };
+    if (deliverySettingsId) {
+      await supabase.from('delivery_settings' as any).update(payload).eq('id', deliverySettingsId);
+    } else {
+      await supabase.from('delivery_settings' as any).insert(payload);
+    }
+    setSavingDelivery(false);
+    fetchDeliverySettings();
+  };
 
   const fetchData = async () => {
     const { data } = await supabase.from('stores').select('*').order('created_at');

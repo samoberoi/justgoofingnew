@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Smartphone, CreditCard, Building2, Wallet, CheckCircle2, MapPin } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { ArrowLeft, Smartphone, CreditCard, Building2, Wallet, CheckCircle2, MapPin, Navigation, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store';
 import { supabase } from '@/integrations/supabase/client';
@@ -22,10 +22,26 @@ const PaymentPage = () => {
   const [orderId, setOrderId] = useState('');
   const [address, setAddress] = useState(savedAddresses[0] || '');
   const [usePoints, setUsePoints] = useState(false);
+  const [locatingGPS, setLocatingGPS] = useState(false);
+  const [locationPromptShown, setLocationPromptShown] = useState(false);
+
+  // Delivery settings from DB
+  const [deliveryFee, setDeliveryFee] = useState(30);
+  const [freeDeliveryAbove, setFreeDeliveryAbove] = useState(500);
+
+  useEffect(() => {
+    const fetchDeliverySettings = async () => {
+      const { data } = await supabase.from('delivery_settings' as any).select('*').limit(1).single();
+      if (data) {
+        setDeliveryFee(Number((data as any).base_delivery_fee) || 30);
+        setFreeDeliveryAbove(Number((data as any).free_delivery_above) || 500);
+      }
+    };
+    fetchDeliverySettings();
+  }, []);
 
   const subtotal = cart.reduce((sum, c) => sum + c.price * c.quantity, 0);
 
-  // Check for applicable 1+1 campaign
   const freeItemCampaign = activeCampaigns.find(c =>
     c.type === 'free_item' && c.is_active && c.auto_apply &&
     (c.target_audience === 'all' || (c.target_audience === 'new_users' && totalOrders === 0)) &&
@@ -37,27 +53,51 @@ const PaymentPage = () => {
     : 0;
 
   const pointsDiscount = usePoints ? -Math.min(walletBalance, subtotal + firstOrderDiscount) : 0;
-  const deliveryFee = subtotal > 500 ? 0 : 30;
-  const total = Math.max(0, subtotal + firstOrderDiscount + pointsDiscount + deliveryFee);
+  const computedDeliveryFee = subtotal > freeDeliveryAbove ? 0 : deliveryFee;
+  const total = Math.max(0, subtotal + firstOrderDiscount + pointsDiscount + computedDeliveryFee);
+
+  const handleUseCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationPromptShown(true);
+      return;
+    }
+    setLocatingGPS(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const { latitude, longitude } = pos.coords;
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`);
+          const data = await res.json();
+          setAddress(data.display_name || `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`);
+        } catch {
+          setAddress(`${latitude.toFixed(6)}, ${longitude.toFixed(6)}`);
+        }
+        setLocatingGPS(false);
+        setLocationPromptShown(true);
+      },
+      () => {
+        setLocatingGPS(false);
+        setLocationPromptShown(true);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
 
   const handlePay = async () => {
     if (!address.trim()) return;
     setProcessing(true);
 
     try {
-      // Get first store
       const { data: stores } = await supabase.from('stores').select('id').eq('is_active', true).limit(1);
       const storeId = stores?.[0]?.id;
-      if (!storeId) { setProcessing(false); return; }
+      if (!storeId) { console.error('No active store found'); setProcessing(false); return; }
 
-      // Get points settings for earning
       const { data: pointsSettings } = await supabase
         .from('points_settings')
         .select('*')
         .limit(1)
         .single() as any;
 
-      // Create order
       const { data: order, error: orderError } = await supabase.from('orders').insert({
         store_id: storeId,
         customer_name: userName || 'Guest',
@@ -79,7 +119,6 @@ const PaymentPage = () => {
         return;
       }
 
-      // Create order items
       const orderItems = cart.map(item => ({
         order_id: order.id,
         menu_item_id: item.id.includes('_') ? item.id.split('_')[0] : item.id,
@@ -90,7 +129,6 @@ const PaymentPage = () => {
 
       await supabase.from('order_items').insert(orderItems);
 
-      // Earn Biryan Points
       const { data: { user } } = await supabase.auth.getUser();
       if (user && pointsSettings?.earning_enabled) {
         const earnPercent = pointsSettings.earning_percent || 2.5;
@@ -102,7 +140,6 @@ const PaymentPage = () => {
           const expiresAt = pointsSettings.expiry_days
             ? new Date(Date.now() + pointsSettings.expiry_days * 86400000).toISOString()
             : null;
-
           await supabase.from('points_transactions').insert({
             user_id: user.id,
             type: 'earned',
@@ -115,12 +152,11 @@ const PaymentPage = () => {
         }
       }
 
-      // Deduct points if used
       if (usePoints && pointsDiscount < 0 && user) {
         await supabase.from('points_transactions').insert({
           user_id: user.id,
           type: 'spent',
-          amount: pointsDiscount, // negative
+          amount: pointsDiscount,
           balance_after: walletBalance + pointsDiscount,
           description: `Redeemed on Order #${order.order_number}`,
           order_id: order.id,
@@ -132,7 +168,7 @@ const PaymentPage = () => {
       setProcessing(false);
       setSuccess(true);
       clearCart();
-      refreshUserData(); // Refresh wallet balance
+      refreshUserData();
     } catch (err) {
       console.error('Payment error:', err);
       setProcessing(false);
@@ -180,16 +216,49 @@ const PaymentPage = () => {
       </header>
 
       <div className="px-4 pt-4 space-y-4">
-        {/* Delivery address */}
+        {/* Delivery address with GPS prompt */}
         <div className="space-y-2">
           <label className="text-xs font-medium text-muted-foreground flex items-center gap-1"><MapPin size={12} /> Delivery Address</label>
+
+          {!locationPromptShown && !address && (
+            <motion.button
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={handleUseCurrentLocation}
+              disabled={locatingGPS}
+              className="w-full flex items-center gap-3 p-3.5 bg-secondary/10 border border-secondary/30 rounded-xl text-sm text-foreground transition-colors"
+            >
+              {locatingGPS ? (
+                <Loader2 size={18} className="text-secondary animate-spin" />
+              ) : (
+                <Navigation size={18} className="text-secondary" />
+              )}
+              <div className="text-left">
+                <p className="font-semibold text-sm">{locatingGPS ? 'Detecting location...' : 'Use Current Location'}</p>
+                <p className="text-xs text-muted-foreground">Auto-fill address using GPS</p>
+              </div>
+            </motion.button>
+          )}
+
           <textarea
             value={address}
-            onChange={e => setAddress(e.target.value)}
-            placeholder="Enter your delivery address..."
+            onChange={e => { setAddress(e.target.value); setLocationPromptShown(true); }}
+            placeholder="Enter your full delivery address..."
             rows={2}
             className="w-full px-3 py-2.5 bg-muted border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-secondary resize-none"
           />
+
+          {locationPromptShown && (
+            <button
+              onClick={handleUseCurrentLocation}
+              disabled={locatingGPS}
+              className="flex items-center gap-1.5 text-xs text-secondary font-medium"
+            >
+              {locatingGPS ? <Loader2 size={12} className="animate-spin" /> : <Navigation size={12} />}
+              {locatingGPS ? 'Detecting...' : 'Re-detect location'}
+            </button>
+          )}
         </div>
 
         {/* Order summary */}
@@ -205,7 +274,7 @@ const PaymentPage = () => {
             <div className="flex justify-between text-sm text-foreground"><span>Subtotal</span><span>₹{subtotal}</span></div>
             {firstOrderDiscount < 0 && <div className="flex justify-between text-sm text-green-500"><span>1+1 FREE</span><span>₹{firstOrderDiscount}</span></div>}
             {pointsDiscount < 0 && <div className="flex justify-between text-sm text-secondary"><span>Points</span><span>₹{pointsDiscount}</span></div>}
-            <div className="flex justify-between text-sm text-muted-foreground"><span>Delivery</span><span>{deliveryFee === 0 ? 'FREE' : `₹${deliveryFee}`}</span></div>
+            <div className="flex justify-between text-sm text-muted-foreground"><span>Delivery</span><span>{computedDeliveryFee === 0 ? 'FREE' : `₹${computedDeliveryFee}`}</span></div>
             <div className="flex justify-between font-heading text-base text-foreground pt-1 border-t border-border">
               <span>Total</span><span className="text-secondary">₹{total}</span>
             </div>
