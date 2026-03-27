@@ -128,12 +128,13 @@ const ItemFormModal = ({ item, categories, addonGroups, onClose, onSaved }: Prop
       const validVariants = variants.filter(v => v.name.trim() && v.price);
       if (validVariants.length > 0) {
         const variantRows = validVariants.map((v, i) => ({
-          menu_item_id: itemId,
+          menu_item_id: itemId!,
           name: v.name.trim(),
           price: parseFloat(v.price),
           prep_time_override: v.prep_time_override ? parseInt(v.prep_time_override) : null,
           display_order: i,
-        })));
+        }));
+        await supabase.from('menu_variants').insert(variantRows);
       }
 
       // Addon group links
