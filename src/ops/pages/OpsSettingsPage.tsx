@@ -15,6 +15,7 @@ interface StoreForm {
   tax_percent: string;
   latitude: string;
   longitude: string;
+  google_maps_url: string;
   is_active: boolean;
 }
 
@@ -29,6 +30,7 @@ const defaultForm: StoreForm = {
   tax_percent: '5',
   latitude: '',
   longitude: '',
+  google_maps_url: '',
   is_active: true,
 };
 
@@ -90,7 +92,11 @@ const StoreFormFields = ({ form, setForm, onSave, onCancel, saving, submitLabel 
         <input type="number" step="any" value={form.longitude} onChange={e => setForm(p => ({ ...p, longitude: e.target.value }))} placeholder="e.g. 77.5946" className={inputClass} />
       </div>
     </div>
-    {form.latitude && form.longitude && (
+    <div>
+      <label className={labelClass}>Google Maps Link (optional)</label>
+      <input value={form.google_maps_url} onChange={e => setForm(p => ({ ...p, google_maps_url: e.target.value }))} placeholder="Paste Google Maps URL here" className={inputClass} />
+    </div>
+    {(form.latitude && form.longitude) && (
       <div className="space-y-2">
         <div className="rounded-lg overflow-hidden border border-border">
           <iframe
@@ -100,7 +106,7 @@ const StoreFormFields = ({ form, setForm, onSave, onCancel, saving, submitLabel 
           />
         </div>
         <a
-          href={`https://www.google.com/maps?q=${form.latitude},${form.longitude}`}
+          href={form.google_maps_url?.trim() || `https://www.google.com/maps?q=${form.latitude},${form.longitude}`}
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center gap-1.5 text-xs text-secondary font-medium"
@@ -162,6 +168,7 @@ const OpsSettingsPage = () => {
     tax_percent: parseFloat(form.tax_percent) || 5,
     latitude: form.latitude ? parseFloat(form.latitude) : null,
     longitude: form.longitude ? parseFloat(form.longitude) : null,
+    google_maps_url: form.google_maps_url.trim() || null,
     is_active: form.is_active,
   });
 
@@ -189,6 +196,7 @@ const OpsSettingsPage = () => {
       tax_percent: String(store.tax_percent ?? 5),
       latitude: store.latitude ? String(store.latitude) : '',
       longitude: store.longitude ? String(store.longitude) : '',
+      google_maps_url: store.google_maps_url || '',
       is_active: store.is_active,
     });
   };
