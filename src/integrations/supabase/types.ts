@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      addresses: {
+        Row: {
+          created_at: string | null
+          formatted_address: string
+          house_number: string | null
+          id: string
+          label: string | null
+          lat: number | null
+          line1: string | null
+          lng: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          formatted_address: string
+          house_number?: string | null
+          id?: string
+          label?: string | null
+          lat?: number | null
+          line1?: string | null
+          lng?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          formatted_address?: string
+          house_number?: string | null
+          id?: string
+          label?: string | null
+          lat?: number | null
+          line1?: string | null
+          lng?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       badges: {
         Row: {
           created_at: string
@@ -620,6 +659,7 @@ export type Database = {
           customer_phone: string | null
           delivered_at: string | null
           discount: number
+          house_number: string | null
           id: string
           order_number: string
           out_for_delivery_at: string | null
@@ -635,6 +675,7 @@ export type Database = {
           tax: number
           total: number
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           accepted_at?: string | null
@@ -646,6 +687,7 @@ export type Database = {
           customer_phone?: string | null
           delivered_at?: string | null
           discount?: number
+          house_number?: string | null
           id?: string
           order_number: string
           out_for_delivery_at?: string | null
@@ -661,6 +703,7 @@ export type Database = {
           tax?: number
           total?: number
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           accepted_at?: string | null
@@ -672,6 +715,7 @@ export type Database = {
           customer_phone?: string | null
           delivered_at?: string | null
           discount?: number
+          house_number?: string | null
           id?: string
           order_number?: string
           out_for_delivery_at?: string | null
@@ -687,6 +731,7 @@ export type Database = {
           tax?: number
           total?: number
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: [
           {
