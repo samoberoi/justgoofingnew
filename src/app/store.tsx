@@ -98,9 +98,25 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
-        setUserId(session.user.id);
-        // Generate referral code from user id
-        setReferralCode('BIRYAAN-' + session.user.id.slice(0, 6).toUpperCase());
+        const uid = session.user.id;
+        setUserId(uid);
+        const code = 'BIRYAAN-' + uid.slice(0, 6).toUpperCase();
+        setReferralCode(code);
+
+        // Ensure a pending referral row exists for this user's code
+        const { data: existing } = await supabase
+          .from('referrals')
+          .select('id')
+          .eq('referrer_id', uid)
+          .eq('referral_code', code)
+          .limit(1);
+        if (!existing || existing.length === 0) {
+          await supabase.from('referrals').insert({
+            referrer_id: uid,
+            referral_code: code,
+            status: 'pending',
+          });
+        }
       } else {
         setUserId(null);
         setWalletBalance(0);
