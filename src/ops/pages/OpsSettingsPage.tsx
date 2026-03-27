@@ -322,26 +322,8 @@ const OpsSettingsPage = () => {
           </div>
         </div>
 
-        {/* Team Roles */}
-        <div>
-          <h2 className="font-heading text-sm text-foreground flex items-center gap-2 mb-3"><Users size={16} /> Team Roles</h2>
-          <div className="space-y-2">
-            {roles.map((r: any) => (
-              <div key={r.id} className="bg-card border border-border rounded-lg p-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{(r as any).profiles?.full_name || 'Unknown'}</p>
-                    <p className="text-xs text-muted-foreground">{r.role.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())}</p>
-                  </div>
-                  <div className={`px-2 py-0.5 rounded text-xs ${r.is_active ? 'bg-green-500/20 text-green-400' : 'bg-destructive/20 text-destructive'}`}>
-                    {r.is_active ? 'Active' : 'Inactive'}
-                  </div>
-                </div>
-              </div>
-            ))}
-            {roles.length === 0 && <p className="text-center text-sm text-muted-foreground py-6">No team members yet</p>}
-          </div>
-        </div>
+        {/* User Management */}
+        <UserManagement />
       </div>
 
       <OpsBottomNav />
