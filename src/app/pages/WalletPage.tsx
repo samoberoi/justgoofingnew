@@ -33,14 +33,13 @@ const WalletPage = () => {
         </motion.div>
       </div>
 
-      {/* Ways to earn */}
+      {/* Ways to earn - only show if user has some activity or always as info */}
       <div className="px-4 pt-6">
         <h3 className="font-heading text-sm text-foreground mb-3">Earn Points</h3>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-3 gap-2">
           {[
             { points: '2.5%', desc: 'Every Order' },
             { points: '100', desc: 'Successful Referral' },
-            { points: '🎡', desc: 'Spin the Wheel' },
             { points: '📦', desc: 'Streak Bonus' },
           ].map((item, i) => (
             <div key={i} className="bg-card border border-border rounded-xl p-3 text-center">
@@ -51,14 +50,10 @@ const WalletPage = () => {
         </div>
       </div>
 
-      {/* Transactions */}
-      <div className="px-4 pt-6">
-        <h3 className="font-heading text-sm text-foreground mb-3">Transaction History</h3>
-        {transactions.length === 0 ? (
-          <div className="bg-card border border-border rounded-xl p-6 text-center">
-            <p className="text-muted-foreground text-sm">No transactions yet — place your first order!</p>
-          </div>
-        ) : (
+      {/* Transactions - only show section if there are transactions */}
+      {transactions.length > 0 && (
+        <div className="px-4 pt-6">
+          <h3 className="font-heading text-sm text-foreground mb-3">Transaction History</h3>
           <div className="space-y-2">
             {transactions.map(tx => {
               const Icon = iconMap[tx.type] || Gift;
@@ -78,8 +73,8 @@ const WalletPage = () => {
               );
             })}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       <BottomNav />
     </div>
