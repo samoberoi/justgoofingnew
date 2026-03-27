@@ -25,6 +25,7 @@ import NotificationsPage from "./app/pages/NotificationsPage";
 
 // Ops pages
 import SuperAdminDashboard from "./ops/pages/SuperAdminDashboard";
+import LoyaltyEnginePage from "./ops/pages/LoyaltyEnginePage";
 import StoreManagerDashboard from "./ops/pages/StoreManagerDashboard";
 import OpsOrdersPage from "./ops/pages/OpsOrdersPage";
 import OpsMenuPage from "./ops/pages/OpsMenuPage";
@@ -113,6 +114,11 @@ const App = () => (
               <Route path="/settings" element={
                 <OpsRoute allowedRoles={['super_admin']}>
                   <OpsSettingsPage />
+                </OpsRoute>
+              } />
+              <Route path="/loyalty" element={
+                <OpsRoute allowedRoles={['super_admin']}>
+                  <LoyaltyEnginePage />
                 </OpsRoute>
               } />
               <Route path="/kitchen" element={
