@@ -115,6 +115,11 @@ const App = () => (
                   <OpsSettingsPage />
                 </OpsRoute>
               } />
+              <Route path="/loyalty" element={
+                <OpsRoute allowedRoles={['super_admin']}>
+                  <LoyaltyEnginePage />
+                </OpsRoute>
+              } />
               <Route path="/kitchen" element={
                 <OpsRoute allowedRoles={['kitchen_manager']}>
                   <KitchenView />
