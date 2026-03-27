@@ -20,10 +20,10 @@ const OrdersPage = () => {
 
   const fetchOrders = async () => {
     // Query orders by user_id directly
-    const { data } = await supabase
+    const { data } = await (supabase
       .from('orders')
-      .select('*')
-      .eq('user_id' as any, userId!)
+      .select('*') as any)
+      .eq('user_id', userId!)
       .order('created_at', { ascending: false });
 
     const fetchedOrders = data || [];

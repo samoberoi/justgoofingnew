@@ -20,15 +20,15 @@ const ProfilePage = () => {
   useEffect(() => {
     if (!userId) return;
     // Fetch saved addresses
-    supabase.from('addresses' as any).select('*').eq('user_id', userId)
+    (supabase.from('addresses' as any).select('*') as any).eq('user_id', userId)
       .order('created_at', { ascending: false })
-      .then(({ data }) => setAddresses(data || []));
+      .then(({ data }: any) => setAddresses(data || []));
 
     // Fetch recent orders
-    supabase.from('orders').select('id, order_number, total, status, created_at')
-      .eq('user_id' as any, userId)
+    (supabase.from('orders').select('id, order_number, total, status, created_at') as any)
+      .eq('user_id', userId)
       .order('created_at', { ascending: false }).limit(5)
-      .then(({ data }) => setRecentOrders(data || []));
+      .then(({ data }: any) => setRecentOrders(data || []));
   }, [userId]);
 
   const handleLogout = async () => {
