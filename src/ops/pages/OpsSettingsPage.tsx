@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '../hooks/useAuth';
 import OpsBottomNav from '../components/OpsBottomNav';
 import UserManagement from '../components/UserManagement';
-import { Plus, Store, Clock, MapPin, Phone, ChevronDown, ChevronUp, Pencil, ExternalLink } from 'lucide-react';
+import { Plus, Store, Clock, MapPin, Phone, ChevronDown, ChevronUp, Pencil, ExternalLink, Truck } from 'lucide-react';
 
 interface StoreForm {
   name: string;
@@ -146,7 +146,34 @@ const OpsSettingsPage = () => {
   const [expandedStore, setExpandedStore] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => { fetchData(); }, []);
+  // Delivery settings
+  const [deliveryFee, setDeliveryFee] = useState('30');
+  const [freeAbove, setFreeAbove] = useState('500');
+  const [deliverySettingsId, setDeliverySettingsId] = useState<string | null>(null);
+  const [savingDelivery, setSavingDelivery] = useState(false);
+
+  useEffect(() => { fetchData(); fetchDeliverySettings(); }, []);
+
+  const fetchDeliverySettings = async () => {
+    const { data } = await supabase.from('delivery_settings' as any).select('*').limit(1).single();
+    if (data) {
+      setDeliverySettingsId((data as any).id);
+      setDeliveryFee(String((data as any).base_delivery_fee ?? 30));
+      setFreeAbove(String((data as any).free_delivery_above ?? 500));
+    }
+  };
+
+  const saveDeliverySettings = async () => {
+    setSavingDelivery(true);
+    const payload = { base_delivery_fee: parseFloat(deliveryFee) || 30, free_delivery_above: parseFloat(freeAbove) || 500 };
+    if (deliverySettingsId) {
+      await supabase.from('delivery_settings' as any).update(payload).eq('id', deliverySettingsId);
+    } else {
+      await supabase.from('delivery_settings' as any).insert(payload);
+    }
+    setSavingDelivery(false);
+    fetchDeliverySettings();
+  };
 
   const fetchData = async () => {
     const { data } = await supabase.from('stores').select('*').order('created_at');
@@ -314,6 +341,27 @@ const OpsSettingsPage = () => {
               </div>
             ))}
             {stores.length === 0 && <p className="text-center text-sm text-muted-foreground py-6">No stores yet</p>}
+          </div>
+        </div>
+
+        {/* Delivery Fee Settings */}
+        <div>
+          <h2 className="font-heading text-sm text-foreground flex items-center gap-2 mb-3"><Truck size={16} /> Delivery Fee Settings</h2>
+          <div className="bg-card border border-border rounded-xl p-4 space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={labelClass}>Base Delivery Fee (₹)</label>
+                <input type="number" min="0" value={deliveryFee} onChange={e => setDeliveryFee(e.target.value)} className={inputClass} />
+              </div>
+              <div>
+                <label className={labelClass}>Free Delivery Above (₹)</label>
+                <input type="number" min="0" value={freeAbove} onChange={e => setFreeAbove(e.target.value)} className={inputClass} />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">Orders above ₹{freeAbove} get free delivery. Others pay ₹{deliveryFee}.</p>
+            <button onClick={saveDeliverySettings} disabled={savingDelivery} className="w-full py-2.5 bg-gradient-saffron rounded-lg text-xs font-medium text-primary-foreground disabled:opacity-40">
+              {savingDelivery ? 'Saving...' : 'Save Delivery Settings'}
+            </button>
           </div>
         </div>
 

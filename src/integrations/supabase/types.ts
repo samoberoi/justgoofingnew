@@ -133,6 +133,30 @@ export type Database = {
           },
         ]
       }
+      delivery_settings: {
+        Row: {
+          base_delivery_fee: number
+          free_delivery_above: number
+          id: string
+          is_active: boolean
+          updated_at: string
+        }
+        Insert: {
+          base_delivery_fee?: number
+          free_delivery_above?: number
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+        }
+        Update: {
+          base_delivery_fee?: number
+          free_delivery_above?: number
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       loyalty_campaigns: {
         Row: {
           auto_apply: boolean
