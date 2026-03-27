@@ -217,7 +217,19 @@ const UserManagement = () => {
           <div key={u.id}>
             {editingId === u.id ? (
               <div className="bg-card border border-border rounded-xl p-4 space-y-3">
-                <p className="font-heading text-sm text-foreground">Edit Role — {u.profiles?.full_name || 'Unknown'}</p>
+                <p className="font-heading text-sm text-foreground">Edit User — {u.profiles?.full_name || 'Unknown'}</p>
+
+                {error && <p className="text-xs text-destructive bg-destructive/10 rounded-lg px-3 py-2">{error}</p>}
+
+                <div>
+                  <label className={labelClass}>Full Name</label>
+                  <input value={editName} onChange={e => setEditName(e.target.value)} className={inputClass} />
+                </div>
+
+                <div>
+                  <label className={labelClass}>Phone</label>
+                  <input value={editPhone} onChange={e => setEditPhone(e.target.value.replace(/[^\d]/g, ''))} className={inputClass} />
+                </div>
 
                 <div>
                   <label className={labelClass}>Role</label>
@@ -247,11 +259,11 @@ const UserManagement = () => {
                 </div>
 
                 <div className="flex gap-2 pt-1">
-                  <button onClick={() => setEditingId(null)} className="flex-1 py-2.5 border border-border rounded-lg text-xs font-medium text-muted-foreground">
+                  <button onClick={() => { setEditingId(null); setError(''); }} className="flex-1 py-2.5 border border-border rounded-lg text-xs font-medium text-muted-foreground">
                     Cancel
                   </button>
-                  <button onClick={() => updateRole(u.id)} disabled={saving} className="flex-1 py-2.5 bg-gradient-saffron rounded-lg text-xs font-medium text-primary-foreground disabled:opacity-40">
-                    {saving ? 'Saving...' : 'Update Role'}
+                  <button onClick={() => updateUser(u)} disabled={saving} className="flex-1 py-2.5 bg-gradient-saffron rounded-lg text-xs font-medium text-primary-foreground disabled:opacity-40">
+                    {saving ? 'Saving...' : 'Update User'}
                   </button>
                 </div>
               </div>
