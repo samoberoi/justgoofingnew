@@ -363,6 +363,7 @@ const OpsSettingsPage = () => {
               {savingDelivery ? 'Saving...' : 'Save Delivery Settings'}
             </button>
           </div>
+        </div>
 
         {/* User Management */}
         <UserManagement />
