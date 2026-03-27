@@ -127,7 +127,7 @@ const ItemFormModal = ({ item, categories, addonGroups, onClose, onSaved }: Prop
       if (item) await supabase.from('menu_variants').delete().eq('menu_item_id', itemId);
       const validVariants = variants.filter(v => v.name.trim() && v.price);
       if (validVariants.length > 0) {
-        await supabase.from('menu_variants').insert(validVariants.map((v, i) => ({
+        const variantRows = validVariants.map((v, i) => ({
           menu_item_id: itemId,
           name: v.name.trim(),
           price: parseFloat(v.price),
