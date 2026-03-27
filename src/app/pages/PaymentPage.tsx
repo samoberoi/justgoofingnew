@@ -193,9 +193,11 @@ const PaymentPage = () => {
 
       await supabase.from('order_items').insert(orderItems);
 
-      // Save address for user (avoid duplicates)
+      // Save address for user (avoid duplicates by formatted_address + house_number combo)
       if (user && address.trim()) {
-        const alreadySaved = dbAddresses.some(a => a.formatted_address === address);
+        const alreadySaved = dbAddresses.some(
+          a => a.formatted_address === address && (a.house_number || '') === (houseNumber || '')
+        );
         if (!alreadySaved) {
           await supabase.from('addresses' as any).insert({
             user_id: user.id,
