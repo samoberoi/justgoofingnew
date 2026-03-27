@@ -29,12 +29,27 @@ const OpsMenuPage = () => {
   const [analytics, setAnalytics] = useState<any[]>([]);
 
   const fetchAll = useCallback(async () => {
-    const [itemsRes, catsRes, addonsRes] = await Promise.all([
+    const [itemsRes, catsRes, addonsRes, variantsRes] = await Promise.all([
       supabase.from('menu_items').select('*').order('display_order').order('created_at', { ascending: false }),
       supabase.from('menu_categories').select('*').order('display_order'),
       supabase.from('menu_addon_groups').select('*').order('created_at'),
+      supabase.from('menu_variants').select('*').eq('is_active', true).order('display_order'),
     ]);
-    setItems(itemsRes.data || []);
+
+    // Attach variants to items
+    const variantsByItem = new Map<string, any[]>();
+    (variantsRes.data || []).forEach((v: any) => {
+      const list = variantsByItem.get(v.menu_item_id) || [];
+      list.push(v);
+      variantsByItem.set(v.menu_item_id, list);
+    });
+
+    const enrichedItems = (itemsRes.data || []).map((item: any) => ({
+      ...item,
+      variants: variantsByItem.get(item.id) || [],
+    }));
+
+    setItems(enrichedItems);
     setCategories(catsRes.data || []);
     setAddonGroups(addonsRes.data || []);
     setLoading(false);

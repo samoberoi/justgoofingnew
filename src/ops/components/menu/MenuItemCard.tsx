@@ -16,9 +16,9 @@ const MenuItemCard = ({ item, isSelected, selectionMode, onToggleAvailability, o
   if (item.is_chefs_special) tags.push('👨‍🍳 Special');
   if (item.is_new) tags.push('✨ New');
 
-  const displayPrice = item.discounted_price && item.discounted_price < item.price
-    ? { original: item.price, current: item.discounted_price }
-    : { original: null, current: item.price };
+  const variants = item.variants || [];
+  const defaultVariant = variants.find((v: any) => v.id === item.default_variant_id) || variants[0];
+  const displayPrice = defaultVariant ? defaultVariant.price : item.price;
 
   return (
     <div className={`bg-card border rounded-lg overflow-hidden transition-colors ${isSelected ? 'border-secondary' : 'border-border'} ${!item.is_active ? 'opacity-50' : ''}`}>
@@ -41,12 +41,15 @@ const MenuItemCard = ({ item, isSelected, selectionMode, onToggleAvailability, o
                 <span className="font-medium text-sm text-foreground truncate">{item.name}</span>
               </div>
               <div className="flex items-center gap-2 mt-0.5">
-                {displayPrice.original && (
-                  <span className="text-[10px] text-muted-foreground line-through">₹{Number(displayPrice.original)}</span>
-                )}
-                <span className="text-xs font-medium text-foreground">₹{Number(displayPrice.current)}</span>
+                <span className="text-xs font-medium text-foreground">₹{Number(displayPrice)}</span>
+                {defaultVariant && <span className="text-[10px] text-muted-foreground">({defaultVariant.name})</span>}
                 {item.prep_time && <span className="text-[10px] text-muted-foreground">• {item.prep_time}min</span>}
               </div>
+              {variants.length > 1 && (
+                <p className="text-[10px] text-muted-foreground mt-0.5">
+                  {variants.map((v: any) => `${v.name}: ₹${v.price}`).join(' · ')}
+                </p>
+              )}
               {tags.length > 0 && (
                 <div className="flex gap-1 mt-1 flex-wrap">
                   {tags.map(t => (
