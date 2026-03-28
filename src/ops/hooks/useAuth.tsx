@@ -31,42 +31,60 @@ export const OpsAuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   const fetchRole = async (userId: string) => {
-    const { data } = await supabase
-      .from('user_roles')
-      .select('role, store_id')
-      .eq('user_id', userId)
-      .eq('is_active', true)
-      .limit(1)
-      .maybeSingle();
-    if (data) {
-      setRole(data.role as AppRole);
-      setStoreId(data.store_id);
-    }
-  };
-
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        setTimeout(() => fetchRole(session.user.id), 0);
+    try {
+      const { data } = await supabase
+        .from('user_roles')
+        .select('role, store_id')
+        .eq('user_id', userId)
+        .eq('is_active', true)
+        .limit(1)
+        .maybeSingle();
+      if (data) {
+        setRole(data.role as AppRole);
+        setStoreId(data.store_id);
       } else {
         setRole(null);
         setStoreId(null);
       }
-      setLoading(false);
-    });
+    } catch (e) {
+      console.warn('[Auth] fetchRole error:', e);
+      setRole(null);
+      setStoreId(null);
+    }
+  };
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+  useEffect(() => {
+    let mounted = true;
+
+    // First get the current session
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!mounted) return;
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchRole(session.user.id);
+        await fetchRole(session.user.id);
       }
-      setLoading(false);
+      if (mounted) setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    // Then listen for changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (!mounted) return;
+      setSession(session);
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        await fetchRole(session.user.id);
+      } else {
+        setRole(null);
+        setStoreId(null);
+      }
+      if (mounted) setLoading(false);
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signInWithOtp = async (phone: string) => {
