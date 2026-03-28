@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,6 +10,11 @@ const OTP_LENGTH = 6;
 const LoginPage = () => {
   const navigate = useNavigate();
   const { setLoggedIn, setPhoneNumber } = useAppStore();
+
+  // Clear any existing session when landing on login page
+  useEffect(() => {
+    supabase.auth.signOut().catch(() => {});
+  }, []);
   const [step, setStep] = useState<'phone' | 'otp' | 'success'>('phone');
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
