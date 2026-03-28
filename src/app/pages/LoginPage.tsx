@@ -88,14 +88,13 @@ const LoginPage = () => {
         }
       }
 
-      // Auth succeeded — just navigate. Don't call getUser/role check here
-      // as it conflicts with onAuthStateChange listeners.
+      // Auth succeeded — force navigation with window.location
+      // React Router navigate gets swallowed by auth state listener re-renders
       console.log('[Login] Auth successful, navigating...');
       setLoggedIn(true);
       setStep('success');
-
       setTimeout(() => {
-        navigate('/welcome', { replace: true });
+        window.location.href = '/welcome';
       }, 1000);
     } catch (err: any) {
       console.error('[Login] Error:', err);
