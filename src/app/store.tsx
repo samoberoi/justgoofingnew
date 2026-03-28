@@ -108,22 +108,25 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
         // Fire-and-forget referral setup — completely detached from callback
         setTimeout(() => {
-          supabase
-            .from('referrals')
-            .select('id')
-            .eq('referrer_id', uid)
-            .eq('referral_code', code)
-            .limit(1)
-            .then(({ data: existing }) => {
+          void (async () => {
+            try {
+              const { data: existing } = await supabase
+                .from('referrals')
+                .select('id')
+                .eq('referrer_id', uid)
+                .eq('referral_code', code)
+                .limit(1);
               if (!existing || existing.length === 0) {
-                supabase.from('referrals').insert({
+                await supabase.from('referrals').insert({
                   referrer_id: uid,
                   referral_code: code,
                   status: 'pending',
-                }).then(() => {});
+                });
               }
-            })
-            .catch((e) => console.warn('[Store] Referral setup failed:', e));
+            } catch (e) {
+              console.warn('[Store] Referral setup failed:', e);
+            }
+          })();
         }, 0);
       } else {
         setUserId(null);
