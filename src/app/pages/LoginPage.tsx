@@ -137,6 +137,23 @@ const LoginPage = () => {
       console.warn('[Login] Role check failed, defaulting to /welcome', e);
     }
 
+    // Check if returning user (has orders) → /home, new user → /welcome
+    try {
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (currentUser) {
+        const { count } = await supabase
+          .from('orders')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', currentUser.id);
+        if (count && count > 0) {
+          setTimeout(() => { window.location.href = '/home'; }, 1000);
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn('[Login] Order check failed', e);
+    }
+
     setTimeout(() => { window.location.href = '/welcome'; }, 1000);
   };
 
