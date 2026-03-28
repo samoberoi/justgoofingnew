@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,12 +12,10 @@ const LoginPage = () => {
   const { setLoggedIn, setPhoneNumber } = useAppStore();
   const [step, setStep] = useState<'phone' | 'otp' | 'success'>('phone');
   const [phone, setPhone] = useState('');
-  const [otp, setOtp] = useState(Array(OTP_LENGTH).fill(''));
+  const [otp, setOtp] = useState('');
   const [error, setError] = useState('');
   const [sending, setSending] = useState(false);
   const [verifying, setVerifying] = useState(false);
-  const otpRef = useRef(Array(OTP_LENGTH).fill(''));
-  const isSubmittingRef = useRef(false);
 
   const mockEmail = (p: string) => `${p}@ops.biryaan.app`;
 
@@ -32,49 +30,47 @@ const LoginPage = () => {
     }, 500);
   };
 
-  const doLogin = useCallback(async (password: string) => {
-    if (isSubmittingRef.current) return;
-    isSubmittingRef.current = true;
+  const handleVerify = async () => {
+    if (otp.length !== OTP_LENGTH || verifying) return;
     setVerifying(true);
     setError('');
 
     try {
       const email = mockEmail(phone);
+      const password = otp;
 
-      // Try sign in first
-      const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
+      // Sign out any existing session first
+      await supabase.auth.signOut();
+
+      // Try sign in
+      const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
 
       if (signInErr) {
-        // User may not exist — try sign up
+        // User might not exist — try sign up
         const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({ email, password });
+
         if (signUpErr) {
           setError(signUpErr.message);
           setVerifying(false);
-          isSubmittingRef.current = false;
-          resetOtp();
           return;
         }
 
-        // If no session after signup, try sign in again
+        // If no session after signup, sign in again
         if (!signUpData?.session) {
           const { error: retryErr } = await supabase.auth.signInWithPassword({ email, password });
           if (retryErr) {
-            setError('Account created but login failed. Try again.');
+            setError('Could not log in. Please try again.');
             setVerifying(false);
-            isSubmittingRef.current = false;
-            resetOtp();
             return;
           }
         }
       }
 
-      // At this point we should have a session — get user
+      // Get current user
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        setError('Could not get user info. Try again.');
+        setError('Login failed. Please try again.');
         setVerifying(false);
-        isSubmittingRef.current = false;
-        resetOtp();
         return;
       }
 
@@ -87,10 +83,9 @@ const LoginPage = () => {
         .limit(1)
         .maybeSingle();
 
-      // Show success animation
+      // Show success
       setStep('success');
       setVerifying(false);
-      isSubmittingRef.current = false;
 
       setTimeout(() => {
         if (roleData?.role) {
@@ -108,58 +103,14 @@ const LoginPage = () => {
       }, 1500);
     } catch (err: any) {
       console.error('Login error:', err);
-      setError(err?.message || 'Something went wrong. Try again.');
-      setStep('otp');
+      setError(err?.message || 'Something went wrong.');
       setVerifying(false);
-      isSubmittingRef.current = false;
-      resetOtp();
-    }
-  }, [phone, navigate, setLoggedIn]);
-
-  const resetOtp = () => {
-    otpRef.current = Array(OTP_LENGTH).fill('');
-    setOtp(Array(OTP_LENGTH).fill(''));
-    setTimeout(() => document.getElementById('otp-0')?.focus(), 100);
-  };
-
-  const handleOtpChange = (index: number, value: string) => {
-    if (value.length > 1) {
-      // Handle paste: distribute digits across boxes
-      const digits = value.replace(/\D/g, '').split('').slice(0, OTP_LENGTH);
-      const newOtp = Array(OTP_LENGTH).fill('');
-      digits.forEach((d, i) => { newOtp[i] = d; });
-      otpRef.current = newOtp;
-      setOtp([...newOtp]);
-      if (digits.length === OTP_LENGTH) {
-        doLogin(newOtp.join(''));
-      }
-      return;
-    }
-
-    const digit = value.replace(/\D/g, '');
-    otpRef.current[index] = digit;
-    setOtp([...otpRef.current]);
-
-    if (digit && index < OTP_LENGTH - 1) {
-      document.getElementById(`otp-${index + 1}`)?.focus();
-    }
-
-    // Don't auto-submit — let user click Verify button
-  };
-
-  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent) => {
-    if (e.key === 'Backspace' && !otpRef.current[index] && index > 0) {
-      otpRef.current[index - 1] = '';
-      setOtp([...otpRef.current]);
-      document.getElementById(`otp-${index - 1}`)?.focus();
     }
   };
 
-  const handleManualVerify = () => {
-    const password = otpRef.current.join('');
-    if (password.length === OTP_LENGTH) {
-      doLogin(password);
-    }
+  // Simple OTP input handler — single text input
+  const handleOtpInput = (value: string) => {
+    setOtp(value.replace(/\D/g, '').slice(0, OTP_LENGTH));
   };
 
   return (
@@ -227,35 +178,30 @@ const LoginPage = () => {
               <p className="mt-2 text-muted-foreground text-sm">Sent to +91 {phone}</p>
             </div>
 
-            <div className="flex justify-center gap-3">
-              {otp.map((digit, i) => (
-                <input
-                  key={i}
-                  id={`otp-${i}`}
-                  type="tel"
-                  inputMode="numeric"
-                  maxLength={i === 0 ? OTP_LENGTH : 1}
-                  value={digit}
-                  onChange={e => handleOtpChange(i, e.target.value)}
-                  onKeyDown={e => handleOtpKeyDown(i, e)}
-                  className="w-12 h-14 text-center text-xl font-bold bg-card border border-border rounded-lg text-foreground focus:outline-none focus:border-secondary transition-colors"
-                />
-              ))}
-            </div>
+            <input
+              type="tel"
+              inputMode="numeric"
+              maxLength={OTP_LENGTH}
+              value={otp}
+              onChange={e => handleOtpInput(e.target.value)}
+              placeholder="Enter 6-digit OTP"
+              autoFocus
+              className="w-full py-4 text-center text-2xl font-bold tracking-[0.5em] bg-card border border-border rounded-lg text-foreground placeholder:text-muted-foreground placeholder:text-base placeholder:tracking-normal focus:outline-none focus:border-secondary transition-colors"
+            />
 
             {error && <p className="text-destructive text-sm">{error}</p>}
 
             <motion.button
               whileTap={{ scale: 0.97 }}
-              onClick={handleManualVerify}
-              disabled={verifying}
+              onClick={handleVerify}
+              disabled={otp.length !== OTP_LENGTH || verifying}
               className="w-full py-4 bg-gradient-saffron rounded-lg font-heading text-sm uppercase tracking-widest text-primary-foreground disabled:opacity-40 flex items-center justify-center gap-2"
             >
               {verifying ? <><Loader2 size={16} className="animate-spin" /> Verifying...</> : <>Verify <ArrowRight size={16} /></>}
             </motion.button>
 
             <p className="text-muted-foreground text-xs">
-              Wrong number? <button onClick={() => { setStep('phone'); resetOtp(); setError(''); }} className="text-secondary underline">Go back</button>
+              Wrong number? <button onClick={() => { setStep('phone'); setOtp(''); setError(''); }} className="text-secondary underline">Go back</button>
             </p>
           </motion.div>
         )}
