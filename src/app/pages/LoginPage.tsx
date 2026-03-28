@@ -35,46 +35,37 @@ const LoginPage = () => {
     setVerifying(true);
     setError('');
 
+    const email = mockEmail(phone);
+    const password = otp;
+
     try {
-      const email = mockEmail(phone);
-      const password = otp;
-
-      // Sign out any existing session first
-      await supabase.auth.signOut();
-
       // Try sign in
+      console.log('[Login] Attempting signIn for', email);
       const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
+      console.log('[Login] signIn result:', signInErr?.message || 'success');
 
       if (signInErr) {
         // User might not exist — try sign up
+        console.log('[Login] Attempting signUp');
         const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({ email, password });
+        console.log('[Login] signUp result:', signUpErr?.message || 'success', 'session:', !!signUpData?.session);
 
-        if (signUpErr) {
-          setError(signUpErr.message);
-          setVerifying(false);
-          return;
-        }
+        if (signUpErr) throw new Error(signUpErr.message);
 
         // If no session after signup, sign in again
         if (!signUpData?.session) {
+          console.log('[Login] No session after signup, retrying signIn');
           const { error: retryErr } = await supabase.auth.signInWithPassword({ email, password });
-          if (retryErr) {
-            setError('Could not log in. Please try again.');
-            setVerifying(false);
-            return;
-          }
+          if (retryErr) throw new Error('Account created but login failed. Try again.');
         }
       }
 
-      // Get current user
+      // Navigate based on role
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        setError('Login failed. Please try again.');
-        setVerifying(false);
-        return;
-      }
+      console.log('[Login] Got user:', user?.id);
 
-      // Check role
+      if (!user) throw new Error('Login failed. Please try again.');
+
       const { data: roleData } = await supabase
         .from('user_roles')
         .select('role')
@@ -83,9 +74,9 @@ const LoginPage = () => {
         .limit(1)
         .maybeSingle();
 
-      // Show success
+      console.log('[Login] Role:', roleData?.role || 'none (customer)');
+
       setStep('success');
-      setVerifying(false);
 
       setTimeout(() => {
         if (roleData?.role) {
@@ -102,8 +93,9 @@ const LoginPage = () => {
         }
       }, 1500);
     } catch (err: any) {
-      console.error('Login error:', err);
+      console.error('[Login] Error:', err);
       setError(err?.message || 'Something went wrong.');
+    } finally {
       setVerifying(false);
     }
   };
