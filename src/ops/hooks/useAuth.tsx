@@ -57,28 +57,35 @@ export const OpsAuthProvider = ({ children }: { children: ReactNode }) => {
     let mounted = true;
 
     // First get the current session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
       if (!mounted) return;
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        await fetchRole(session.user.id);
+        // Fire-and-forget — do NOT block the callback
+        fetchRole(session.user.id).then(() => {
+          if (mounted) setLoading(false);
+        });
+      } else {
+        setLoading(false);
       }
-      if (mounted) setLoading(false);
     });
 
-    // Then listen for changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    // CRITICAL: This callback must NOT be async — Supabase JS client
+    // waits for all listeners to resolve. Making it async deadlocks auth.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!mounted) return;
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        await fetchRole(session.user.id);
+        fetchRole(session.user.id).then(() => {
+          if (mounted) setLoading(false);
+        });
       } else {
         setRole(null);
         setStoreId(null);
+        setLoading(false);
       }
-      if (mounted) setLoading(false);
     });
 
     return () => {
