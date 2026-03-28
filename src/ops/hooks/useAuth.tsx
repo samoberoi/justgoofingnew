@@ -37,7 +37,7 @@ export const OpsAuthProvider = ({ children }: { children: ReactNode }) => {
       .eq('user_id', userId)
       .eq('is_active', true)
       .limit(1)
-      .single();
+      .maybeSingle();
     if (data) {
       setRole(data.role as AppRole);
       setStoreId(data.store_id);
