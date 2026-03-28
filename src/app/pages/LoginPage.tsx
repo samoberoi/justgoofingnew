@@ -41,50 +41,56 @@ const LoginPage = () => {
     try {
       const email = mockEmail(phone);
 
-      // Try sign in
+      // Try sign in first
       const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
 
-      let userId: string | null = signInData?.user?.id ?? null;
-
       if (signInErr) {
-        // Try sign up
+        // User may not exist — try sign up
         const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({ email, password });
         if (signUpErr) {
           setError(signUpErr.message);
+          setVerifying(false);
+          isSubmittingRef.current = false;
           resetOtp();
           return;
         }
-        userId = signUpData?.user?.id ?? null;
 
-        // Sign in after signup if needed
+        // If no session after signup, try sign in again
         if (!signUpData?.session) {
-          const { data: retryData, error: retryErr } = await supabase.auth.signInWithPassword({ email, password });
+          const { error: retryErr } = await supabase.auth.signInWithPassword({ email, password });
           if (retryErr) {
             setError('Account created but login failed. Try again.');
+            setVerifying(false);
+            isSubmittingRef.current = false;
             resetOtp();
             return;
           }
-          userId = retryData?.user?.id ?? null;
         }
       }
 
-      if (!userId) {
+      // At this point we should have a session — get user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
         setError('Could not get user info. Try again.');
+        setVerifying(false);
+        isSubmittingRef.current = false;
         resetOtp();
         return;
       }
-
-      // Success — show animation
-      setStep('success');
 
       // Check role
       const { data: roleData } = await supabase
         .from('user_roles')
         .select('role')
-        .eq('user_id', userId)
+        .eq('user_id', user.id)
         .eq('is_active', true)
         .limit(1)
         .maybeSingle();
+
+      // Show success animation
+      setStep('success');
+      setVerifying(false);
+      isSubmittingRef.current = false;
 
       setTimeout(() => {
         if (roleData?.role) {
@@ -94,20 +100,19 @@ const LoginPage = () => {
             kitchen_manager: '/kitchen',
             delivery_partner: '/deliveries',
           };
-          navigate(roleRoutes[roleData.role] || '/dashboard');
+          navigate(roleRoutes[roleData.role] || '/dashboard', { replace: true });
         } else {
           setLoggedIn(true);
-          navigate('/welcome');
+          navigate('/welcome', { replace: true });
         }
       }, 1500);
     } catch (err: any) {
       console.error('Login error:', err);
       setError(err?.message || 'Something went wrong. Try again.');
       setStep('otp');
-      resetOtp();
-    } finally {
       setVerifying(false);
       isSubmittingRef.current = false;
+      resetOtp();
     }
   }, [phone, navigate, setLoggedIn]);
 
