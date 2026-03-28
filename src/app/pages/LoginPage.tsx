@@ -41,67 +41,79 @@ const LoginPage = () => {
     setError('');
 
     const email = mockEmail(phone);
-    // Use a deterministic password based on phone, NOT the OTP input
-    // This ensures the same phone always uses the same password
     const password = `${phone}-biryaan-2024`;
 
     try {
-      // Try sign in first
+      // Step 1: Try sign in
       console.log('[Login] Attempting signIn for', email);
       const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
-      console.log('[Login] signIn result:', signInErr?.message || 'success');
+      
+      if (!signInErr) {
+        console.log('[Login] signIn success');
+        onAuthSuccess();
+        return;
+      }
+      
+      console.log('[Login] signIn failed:', signInErr.message);
 
-      if (signInErr) {
-        // Try sign up with deterministic password
-        console.log('[Login] Attempting signUp');
-        const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({ email, password });
-        console.log('[Login] signUp result:', signUpErr?.message || 'success');
+      // Step 2: Try signUp with a 5s timeout (signUp can hang due to Supabase JS client race condition)
+      console.log('[Login] Attempting signUp with timeout');
+      const signUpResult = await Promise.race([
+        supabase.auth.signUp({ email, password }),
+        new Promise<{ data: null; error: Error }>((resolve) =>
+          setTimeout(() => resolve({ data: null, error: new Error('SIGNUP_TIMEOUT') }), 5000)
+        ),
+      ]);
 
-        if (signUpErr) {
-          // "User already registered" means user exists with a DIFFERENT password
-          // Use edge function to reset their password
-          if (signUpErr.message.includes('already registered')) {
-            console.log('[Login] User exists with old password, calling reset edge function');
-            const res = await fetch(
-              `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/reset-dev-password`,
-              {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
-                body: JSON.stringify({ email, password }),
-              }
-            );
-            if (!res.ok) {
-              const errBody = await res.text();
-              console.error('[Login] Reset failed:', errBody);
-              throw new Error('Could not reset account. Contact support.');
-            }
-            // Now sign in with the new password
-            const { error: retryErr } = await supabase.auth.signInWithPassword({ email, password });
-            if (retryErr) throw new Error('Login failed after password reset. Try again.');
-          } else {
-            throw new Error(signUpErr.message);
-          }
-        } else if (!signUpData?.session) {
-          // Signup succeeded but no session — sign in
-          const { error: retryErr } = await supabase.auth.signInWithPassword({ email, password });
-          if (retryErr) throw new Error('Account created but login failed. Try again.');
-        }
+      if (!signUpResult.error && signUpResult.data?.session) {
+        console.log('[Login] signUp success with session');
+        onAuthSuccess();
+        return;
       }
 
-      // Auth succeeded — force navigation with window.location
-      // React Router navigate gets swallowed by auth state listener re-renders
-      console.log('[Login] Auth successful, navigating...');
-      setLoggedIn(true);
-      setStep('success');
-      setTimeout(() => {
-        window.location.href = '/welcome';
-      }, 1000);
+      if (!signUpResult.error && signUpResult.data?.user && !signUpResult.data?.session) {
+        // User created but no session — try signing in
+        console.log('[Login] signUp created user, no session — retrying signIn');
+        const { error: retryErr } = await supabase.auth.signInWithPassword({ email, password });
+        if (!retryErr) { onAuthSuccess(); return; }
+      }
+
+      // Step 3: If signUp timed out or user already exists, use edge function to reset password then sign in
+      console.log('[Login] Falling back to edge function reset');
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/reset-dev-password`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+          body: JSON.stringify({ email, password }),
+        }
+      );
+      
+      if (res.ok) {
+        const { error: finalErr } = await supabase.auth.signInWithPassword({ email, password });
+        if (!finalErr) { onAuthSuccess(); return; }
+        console.error('[Login] signIn after reset failed:', finalErr.message);
+      } else {
+        console.error('[Login] Edge function reset failed:', await res.text());
+      }
+
+      // If we reach here, nothing worked
+      setError('Login failed. Please try again.');
     } catch (err: any) {
       console.error('[Login] Error:', err);
       setError(err?.message || 'Something went wrong.');
     } finally {
       setVerifying(false);
     }
+  };
+
+  const onAuthSuccess = () => {
+    console.log('[Login] Auth successful, navigating to /welcome');
+    setLoggedIn(true);
+    setStep('success');
+    setTimeout(() => {
+      window.location.href = '/welcome';
+    }, 1000);
   };
 
   // Simple OTP input handler — single text input
