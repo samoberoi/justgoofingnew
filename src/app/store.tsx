@@ -95,32 +95,36 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [badges, setBadges] = useState<any[]>([]);
 
   // Listen for auth state changes
+  // CRITICAL: This callback must NOT be async — Supabase JS client waits for
+  // all onAuthStateChange listeners to resolve before completing signUp/signIn.
+  // Making it async with awaits deadlocks the auth flow.
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
         const uid = session.user.id;
         setUserId(uid);
         const code = 'BIRYAAN-' + uid.slice(0, 6).toUpperCase();
         setReferralCode(code);
 
-        // Referral setup — fire and forget, don't block auth flow
-        try {
-          const { data: existing } = await supabase
+        // Fire-and-forget referral setup — completely detached from callback
+        setTimeout(() => {
+          supabase
             .from('referrals')
             .select('id')
             .eq('referrer_id', uid)
             .eq('referral_code', code)
-            .limit(1);
-          if (!existing || existing.length === 0) {
-            await supabase.from('referrals').insert({
-              referrer_id: uid,
-              referral_code: code,
-              status: 'pending',
-            });
-          }
-        } catch (e) {
-          console.warn('[Store] Referral setup failed (non-blocking):', e);
-        }
+            .limit(1)
+            .then(({ data: existing }) => {
+              if (!existing || existing.length === 0) {
+                supabase.from('referrals').insert({
+                  referrer_id: uid,
+                  referral_code: code,
+                  status: 'pending',
+                }).then(() => {});
+              }
+            })
+            .catch((e) => console.warn('[Store] Referral setup failed:', e));
+        }, 0);
       } else {
         setUserId(null);
         setWalletBalance(0);
