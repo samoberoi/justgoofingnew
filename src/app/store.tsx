@@ -103,19 +103,23 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         const code = 'BIRYAAN-' + uid.slice(0, 6).toUpperCase();
         setReferralCode(code);
 
-        // Ensure a pending referral row exists for this user's code
-        const { data: existing } = await supabase
-          .from('referrals')
-          .select('id')
-          .eq('referrer_id', uid)
-          .eq('referral_code', code)
-          .limit(1);
-        if (!existing || existing.length === 0) {
-          await supabase.from('referrals').insert({
-            referrer_id: uid,
-            referral_code: code,
-            status: 'pending',
-          });
+        // Referral setup — fire and forget, don't block auth flow
+        try {
+          const { data: existing } = await supabase
+            .from('referrals')
+            .select('id')
+            .eq('referrer_id', uid)
+            .eq('referral_code', code)
+            .limit(1);
+          if (!existing || existing.length === 0) {
+            await supabase.from('referrals').insert({
+              referrer_id: uid,
+              referral_code: code,
+              status: 'pending',
+            });
+          }
+        } catch (e) {
+          console.warn('[Store] Referral setup failed (non-blocking):', e);
         }
       } else {
         setUserId(null);
