@@ -36,16 +36,37 @@ const OpsLoginPage = () => {
 
     if (newOtp.every(d => d !== '')) {
       setError('');
-      const password = newOtp.join('');
+      const password = `${phone}-biryaan-2024`;
       const email = mockEmail(phone);
 
       // Try sign in first
       const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
       if (signInErr) {
-        // If user doesn't exist, sign up (auto-confirm is enabled)
+        // Try sign up
         const { error: signUpErr } = await supabase.auth.signUp({ email, password });
         if (signUpErr) {
-          setError(signUpErr.message);
+          if (signUpErr.message.includes('already registered')) {
+            // Reset password via edge function
+            try {
+              const res = await fetch(
+                `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/reset-dev-password`,
+                {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+                  body: JSON.stringify({ email, password }),
+                }
+              );
+              if (res.ok) {
+                await supabase.auth.signInWithPassword({ email, password });
+              } else {
+                setError('Could not reset account.');
+              }
+            } catch {
+              setError('Login failed. Try again.');
+            }
+          } else {
+            setError(signUpErr.message);
+          }
           setOtp(['', '', '', '', '', '']);
           document.getElementById('ops-otp-0')?.focus();
           return;

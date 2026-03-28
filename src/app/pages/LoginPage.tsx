@@ -41,62 +41,61 @@ const LoginPage = () => {
     setError('');
 
     const email = mockEmail(phone);
-    const password = otp;
+    // Use a deterministic password based on phone, NOT the OTP input
+    // This ensures the same phone always uses the same password
+    const password = `${phone}-biryaan-2024`;
 
     try {
-      // Try sign in
+      // Try sign in first
       console.log('[Login] Attempting signIn for', email);
       const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
       console.log('[Login] signIn result:', signInErr?.message || 'success');
 
       if (signInErr) {
-        // User might not exist — try sign up
+        // Try sign up with deterministic password
         console.log('[Login] Attempting signUp');
         const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({ email, password });
-        console.log('[Login] signUp result:', signUpErr?.message || 'success', 'session:', !!signUpData?.session);
+        console.log('[Login] signUp result:', signUpErr?.message || 'success');
 
-        if (signUpErr) throw new Error(signUpErr.message);
-
-        // If no session after signup, sign in again
-        if (!signUpData?.session) {
-          console.log('[Login] No session after signup, retrying signIn');
+        if (signUpErr) {
+          // "User already registered" means user exists with a DIFFERENT password
+          // Use edge function to reset their password
+          if (signUpErr.message.includes('already registered')) {
+            console.log('[Login] User exists with old password, calling reset edge function');
+            const res = await fetch(
+              `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/reset-dev-password`,
+              {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+                body: JSON.stringify({ email, password }),
+              }
+            );
+            if (!res.ok) {
+              const errBody = await res.text();
+              console.error('[Login] Reset failed:', errBody);
+              throw new Error('Could not reset account. Contact support.');
+            }
+            // Now sign in with the new password
+            const { error: retryErr } = await supabase.auth.signInWithPassword({ email, password });
+            if (retryErr) throw new Error('Login failed after password reset. Try again.');
+          } else {
+            throw new Error(signUpErr.message);
+          }
+        } else if (!signUpData?.session) {
+          // Signup succeeded but no session — sign in
           const { error: retryErr } = await supabase.auth.signInWithPassword({ email, password });
           if (retryErr) throw new Error('Account created but login failed. Try again.');
         }
       }
 
-      // Navigate based on role
-      const { data: { user } } = await supabase.auth.getUser();
-      console.log('[Login] Got user:', user?.id);
-
-      if (!user) throw new Error('Login failed. Please try again.');
-
-      const { data: roleData } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id)
-        .eq('is_active', true)
-        .limit(1)
-        .maybeSingle();
-
-      console.log('[Login] Role:', roleData?.role || 'none (customer)');
-
+      // Auth succeeded — force navigation with window.location
+      // React Router navigate gets swallowed by auth state listener re-renders
+      console.log('[Login] Auth successful, navigating...');
+      setLoggedIn(true);
       setStep('success');
-
       setTimeout(() => {
-        if (roleData?.role) {
-          const roleRoutes: Record<string, string> = {
-            super_admin: '/dashboard',
-            store_manager: '/dashboard',
-            kitchen_manager: '/kitchen',
-            delivery_partner: '/deliveries',
-          };
-          navigate(roleRoutes[roleData.role] || '/dashboard', { replace: true });
-        } else {
-          setLoggedIn(true);
-          navigate('/welcome', { replace: true });
-        }
-      }, 1500);
+        window.location.href = '/welcome';
+      }, 1000);
     } catch (err: any) {
       console.error('[Login] Error:', err);
       setError(err?.message || 'Something went wrong.');
