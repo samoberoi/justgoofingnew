@@ -11,10 +11,9 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const { setLoggedIn, setPhoneNumber } = useAppStore();
 
-  // Clear any existing session when landing on login page
-  useEffect(() => {
-    supabase.auth.signOut().catch(() => {});
-  }, []);
+  // Only sign out if the user explicitly navigated to /login (not on redirect)
+  // We no longer auto-signOut on mount — this was causing a loop where
+  // OpsRoute redirects here and the signOut clears the valid session.
   const [step, setStep] = useState<'phone' | 'otp' | 'success'>('phone');
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
