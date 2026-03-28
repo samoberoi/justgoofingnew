@@ -107,13 +107,38 @@ const LoginPage = () => {
     }
   };
 
-  const onAuthSuccess = () => {
-    console.log('[Login] Auth successful, navigating to /welcome');
+  const onAuthSuccess = async () => {
+    console.log('[Login] Auth successful, checking role...');
     setLoggedIn(true);
     setStep('success');
-    setTimeout(() => {
-      window.location.href = '/welcome';
-    }, 1000);
+
+    // Check if user has an ops role — route accordingly
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: roleData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .eq('is_active', true)
+          .limit(1)
+          .maybeSingle();
+
+        if (roleData?.role) {
+          const role = roleData.role as string;
+          console.log('[Login] User has ops role:', role);
+          const dest = role === 'kitchen_manager' ? '/kitchen'
+            : role === 'delivery_partner' ? '/deliveries'
+            : '/dashboard';
+          setTimeout(() => { window.location.href = dest; }, 1000);
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn('[Login] Role check failed, defaulting to /welcome', e);
+    }
+
+    setTimeout(() => { window.location.href = '/welcome'; }, 1000);
   };
 
   // Simple OTP input handler — single text input
