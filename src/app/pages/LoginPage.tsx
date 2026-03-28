@@ -88,38 +88,15 @@ const LoginPage = () => {
         }
       }
 
-      // Navigate based on role
-      const { data: { user } } = await supabase.auth.getUser();
-      console.log('[Login] Got user:', user?.id);
-
-      if (!user) throw new Error('Login failed. Please try again.');
-
-      const { data: roleData } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id)
-        .eq('is_active', true)
-        .limit(1)
-        .maybeSingle();
-
-      console.log('[Login] Role:', roleData?.role || 'none (customer)');
-
+      // Auth succeeded — just navigate. Don't call getUser/role check here
+      // as it conflicts with onAuthStateChange listeners.
+      console.log('[Login] Auth successful, navigating...');
+      setLoggedIn(true);
       setStep('success');
 
       setTimeout(() => {
-        if (roleData?.role) {
-          const roleRoutes: Record<string, string> = {
-            super_admin: '/dashboard',
-            store_manager: '/dashboard',
-            kitchen_manager: '/kitchen',
-            delivery_partner: '/deliveries',
-          };
-          navigate(roleRoutes[roleData.role] || '/dashboard', { replace: true });
-        } else {
-          setLoggedIn(true);
-          navigate('/welcome', { replace: true });
-        }
-      }, 1500);
+        navigate('/welcome', { replace: true });
+      }, 1000);
     } catch (err: any) {
       console.error('[Login] Error:', err);
       setError(err?.message || 'Something went wrong.');
