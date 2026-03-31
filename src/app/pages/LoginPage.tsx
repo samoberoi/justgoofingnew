@@ -111,6 +111,16 @@ const LoginPage = () => {
     setLoggedIn(true);
     setStep('success');
 
+    // Save phone number to profile so it persists across reloads
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user && phone) {
+        await supabase.from('profiles').update({ phone }).eq('user_id', user.id);
+      }
+    } catch (e) {
+      console.warn('[Login] Profile phone update failed', e);
+    }
+
     // Check if user has an ops role — route accordingly
     try {
       const { data: { user } } = await supabase.auth.getUser();

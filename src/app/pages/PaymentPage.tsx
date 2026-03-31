@@ -181,11 +181,18 @@ const PaymentPage = () => {
       const user = authRes.data?.user;
       const pointsSettings = (pointsRes.data as any) || null;
 
-      const orderPayload = {
+        // Resolve phone: store state → profile → auth user
+        let resolvedPhone = phoneNumber || user?.phone || null;
+        if (!resolvedPhone && user) {
+          const { data: prof } = await supabase.from('profiles').select('phone').eq('user_id', user.id).maybeSingle();
+          if (prof?.phone) resolvedPhone = prof.phone;
+        }
+
+        const orderPayload = {
         store_id: storeId,
         user_id: user?.id || null,
         customer_name: customerName.trim(),
-        customer_phone: phoneNumber || user?.phone || null,
+        customer_phone: resolvedPhone,
         customer_address: fullAddress,
         house_number: houseNumber || null,
         subtotal,
