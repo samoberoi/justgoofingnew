@@ -1,20 +1,20 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import OpsBottomNav from '../components/OpsBottomNav';
-import { Users, Phone, ShoppingBag, Search, Crown, ArrowLeft } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { Users, Phone, ShoppingBag, Search, ArrowLeft } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { useLocation } from 'react-router-dom';
 
 interface Customer {
   name: string;
   phone: string;
+  userId: string | null;
   orders: number;
   spent: number;
   lastOrderDate: string;
 }
 
 const OpsCustomersPage = () => {
-  const navigate = useNavigate();
   const location = useLocation();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -27,36 +27,50 @@ const OpsCustomersPage = () => {
     fetchCustomers();
   }, []);
 
-  // Auto-open customer from navigation state (e.g. from dashboard top 10)
   useEffect(() => {
     const state = location.state as any;
     if (state?.openCustomer && customers.length > 0) {
       const match = customers.find(c => c.phone === state.openCustomer.phone);
       if (match) viewCustomer(match);
-      // Clear the state
       window.history.replaceState({}, document.title);
     }
   }, [customers, location.state]);
 
   const fetchCustomers = async () => {
-    const { data: orders } = await supabase
-      .from('orders')
-      .select('customer_name, customer_phone, total, created_at, status')
-      .order('created_at', { ascending: false });
+    // Fetch orders and profiles in parallel
+    const [ordersRes, profilesRes] = await Promise.all([
+      supabase.from('orders').select('customer_name, customer_phone, total, created_at, user_id').order('created_at', { ascending: false }),
+      supabase.from('profiles').select('user_id, phone, full_name'),
+    ]);
 
+    const orders = ordersRes.data;
+    const profiles = profilesRes.data || [];
     if (!orders) { setLoading(false); return; }
 
+    // Build a profile lookup by user_id
+    const profileMap = new Map<string, { phone: string | null; name: string | null }>();
+    profiles.forEach(p => profileMap.set(p.user_id, { phone: p.phone, name: p.full_name }));
+
+    // Aggregate by user_id first, fallback to phone/name
     const map = new Map<string, Customer>();
     orders.forEach(o => {
-      const key = o.customer_phone || o.customer_name || 'unknown';
+      const profile = o.user_id ? profileMap.get(o.user_id) : null;
+      const phone = o.customer_phone || profile?.phone || '';
+      const name = o.customer_name || profile?.name || 'Guest';
+      const key = o.user_id || phone || name;
+
       const existing = map.get(key);
       if (existing) {
         existing.orders += 1;
         existing.spent += Number(o.total);
+        // Update phone/name if we now have better data
+        if (!existing.phone && phone) existing.phone = phone;
+        if (existing.name === 'Guest' && name !== 'Guest') existing.name = name;
       } else {
         map.set(key, {
-          name: o.customer_name || 'Guest',
-          phone: o.customer_phone || '-',
+          name,
+          phone: phone || '-',
+          userId: o.user_id || null,
           orders: 1,
           spent: Number(o.total),
           lastOrderDate: o.created_at,
@@ -70,12 +84,28 @@ const OpsCustomersPage = () => {
 
   const viewCustomer = async (customer: Customer) => {
     setSelectedCustomer(customer);
-    const [ordersRes, addrsRes] = await Promise.all([
-      supabase.from('orders').select('*').eq('customer_phone', customer.phone).order('created_at', { ascending: false }).limit(20),
-      supabase.from('addresses').select('*').eq('user_id', (await supabase.from('orders').select('user_id').eq('customer_phone', customer.phone).limit(1)).data?.[0]?.user_id || '').order('created_at', { ascending: false }),
-    ]);
+    window.scrollTo(0, 0);
+
+    // Build query based on available identifiers
+    let ordersQuery = supabase.from('orders').select('*').order('created_at', { ascending: false }).limit(20);
+    if (customer.userId) {
+      ordersQuery = ordersQuery.eq('user_id', customer.userId);
+    } else if (customer.phone && customer.phone !== '-') {
+      ordersQuery = ordersQuery.eq('customer_phone', customer.phone);
+    } else {
+      ordersQuery = ordersQuery.eq('customer_name', customer.name);
+    }
+
+    const ordersRes = await ordersQuery;
     setCustomerOrders(ordersRes.data || []);
-    setCustomerAddresses(addrsRes.data || []);
+
+    // Fetch addresses if we have a userId
+    if (customer.userId) {
+      const addrsRes = await supabase.from('addresses').select('*').eq('user_id', customer.userId).order('created_at', { ascending: false });
+      setCustomerAddresses(addrsRes.data || []);
+    } else {
+      setCustomerAddresses([]);
+    }
   };
 
   const filtered = customers.filter(c =>
@@ -91,7 +121,9 @@ const OpsCustomersPage = () => {
       <div className="min-h-screen bg-background pb-20">
         <div className="sticky top-0 z-40 bg-card/95 backdrop-blur-xl border-b border-border px-4 py-3">
           <div className="flex items-center gap-3">
-            <button onClick={() => setSelectedCustomer(null)}><ArrowLeft size={20} className="text-foreground" /></button>
+            <button onClick={() => { setSelectedCustomer(null); setCustomerOrders([]); setCustomerAddresses([]); }}>
+              <ArrowLeft size={20} className="text-foreground" />
+            </button>
             <h1 className="font-heading text-lg text-foreground">{selectedCustomer.name}</h1>
           </div>
         </div>
@@ -105,7 +137,9 @@ const OpsCustomersPage = () => {
               </div>
               <div>
                 <p className="font-heading text-base text-foreground">{selectedCustomer.name}</p>
-                <p className="text-xs text-muted-foreground flex items-center gap-1"><Phone size={10} /> {selectedCustomer.phone}</p>
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Phone size={10} /> {selectedCustomer.phone}
+                </p>
               </div>
             </div>
             <div className="grid grid-cols-3 gap-3 pt-2 border-t border-border">
@@ -144,26 +178,30 @@ const OpsCustomersPage = () => {
           {/* Order history */}
           <div>
             <h2 className="font-heading text-xs text-muted-foreground uppercase tracking-wider mb-2">Order History</h2>
-            <div className="space-y-2">
-              {customerOrders.map(order => (
-                <div key={order.id} className="bg-card border border-border rounded-lg p-3">
-                  <div className="flex items-center justify-between">
-                    <span className="font-heading text-sm text-foreground">{order.order_number}</span>
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                      order.status === 'delivered' ? 'bg-green-500/10 text-green-500'
-                        : order.status === 'cancelled' ? 'bg-red-500/10 text-red-500'
-                        : 'bg-secondary/10 text-secondary'
-                    }`}>
-                      {order.status.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())}
-                    </span>
+            {customerOrders.length === 0 ? (
+              <p className="text-xs text-muted-foreground py-4 text-center">No orders found</p>
+            ) : (
+              <div className="space-y-2">
+                {customerOrders.map(order => (
+                  <div key={order.id} className="bg-card border border-border rounded-lg p-3">
+                    <div className="flex items-center justify-between">
+                      <span className="font-heading text-sm text-foreground">{order.order_number}</span>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                        order.status === 'delivered' ? 'bg-green-500/10 text-green-500'
+                          : order.status === 'cancelled' ? 'bg-red-500/10 text-red-500'
+                          : 'bg-secondary/10 text-secondary'
+                      }`}>
+                        {order.status?.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()) || 'Unknown'}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between mt-1 text-xs text-muted-foreground">
+                      <span>{formatDate(order.created_at)}</span>
+                      <span className="font-heading text-foreground">₹{Number(order.total).toLocaleString()}</span>
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between mt-1 text-xs text-muted-foreground">
-                    <span>{formatDate(order.created_at)}</span>
-                    <span className="font-heading text-foreground">₹{Number(order.total).toLocaleString()}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -198,7 +236,7 @@ const OpsCustomersPage = () => {
         ) : (
           filtered.map((c, i) => (
             <motion.button
-              key={c.phone}
+              key={c.userId || c.phone + c.name}
               initial={{ opacity: 0, y: 5 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.03 }}
