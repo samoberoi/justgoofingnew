@@ -185,6 +185,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       .eq('user_id', userId);
     setTotalOrders(count || 0);
 
+    // Fetch profile (phone + name)
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('phone, full_name')
+      .eq('user_id', userId)
+      .maybeSingle();
+    if (profile?.phone) setPhoneNumber(profile.phone);
+    if (profile?.full_name) setUserName(profile.full_name);
+
     // Fetch badges
     const { data: userBadges } = await supabase
       .from('user_badges')
