@@ -163,6 +163,12 @@ const HomePage = () => {
   const [activeCatId, setActiveCatId] = useState<string | null>(null);
   const catScrollRef = useRef<HTMLDivElement>(null);
 
+  // Sync vegMode from profile toggle
+  useEffect(() => {
+    if (vegMode) setVegFilter('veg');
+    else setVegFilter('all');
+  }, [vegMode]);
+
   useEffect(() => {
     if (!userId) return;
     const fetchActive = async () => {
