@@ -9,7 +9,7 @@ const OTP_LENGTH = 6;
 
 const LoginPage = () => {
   const navigate = useNavigate();
-  const { setLoggedIn, setPhoneNumber } = useAppStore();
+  const { setLoggedIn, setPhoneNumber, setVegMode } = useAppStore();
 
   // Only sign out if the user explicitly navigated to /login (not on redirect)
   // We no longer auto-signOut on mount — this was causing a loop where
