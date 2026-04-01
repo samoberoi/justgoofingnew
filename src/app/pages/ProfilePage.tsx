@@ -1,10 +1,24 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Copy, ChevronRight, Volume2, VolumeX, Bell, BellOff, LogOut, Award, MapPin, Package, Share2, Check, Crown, Gift } from 'lucide-react';
+import {
+  ArrowLeft, Copy, ChevronRight, Volume2, VolumeX, Bell, BellOff,
+  LogOut, Award, MapPin, Package, Share2, Check, Crown, Gift, Camera,
+  Phone, Cake, Heart, CalendarDays, Pencil,
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store';
 import BottomNav from '../components/BottomNav';
 import { supabase } from '@/integrations/supabase/client';
+import { format } from 'date-fns';
+
+// Sub-components
+import ProfileHero from '../components/profile/ProfileHero';
+import ProfileStats from '../components/profile/ProfileStats';
+import ProfileReferral from '../components/profile/ProfileReferral';
+import ProfileDates from '../components/profile/ProfileDates';
+import ProfileRecentOrders from '../components/profile/ProfileRecentOrders';
+import ProfileAddresses from '../components/profile/ProfileAddresses';
+import ProfileBadges from '../components/profile/ProfileBadges';
 
 const ProfilePage = () => {
   const navigate = useNavigate();
@@ -16,18 +30,36 @@ const ProfilePage = () => {
 
   const [addresses, setAddresses] = useState<any[]>([]);
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
-  const [copied, setCopied] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [birthday, setBirthday] = useState<string | null>(null);
+  const [anniversary, setAnniversary] = useState<string | null>(null);
 
   useEffect(() => {
     if (!userId) return;
+
+    // Fetch addresses
     (supabase.from('addresses' as any).select('*') as any).eq('user_id', userId)
       .order('created_at', { ascending: false })
       .then(({ data }: any) => setAddresses(data || []));
 
+    // Fetch recent orders
     (supabase.from('orders').select('id, order_number, total, status, created_at') as any)
       .eq('user_id', userId)
       .order('created_at', { ascending: false }).limit(5)
       .then(({ data }: any) => setRecentOrders(data || []));
+
+    // Fetch profile details (avatar, birthday, anniversary)
+    supabase.from('profiles')
+      .select('avatar_url, birthday, anniversary')
+      .eq('user_id', userId)
+      .maybeSingle()
+      .then(({ data }: any) => {
+        if (data) {
+          setAvatarUrl(data.avatar_url);
+          setBirthday(data.birthday);
+          setAnniversary(data.anniversary);
+        }
+      });
   }, [userId]);
 
   const handleLogout = async () => {
@@ -35,22 +67,6 @@ const ProfilePage = () => {
     setLoggedIn(false);
     navigate('/');
   };
-
-  const handleCopyReferral = () => {
-    const shareText = `Join BIRYAAN — the Sultanat of Biryani! 🍛👑\n\nUse my referral code ${referralCode} when you sign up and we both earn Biryan Points!\n\nOrder now: https://biryaan.lovable.app`;
-    if (navigator.share) {
-      navigator.share({ title: 'BIRYAAN Referral', text: shareText }).catch(() => {
-        navigator.clipboard.writeText(shareText);
-        setCopied(true);
-      });
-    } else {
-      navigator.clipboard.writeText(shareText);
-      setCopied(true);
-    }
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const formatDate = (d: string) => new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
 
   const tierName = totalOrders >= 50 ? 'Sultan' : totalOrders >= 25 ? 'Nawab' : totalOrders >= 10 ? 'Shahzada' : 'Sipahi';
   const tierEmoji = totalOrders >= 50 ? '👑' : totalOrders >= 25 ? '🏰' : totalOrders >= 10 ? '⚔️' : '🛡️';
@@ -65,139 +81,41 @@ const ProfilePage = () => {
         </div>
       </header>
 
-      {/* Profile Hero */}
-      <div className="px-4 pt-6">
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-br from-secondary/10 via-card to-card border border-secondary/15 rounded-2xl p-6 text-center relative overflow-hidden">
-          {/* Decorative pattern */}
-          <div className="absolute inset-0 mughal-pattern opacity-30" />
-          <div className="relative z-10">
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-secondary/30 to-secondary/10 border-2 border-secondary/30 flex items-center justify-center text-4xl mx-auto shadow-gold">
-              {tierEmoji}
-            </div>
-            <p className="font-heading text-lg text-foreground mt-3">{userName || 'Royal Guest'}</p>
-            {phoneNumber && <p className="text-xs text-muted-foreground mt-0.5">{phoneNumber}</p>}
-            <div className="flex items-center justify-center gap-1.5 mt-1">
-              <Crown size={12} className="text-secondary" />
-              <span className="text-xs text-secondary font-heading uppercase tracking-wider">{tierName}</span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">{totalOrders} orders placed</p>
-          </div>
-        </motion.div>
-      </div>
+      {/* Profile Hero with Avatar */}
+      <ProfileHero
+        userId={userId}
+        userName={userName}
+        phoneNumber={phoneNumber}
+        tierName={tierName}
+        tierEmoji={tierEmoji}
+        totalOrders={totalOrders}
+        avatarUrl={avatarUrl}
+        setAvatarUrl={setAvatarUrl}
+      />
 
-      {/* Stats Row */}
-      <div className="px-4 pt-4 grid grid-cols-3 gap-2">
-        {[
-          { label: 'Orders', value: totalOrders.toString(), icon: '📦', color: 'from-primary/10 to-primary/5' },
-          { label: 'Biryan Points', value: `${walletBalance}`, icon: '💰', color: 'from-secondary/10 to-secondary/5' },
-          { label: 'Badges', value: badges.length.toString(), icon: '🏅', color: 'from-accent/10 to-accent/5' },
-        ].map((stat, i) => (
-          <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
-            className={`bg-gradient-to-br ${stat.color} border border-border rounded-xl p-3 text-center`}>
-            <p className="text-xl">{stat.icon}</p>
-            <p className="font-heading text-base text-foreground mt-1">{stat.value}</p>
-            <p className="text-[10px] text-muted-foreground">{stat.label}</p>
-          </motion.div>
-        ))}
-      </div>
+      {/* Stats */}
+      <ProfileStats totalOrders={totalOrders} walletBalance={walletBalance} badgeCount={badges.length} />
 
-      {/* Referral Card — Enhanced */}
-      <div className="px-4 pt-4">
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-          className="bg-gradient-to-br from-secondary/12 to-card border border-secondary/20 rounded-2xl p-5 space-y-3">
-          <div className="flex items-center gap-2">
-            <Gift size={16} className="text-secondary" />
-            <p className="text-sm font-heading text-foreground">Refer & Earn</p>
-          </div>
-          <p className="text-xs text-muted-foreground">Share your code — both you and your friend earn Biryan Points on their first order!</p>
-          <div className="flex items-center gap-2 bg-muted/60 rounded-xl p-3 border border-border">
-            <span className="text-sm font-mono text-secondary font-bold flex-1 tracking-wider">{referralCode}</span>
-            <AnimatePresence mode="wait">
-              {copied ? (
-                <motion.div key="check" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}>
-                  <Check size={16} className="text-green-500" />
-                </motion.div>
-              ) : (
-                <motion.button key="copy" whileTap={{ scale: 0.9 }} onClick={handleCopyReferral}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-saffron rounded-lg">
-                  <Share2 size={12} className="text-primary-foreground" />
-                  <span className="text-[10px] font-heading text-primary-foreground uppercase">Share</span>
-                </motion.button>
-              )}
-            </AnimatePresence>
-          </div>
-        </motion.div>
-      </div>
+      {/* Birthday & Anniversary */}
+      <ProfileDates
+        userId={userId}
+        birthday={birthday}
+        anniversary={anniversary}
+        setBirthday={setBirthday}
+        setAnniversary={setAnniversary}
+      />
+
+      {/* Referral */}
+      <ProfileReferral referralCode={referralCode} />
 
       {/* Recent Orders */}
-      {recentOrders.length > 0 && (
-        <div className="px-4 pt-4">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-sm text-foreground font-heading flex items-center gap-1.5">
-              <Package size={14} className="text-secondary" /> Recent Orders
-            </p>
-            <button onClick={() => navigate('/orders')} className="text-xs text-secondary font-medium">View All →</button>
-          </div>
-          <div className="space-y-1.5">
-            {recentOrders.map(o => (
-              <motion.div key={o.id} whileTap={{ scale: 0.98 }} onClick={() => navigate(`/tracking/${o.id}`)}
-                className="bg-card border border-border rounded-xl p-3 flex items-center justify-between cursor-pointer">
-                <div>
-                  <p className="text-sm font-heading text-foreground">{o.order_number}</p>
-                  <p className="text-[10px] text-muted-foreground">{formatDate(o.created_at)}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-heading text-secondary">₹{Number(o.total).toLocaleString()}</p>
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
-                    o.status === 'delivered' ? 'bg-green-500/10 text-green-500'
-                    : o.status === 'cancelled' ? 'bg-red-500/10 text-red-500'
-                    : 'bg-secondary/10 text-secondary'
-                  }`}>
-                    {o.status.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())}
-                  </span>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      )}
+      <ProfileRecentOrders orders={recentOrders} navigate={navigate} />
 
       {/* Saved Addresses */}
-      {addresses.length > 0 && (
-        <div className="px-4 pt-4">
-          <p className="text-sm text-foreground font-heading mb-2 flex items-center gap-1.5">
-            <MapPin size={14} className="text-secondary" /> Saved Addresses
-          </p>
-          <div className="space-y-1.5">
-            {addresses.map((addr: any) => (
-              <div key={addr.id} className="bg-card border border-border rounded-xl p-3">
-                <p className="text-xs font-medium text-foreground">
-                  {addr.house_number ? `${addr.house_number}, ` : ''}{addr.formatted_address}
-                </p>
-                {addr.label && <p className="text-[10px] text-muted-foreground mt-0.5">{addr.label}</p>}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      <ProfileAddresses addresses={addresses} />
 
       {/* Badges */}
-      {badges.length > 0 && (
-        <div className="px-4 pt-4">
-          <p className="text-sm text-foreground font-heading mb-2 flex items-center gap-1.5">
-            <Award size={14} className="text-secondary" /> Earned Badges
-          </p>
-          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-            {badges.map(b => (
-              <div key={b.id} className="bg-gradient-to-br from-secondary/10 to-card border border-secondary/15 rounded-xl p-3 text-center min-w-[80px] shrink-0">
-                <span className="text-2xl">{b.icon}</span>
-                <p className="text-[10px] font-medium text-foreground mt-1">{b.name}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      <ProfileBadges badges={badges} />
 
       {/* Quick links */}
       <div className="px-4 pt-4 space-y-1.5">
