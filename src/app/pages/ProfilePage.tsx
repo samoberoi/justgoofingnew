@@ -25,7 +25,7 @@ const ProfilePage = () => {
   const {
     userName, phoneNumber, walletBalance, totalOrders, referralCode, userId,
     musicEnabled, setMusicEnabled, notificationsEnabled, setNotificationsEnabled,
-    setLoggedIn, badges,
+    vegMode, setVegMode, setLoggedIn, badges,
   } = useAppStore();
 
   const [addresses, setAddresses] = useState<any[]>([]);
