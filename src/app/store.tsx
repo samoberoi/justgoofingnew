@@ -226,14 +226,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setCart(prev => prev.map(c => c.id === id ? { ...c, quantity: qty } : c));
   };
   const clearCart = () => setCart([]);
+  const setVegMode = (v: boolean) => { setVegModeState(v); localStorage.setItem('vegMode', String(v)); };
 
   return (
     <AppContext.Provider value={{
       isLoggedIn, userId, phoneNumber, userName, walletBalance, totalOrders,
-      cart, transactions, musicEnabled, notificationsEnabled, referralCode,
+      cart, transactions, musicEnabled, notificationsEnabled, vegMode, referralCode,
       savedAddresses, activeCampaigns, badges,
       setLoggedIn, setPhoneNumber, setUserName, addToCart, removeFromCart,
-      updateQuantity, clearCart, setMusicEnabled, setNotificationsEnabled, refreshUserData,
+      updateQuantity, clearCart, setMusicEnabled, setNotificationsEnabled, setVegMode, refreshUserData,
     }}>
       {children}
     </AppContext.Provider>
