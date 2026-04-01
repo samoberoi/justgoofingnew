@@ -232,7 +232,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setCart(prev => prev.map(c => c.id === id ? { ...c, quantity: qty } : c));
   };
   const clearCart = () => setCart([]);
-  const setVegMode = (v: boolean) => { setVegModeState(v); localStorage.setItem('vegMode', String(v)); };
+  const setVegMode = (v: boolean) => {
+    setVegModeState(v);
+    localStorage.setItem('vegMode', String(v));
+    // Persist to DB
+    if (userId) {
+      supabase.from('profiles').update({ diet_preference: v ? 'veg' : 'nonveg' } as any).eq('user_id', userId).then(() => {});
+    }
+  };
 
   return (
     <AppContext.Provider value={{
