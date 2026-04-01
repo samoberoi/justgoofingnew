@@ -191,11 +191,16 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     // Fetch profile (phone + name)
     const { data: profile } = await supabase
       .from('profiles')
-      .select('phone, full_name')
+      .select('phone, full_name, diet_preference')
       .eq('user_id', userId)
-      .maybeSingle();
+      .maybeSingle() as any;
     if (profile?.phone) setPhoneNumber(profile.phone);
     if (profile?.full_name) setUserName(profile.full_name);
+    if (profile?.diet_preference) {
+      const isVeg = profile.diet_preference === 'veg';
+      setVegModeState(isVeg);
+      localStorage.setItem('vegMode', String(isVeg));
+    }
 
     // Fetch badges
     const { data: userBadges } = await supabase
@@ -227,7 +232,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setCart(prev => prev.map(c => c.id === id ? { ...c, quantity: qty } : c));
   };
   const clearCart = () => setCart([]);
-  const setVegMode = (v: boolean) => { setVegModeState(v); localStorage.setItem('vegMode', String(v)); };
+  const setVegMode = (v: boolean) => {
+    setVegModeState(v);
+    localStorage.setItem('vegMode', String(v));
+    // Persist to DB
+    if (userId) {
+      supabase.from('profiles').update({ diet_preference: v ? 'veg' : 'nonveg' } as any).eq('user_id', userId).then(() => {});
+    }
+  };
 
   return (
     <AppContext.Provider value={{

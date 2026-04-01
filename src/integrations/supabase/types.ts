@@ -835,6 +835,7 @@ export type Database = {
           birthday: string | null
           created_at: string
           designation: string | null
+          diet_preference: string | null
           full_name: string | null
           id: string
           pan_document_url: string | null
@@ -853,6 +854,7 @@ export type Database = {
           birthday?: string | null
           created_at?: string
           designation?: string | null
+          diet_preference?: string | null
           full_name?: string | null
           id?: string
           pan_document_url?: string | null
@@ -871,6 +873,7 @@ export type Database = {
           birthday?: string | null
           created_at?: string
           designation?: string | null
+          diet_preference?: string | null
           full_name?: string | null
           id?: string
           pan_document_url?: string | null

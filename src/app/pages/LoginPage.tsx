@@ -3,18 +3,19 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useAppStore } from '../store';
-import { ArrowRight, Shield, Loader2 } from 'lucide-react';
+import { ArrowRight, Shield, Loader2, Leaf, Drumstick } from 'lucide-react';
 
 const OTP_LENGTH = 6;
 
 const LoginPage = () => {
   const navigate = useNavigate();
-  const { setLoggedIn, setPhoneNumber } = useAppStore();
+  const { setLoggedIn, setPhoneNumber, setVegMode } = useAppStore();
 
   // Only sign out if the user explicitly navigated to /login (not on redirect)
   // We no longer auto-signOut on mount — this was causing a loop where
   // OpsRoute redirects here and the signOut clears the valid session.
-  const [step, setStep] = useState<'phone' | 'otp' | 'success'>('phone');
+  const [step, setStep] = useState<'phone' | 'otp' | 'diet' | 'success'>('phone');
+  const [pendingDestination, setPendingDestination] = useState<string | null>(null);
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
   const [error, setError] = useState('');
@@ -109,7 +110,6 @@ const LoginPage = () => {
   const onAuthSuccess = async () => {
     console.log('[Login] Auth successful, checking role...');
     setLoggedIn(true);
-    setStep('success');
 
     // Save phone number to profile so it persists across reloads
     try {
@@ -139,32 +139,59 @@ const LoginPage = () => {
           const dest = role === 'kitchen_manager' ? '/kitchen'
             : role === 'delivery_partner' ? '/deliveries'
             : '/dashboard';
+          setStep('success');
           setTimeout(() => { window.location.href = dest; }, 1000);
           return;
         }
-      }
-    } catch (e) {
-      console.warn('[Login] Role check failed, defaulting to /welcome', e);
-    }
 
-    // Check if returning user (has orders) → /home, new user → /welcome
-    try {
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
-      if (currentUser) {
+        // Check diet preference — if not set, show diet step
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('diet_preference')
+          .eq('user_id', user.id)
+          .maybeSingle() as any;
+
+        // Determine destination
         const { count } = await supabase
           .from('orders')
           .select('id', { count: 'exact', head: true })
-          .eq('user_id', currentUser.id);
-        if (count && count > 0) {
-          setTimeout(() => { window.location.href = '/home'; }, 1000);
-          return;
+          .eq('user_id', user.id);
+        const dest = (count && count > 0) ? '/home' : '/welcome';
+
+        if (profile?.diet_preference) {
+          // Already set — apply and go
+          setVegMode(profile.diet_preference === 'veg');
+          setStep('success');
+          setTimeout(() => { window.location.href = dest; }, 1000);
+        } else {
+          // New user — ask diet preference
+          setPendingDestination(dest);
+          setStep('diet');
         }
+        return;
       }
     } catch (e) {
-      console.warn('[Login] Order check failed', e);
+      console.warn('[Login] Role/diet check failed', e);
     }
 
+    setStep('success');
     setTimeout(() => { window.location.href = '/welcome'; }, 1000);
+  };
+
+  const handleDietChoice = async (preference: 'veg' | 'nonveg') => {
+    setVegMode(preference === 'veg');
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await (supabase.from('profiles') as any).update({ diet_preference: preference }).eq('user_id', user.id);
+      }
+    } catch (e) {
+      console.warn('[Login] Diet preference save failed', e);
+    }
+
+    setStep('success');
+    setTimeout(() => { window.location.href = pendingDestination || '/home'; }, 1000);
   };
 
   // Simple OTP input handler — single text input
@@ -262,6 +289,58 @@ const LoginPage = () => {
             <p className="text-muted-foreground text-xs">
               Wrong number? <button onClick={() => { setStep('phone'); setOtp(''); setError(''); }} className="text-secondary underline">Go back</button>
             </p>
+          </motion.div>
+        )}
+
+        {step === 'diet' && (
+          <motion.div
+            key="diet"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -30 }}
+            className="w-full max-w-sm space-y-8 text-center"
+          >
+            <div>
+              <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 1.5, repeat: Infinity }} className="text-5xl mb-3">
+                🍽️
+              </motion.div>
+              <span className="font-display text-2xl text-gradient-gold">Your Royal Preference</span>
+              <p className="mt-2 text-muted-foreground text-sm">What does the royal palate prefer?</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                whileHover={{ scale: 1.02 }}
+                onClick={() => handleDietChoice('veg')}
+                className="flex flex-col items-center gap-3 p-6 bg-card border-2 border-green-500/30 rounded-2xl hover:border-green-500/60 hover:bg-green-500/5 transition-all"
+              >
+                <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center">
+                  <Leaf size={28} className="text-green-500" />
+                </div>
+                <div>
+                  <p className="font-heading text-foreground text-sm">Vegetarian</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">Pure veg delicacies</p>
+                </div>
+              </motion.button>
+
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                whileHover={{ scale: 1.02 }}
+                onClick={() => handleDietChoice('nonveg')}
+                className="flex flex-col items-center gap-3 p-6 bg-card border-2 border-red-500/30 rounded-2xl hover:border-red-500/60 hover:bg-red-500/5 transition-all"
+              >
+                <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center">
+                  <span className="text-2xl">🍗</span>
+                </div>
+                <div>
+                  <p className="font-heading text-foreground text-sm">Non-Vegetarian</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">The full royal feast</p>
+                </div>
+              </motion.button>
+            </div>
+
+            <p className="text-[10px] text-muted-foreground">You can change this anytime from your Profile</p>
           </motion.div>
         )}
 
