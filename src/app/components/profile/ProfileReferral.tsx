@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Gift, Share2, Check } from 'lucide-react';
+import { Gift, Share2, Check, Copy, Link } from 'lucide-react';
 
 interface ProfileReferralProps {
   referralCode: string;
@@ -9,10 +9,25 @@ interface ProfileReferralProps {
 const ProfileReferral = ({ referralCode }: ProfileReferralProps) => {
   const [copied, setCopied] = useState(false);
 
+  const appLink = 'https://biryaan.lovable.app';
+
   const handleShare = () => {
-    const shareText = `Join BIRYAAN — the Sultanat of Biryani! 🍛👑\n\nUse my referral code ${referralCode} when you sign up and we both earn Biryan Points!\n\nOrder now: https://biryaan.lovable.app`;
+    const shareText = [
+      `🍛👑 Join BIRYAAN — the Sultanat of Biryani!`,
+      ``,
+      `Use my referral code ${referralCode} when you sign up and we both earn Biryan Points!`,
+      ``,
+      `🔗 Order now: ${appLink}`,
+      ``,
+      `Download the app & start your royal feast today! 🏰`,
+    ].join('\n');
+
     if (navigator.share) {
-      navigator.share({ title: 'BIRYAAN Referral', text: shareText }).catch(() => {
+      navigator.share({
+        title: 'BIRYAAN — Royal Biryani, Delivered',
+        text: shareText,
+        url: appLink,
+      }).catch(() => {
         navigator.clipboard.writeText(shareText);
         setCopied(true);
       });
@@ -20,6 +35,12 @@ const ProfileReferral = ({ referralCode }: ProfileReferralProps) => {
       navigator.clipboard.writeText(shareText);
       setCopied(true);
     }
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleCopyCode = () => {
+    navigator.clipboard.writeText(referralCode);
+    setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -32,6 +53,8 @@ const ProfileReferral = ({ referralCode }: ProfileReferralProps) => {
           <p className="text-sm font-heading text-foreground">Refer & Earn</p>
         </div>
         <p className="text-xs text-muted-foreground">Share your code — both you and your friend earn Biryan Points on their first order!</p>
+
+        {/* Referral code */}
         <div className="flex items-center gap-2 bg-muted/60 rounded-xl p-3 border border-border">
           <span className="text-sm font-mono text-secondary font-bold flex-1 tracking-wider">{referralCode}</span>
           <AnimatePresence mode="wait">
@@ -40,13 +63,27 @@ const ProfileReferral = ({ referralCode }: ProfileReferralProps) => {
                 <Check size={16} className="text-green-500" />
               </motion.div>
             ) : (
-              <motion.button key="copy" whileTap={{ scale: 0.9 }} onClick={handleShare}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-saffron rounded-lg">
-                <Share2 size={12} className="text-primary-foreground" />
-                <span className="text-[10px] font-heading text-primary-foreground uppercase">Share</span>
+              <motion.button key="copy" whileTap={{ scale: 0.9 }} onClick={handleCopyCode}
+                className="p-1.5 rounded-lg bg-muted hover:bg-muted/80 transition-colors">
+                <Copy size={12} className="text-muted-foreground" />
               </motion.button>
             )}
           </AnimatePresence>
+        </div>
+
+        {/* Share button with link preview */}
+        <motion.button
+          whileTap={{ scale: 0.97 }}
+          onClick={handleShare}
+          className="w-full flex items-center justify-center gap-2 py-3 bg-gradient-saffron rounded-xl"
+        >
+          <Share2 size={14} className="text-primary-foreground" />
+          <span className="text-sm font-heading text-primary-foreground">Share Invite with Friends</span>
+        </motion.button>
+
+        <div className="flex items-center gap-1.5 justify-center">
+          <Link size={10} className="text-muted-foreground" />
+          <span className="text-[10px] text-muted-foreground">Your friends will get the app link to order instantly</span>
         </div>
       </motion.div>
     </div>

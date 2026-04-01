@@ -53,6 +53,7 @@ interface AppState {
   transactions: WalletTransaction[];
   musicEnabled: boolean;
   notificationsEnabled: boolean;
+  vegMode: boolean;
   referralCode: string;
   savedAddresses: string[];
   activeCampaigns: LoyaltyCampaign[];
@@ -67,6 +68,7 @@ interface AppState {
   clearCart: () => void;
   setMusicEnabled: (v: boolean) => void;
   setNotificationsEnabled: (v: boolean) => void;
+  setVegMode: (v: boolean) => void;
   refreshUserData: () => Promise<void>;
 }
 
@@ -89,6 +91,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
   const [musicEnabled, setMusicEnabled] = useState(true);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [vegMode, setVegModeState] = useState(() => localStorage.getItem('vegMode') === 'true');
   const [referralCode, setReferralCode] = useState('');
   const [savedAddresses] = useState<string[]>([]);
   const [activeCampaigns, setActiveCampaigns] = useState<LoyaltyCampaign[]>([]);
@@ -224,14 +227,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setCart(prev => prev.map(c => c.id === id ? { ...c, quantity: qty } : c));
   };
   const clearCart = () => setCart([]);
+  const setVegMode = (v: boolean) => { setVegModeState(v); localStorage.setItem('vegMode', String(v)); };
 
   return (
     <AppContext.Provider value={{
       isLoggedIn, userId, phoneNumber, userName, walletBalance, totalOrders,
-      cart, transactions, musicEnabled, notificationsEnabled, referralCode,
+      cart, transactions, musicEnabled, notificationsEnabled, vegMode, referralCode,
       savedAddresses, activeCampaigns, badges,
       setLoggedIn, setPhoneNumber, setUserName, addToCart, removeFromCart,
-      updateQuantity, clearCart, setMusicEnabled, setNotificationsEnabled, refreshUserData,
+      updateQuantity, clearCart, setMusicEnabled, setNotificationsEnabled, setVegMode, refreshUserData,
     }}>
       {children}
     </AppContext.Provider>

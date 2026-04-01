@@ -1,15 +1,13 @@
 import { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ArrowLeft, Copy, ChevronRight, Volume2, VolumeX, Bell, BellOff,
-  LogOut, Award, MapPin, Package, Share2, Check, Crown, Gift, Camera,
-  Phone, Cake, Heart, CalendarDays, Pencil,
+  ArrowLeft, ChevronRight, Volume2, VolumeX, Bell, BellOff,
+  LogOut, Package, Crown, Leaf,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store';
 import BottomNav from '../components/BottomNav';
 import { supabase } from '@/integrations/supabase/client';
-import { format } from 'date-fns';
 
 // Sub-components
 import ProfileHero from '../components/profile/ProfileHero';
@@ -25,7 +23,7 @@ const ProfilePage = () => {
   const {
     userName, phoneNumber, walletBalance, totalOrders, referralCode, userId,
     musicEnabled, setMusicEnabled, notificationsEnabled, setNotificationsEnabled,
-    setLoggedIn, badges,
+    vegMode, setVegMode, setLoggedIn, badges,
   } = useAppStore();
 
   const [addresses, setAddresses] = useState<any[]>([]);
@@ -134,6 +132,20 @@ const ProfilePage = () => {
 
       {/* Toggles */}
       <div className="px-4 pt-4 space-y-1.5">
+        {/* Veg Mode */}
+        <button onClick={() => setVegMode(!vegMode)}
+          className={`w-full flex items-center justify-between p-3.5 bg-card border rounded-xl transition-colors ${vegMode ? 'border-green-500/30' : 'border-border'}`}>
+          <div className="flex items-center gap-3">
+            <Leaf size={16} className={vegMode ? 'text-green-500' : 'text-muted-foreground'} />
+            <div className="text-left">
+              <span className="text-sm text-foreground block">Veg Mode</span>
+              <span className="text-[10px] text-muted-foreground">{vegMode ? 'Only vegetarian dishes' : 'Showing all dishes'}</span>
+            </div>
+          </div>
+          <div className={`w-11 h-6 rounded-full transition-colors ${vegMode ? 'bg-green-500' : 'bg-muted'} flex items-center px-0.5`}>
+            <div className={`w-5 h-5 rounded-full bg-card shadow-sm transition-transform ${vegMode ? 'translate-x-5' : 'translate-x-0'}`} />
+          </div>
+        </button>
         <button onClick={() => setMusicEnabled(!musicEnabled)}
           className="w-full flex items-center justify-between p-3.5 bg-card border border-border rounded-xl">
           <div className="flex items-center gap-3">
