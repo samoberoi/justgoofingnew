@@ -154,7 +154,7 @@ const ACTIVE_STATUS_LABELS: Record<string, { label: string; emoji: string }> = {
 
 const HomePage = () => {
   const navigate = useNavigate();
-  const { cart, activeCampaigns, totalOrders, userId, vegMode } = useAppStore();
+  const { cart, activeCampaigns, totalOrders, userId, vegMode, setVegMode } = useAppStore();
   const { selectedStore, outOfArea, locationLoading } = useStoreSelection();
   const { categories, grouped, uncategorized, loading, items } = useMenu(selectedStore?.id);
   const [vegFilter, setVegFilter] = useState<'all' | 'veg' | 'nonveg'>(vegMode ? 'veg' : 'all');
