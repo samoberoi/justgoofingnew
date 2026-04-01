@@ -886,6 +886,91 @@ export type Database = {
         }
         Relationships: []
       }
+      recipe_ingredients: {
+        Row: {
+          created_at: string
+          display_order: number
+          id: string
+          name: string
+          quantity: number
+          recipe_id: string
+          unit: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          name: string
+          quantity?: number
+          recipe_id: string
+          unit?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          name?: string
+          quantity?: number
+          recipe_id?: string
+          unit?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipe_ingredients_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recipes: {
+        Row: {
+          base_servings: string
+          cooking_time_minutes: number | null
+          created_at: string
+          id: string
+          instructions: string | null
+          menu_item_id: string
+          notes: string | null
+          updated_at: string
+          video_url: string | null
+          water_quantity: string | null
+        }
+        Insert: {
+          base_servings?: string
+          cooking_time_minutes?: number | null
+          created_at?: string
+          id?: string
+          instructions?: string | null
+          menu_item_id: string
+          notes?: string | null
+          updated_at?: string
+          video_url?: string | null
+          water_quantity?: string | null
+        }
+        Update: {
+          base_servings?: string
+          cooking_time_minutes?: number | null
+          created_at?: string
+          id?: string
+          instructions?: string | null
+          menu_item_id?: string
+          notes?: string | null
+          updated_at?: string
+          video_url?: string | null
+          water_quantity?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipes_menu_item_id_fkey"
+            columns: ["menu_item_id"]
+            isOneToOne: true
+            referencedRelation: "menu_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       referral_settings: {
         Row: {
           id: string
