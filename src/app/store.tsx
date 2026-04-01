@@ -53,6 +53,7 @@ interface AppState {
   transactions: WalletTransaction[];
   musicEnabled: boolean;
   notificationsEnabled: boolean;
+  vegMode: boolean;
   referralCode: string;
   savedAddresses: string[];
   activeCampaigns: LoyaltyCampaign[];
