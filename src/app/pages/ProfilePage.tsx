@@ -9,7 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 const ProfilePage = () => {
   const navigate = useNavigate();
   const {
-    userName, walletBalance, totalOrders, referralCode, userId,
+    userName, phoneNumber, walletBalance, totalOrders, referralCode, userId,
     musicEnabled, setMusicEnabled, notificationsEnabled, setNotificationsEnabled,
     setLoggedIn, badges,
   } = useAppStore();
@@ -76,6 +76,7 @@ const ProfilePage = () => {
               {tierEmoji}
             </div>
             <p className="font-heading text-lg text-foreground mt-3">{userName || 'Royal Guest'}</p>
+            {phoneNumber && <p className="text-xs text-muted-foreground mt-0.5">{phoneNumber}</p>}
             <div className="flex items-center justify-center gap-1.5 mt-1">
               <Crown size={12} className="text-secondary" />
               <span className="text-xs text-secondary font-heading uppercase tracking-wider">{tierName}</span>
