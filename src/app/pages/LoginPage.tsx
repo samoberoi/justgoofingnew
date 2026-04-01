@@ -110,7 +110,6 @@ const LoginPage = () => {
   const onAuthSuccess = async () => {
     console.log('[Login] Auth successful, checking role...');
     setLoggedIn(true);
-    setStep('success');
 
     // Save phone number to profile so it persists across reloads
     try {
@@ -140,32 +139,59 @@ const LoginPage = () => {
           const dest = role === 'kitchen_manager' ? '/kitchen'
             : role === 'delivery_partner' ? '/deliveries'
             : '/dashboard';
+          setStep('success');
           setTimeout(() => { window.location.href = dest; }, 1000);
           return;
         }
-      }
-    } catch (e) {
-      console.warn('[Login] Role check failed, defaulting to /welcome', e);
-    }
 
-    // Check if returning user (has orders) → /home, new user → /welcome
-    try {
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
-      if (currentUser) {
+        // Check diet preference — if not set, show diet step
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('diet_preference')
+          .eq('user_id', user.id)
+          .maybeSingle() as any;
+
+        // Determine destination
         const { count } = await supabase
           .from('orders')
           .select('id', { count: 'exact', head: true })
-          .eq('user_id', currentUser.id);
-        if (count && count > 0) {
-          setTimeout(() => { window.location.href = '/home'; }, 1000);
-          return;
+          .eq('user_id', user.id);
+        const dest = (count && count > 0) ? '/home' : '/welcome';
+
+        if (profile?.diet_preference) {
+          // Already set — apply and go
+          setVegMode(profile.diet_preference === 'veg');
+          setStep('success');
+          setTimeout(() => { window.location.href = dest; }, 1000);
+        } else {
+          // New user — ask diet preference
+          setPendingDestination(dest);
+          setStep('diet');
         }
+        return;
       }
     } catch (e) {
-      console.warn('[Login] Order check failed', e);
+      console.warn('[Login] Role/diet check failed', e);
     }
 
+    setStep('success');
     setTimeout(() => { window.location.href = '/welcome'; }, 1000);
+  };
+
+  const handleDietChoice = async (preference: 'veg' | 'nonveg') => {
+    setVegMode(preference === 'veg');
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await (supabase.from('profiles') as any).update({ diet_preference: preference }).eq('user_id', user.id);
+      }
+    } catch (e) {
+      console.warn('[Login] Diet preference save failed', e);
+    }
+
+    setStep('success');
+    setTimeout(() => { window.location.href = pendingDestination || '/home'; }, 1000);
   };
 
   // Simple OTP input handler — single text input
