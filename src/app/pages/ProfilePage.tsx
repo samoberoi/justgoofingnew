@@ -1,15 +1,13 @@
 import { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ArrowLeft, Copy, ChevronRight, Volume2, VolumeX, Bell, BellOff,
-  LogOut, Award, MapPin, Package, Share2, Check, Crown, Gift, Camera,
-  Phone, Cake, Heart, CalendarDays, Pencil,
+  ArrowLeft, ChevronRight, Volume2, VolumeX, Bell, BellOff,
+  LogOut, Package, Crown, Leaf,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store';
 import BottomNav from '../components/BottomNav';
 import { supabase } from '@/integrations/supabase/client';
-import { format } from 'date-fns';
 
 // Sub-components
 import ProfileHero from '../components/profile/ProfileHero';
