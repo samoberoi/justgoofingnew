@@ -316,7 +316,9 @@ const HomePage = () => {
             <span className="px-3.5 py-1.5 rounded-full text-xs font-bold border bg-green-500/15 text-green-500 border-green-500/30">
               ● Veg Only
             </span>
-            <span className="text-[10px] text-muted-foreground">Change in Profile → Diet</span>
+            <button onClick={() => setVegMode(false)} className="text-[10px] text-muted-foreground underline underline-offset-2">
+              Show All
+            </button>
           </div>
         ) : (
           <div className="flex gap-2">
