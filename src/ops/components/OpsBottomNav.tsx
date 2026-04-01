@@ -23,6 +23,7 @@ const navConfig: Record<AppRole, { path: string; icon: any; label: string }[]> =
   ],
   kitchen_manager: [
     { path: '/kitchen', icon: UtensilsCrossed, label: 'Orders' },
+    { path: '/recipes', icon: ChefHat, label: 'Recipes' },
   ],
   delivery_partner: [
     { path: '/deliveries', icon: Truck, label: 'Deliveries' },
