@@ -14,7 +14,8 @@ const LoginPage = () => {
   // Only sign out if the user explicitly navigated to /login (not on redirect)
   // We no longer auto-signOut on mount — this was causing a loop where
   // OpsRoute redirects here and the signOut clears the valid session.
-  const [step, setStep] = useState<'phone' | 'otp' | 'success'>('phone');
+  const [step, setStep] = useState<'phone' | 'otp' | 'diet' | 'success'>('phone');
+  const [pendingDestination, setPendingDestination] = useState<string | null>(null);
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
   const [error, setError] = useState('');
