@@ -311,15 +311,20 @@ const HomePage = () => {
 
       {/* Category Pills + Veg Filter */}
       <div className="px-4 pt-3 space-y-2">
-        {vegMode && (
-          <div className="flex items-center gap-2 mb-2">
-            <span className="w-2 h-2 rounded-full bg-green-500" />
-            <span className="text-[11px] text-green-500 font-semibold">Veg Mode</span>
-            <button onClick={() => setVegMode(false)} className="text-[10px] text-muted-foreground/70 ml-1">✕</button>
-          </div>
-        )}
         <div className="flex gap-2">
-          {(['all', 'veg', 'nonveg'] as const).map(f => (
+          {(vegMode ? (['veg'] as const) : (['all', 'veg', 'nonveg'] as const)).map(f => (
+            <button key={f} onClick={() => setVegFilter(f)}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-bold border transition-all ${
+                vegFilter === f
+                  ? f === 'veg' ? 'bg-green-500/15 text-green-500 border-green-500/30'
+                    : f === 'nonveg' ? 'bg-red-500/15 text-red-500 border-red-500/30'
+                    : 'bg-secondary/15 text-secondary border-secondary/25'
+                  : 'bg-card text-muted-foreground border-border hover:border-muted-foreground/30'
+              }`}>
+              {f === 'all' ? 'All' : f === 'veg' ? '● Veg' : '● Non-Veg'}
+            </button>
+          ))}
+        </div>
             <button key={f} onClick={() => setVegFilter(f)}
               disabled={vegMode && f !== 'veg'}
               className={`px-3.5 py-1.5 rounded-full text-xs font-bold border transition-all ${
