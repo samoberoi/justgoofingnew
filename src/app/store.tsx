@@ -68,6 +68,7 @@ interface AppState {
   clearCart: () => void;
   setMusicEnabled: (v: boolean) => void;
   setNotificationsEnabled: (v: boolean) => void;
+  setVegMode: (v: boolean) => void;
   refreshUserData: () => Promise<void>;
 }
 
