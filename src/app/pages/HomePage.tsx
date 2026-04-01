@@ -154,7 +154,7 @@ const ACTIVE_STATUS_LABELS: Record<string, { label: string; emoji: string }> = {
 
 const HomePage = () => {
   const navigate = useNavigate();
-  const { cart, activeCampaigns, totalOrders, userId, vegMode } = useAppStore();
+  const { cart, activeCampaigns, totalOrders, userId, vegMode, setVegMode } = useAppStore();
   const { selectedStore, outOfArea, locationLoading } = useStoreSelection();
   const { categories, grouped, uncategorized, loading, items } = useMenu(selectedStore?.id);
   const [vegFilter, setVegFilter] = useState<'all' | 'veg' | 'nonveg'>(vegMode ? 'veg' : 'all');
@@ -316,7 +316,9 @@ const HomePage = () => {
             <span className="px-3.5 py-1.5 rounded-full text-xs font-bold border bg-green-500/15 text-green-500 border-green-500/30">
               ● Veg Only
             </span>
-            <span className="text-[10px] text-muted-foreground">Change in Profile → Diet</span>
+            <button onClick={() => setVegMode(false)} className="text-[10px] text-muted-foreground underline underline-offset-2">
+              Show All
+            </button>
           </div>
         ) : (
           <div className="flex gap-2">
