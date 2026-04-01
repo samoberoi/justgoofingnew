@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useAuth, AppRole } from '../hooks/useAuth';
 import {
   LayoutDashboard, ShoppingBag, UtensilsCrossed, Truck,
-  BarChart3, Users, Settings, Ticket, LogOut, Crown
+  BarChart3, Users, Settings, Ticket, LogOut, Crown, ChefHat
 } from 'lucide-react';
 
 const navConfig: Record<AppRole, { path: string; icon: any; label: string }[]> = {
@@ -11,6 +11,7 @@ const navConfig: Record<AppRole, { path: string; icon: any; label: string }[]> =
     { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/ops-orders', icon: ShoppingBag, label: 'Orders' },
     { path: '/menu', icon: UtensilsCrossed, label: 'Menu' },
+    { path: '/recipes', icon: ChefHat, label: 'Recipes' },
     { path: '/loyalty', icon: Crown, label: 'Loyalty' },
     { path: '/customers', icon: Users, label: 'Customers' },
     { path: '/settings', icon: Settings, label: 'Settings' },
@@ -19,10 +20,12 @@ const navConfig: Record<AppRole, { path: string; icon: any; label: string }[]> =
     { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/ops-orders', icon: ShoppingBag, label: 'Orders' },
     { path: '/menu', icon: UtensilsCrossed, label: 'Menu' },
+    { path: '/recipes', icon: ChefHat, label: 'Recipes' },
     { path: '/customers', icon: Users, label: 'Customers' },
   ],
   kitchen_manager: [
     { path: '/kitchen', icon: UtensilsCrossed, label: 'Orders' },
+    { path: '/recipes', icon: ChefHat, label: 'Recipes' },
   ],
   delivery_partner: [
     { path: '/deliveries', icon: Truck, label: 'Deliveries' },
