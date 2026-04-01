@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useAppStore } from '../store';
-import { ArrowRight, Shield, Loader2 } from 'lucide-react';
+import { ArrowRight, Shield, Loader2, Leaf, Drumstick } from 'lucide-react';
 
 const OTP_LENGTH = 6;
 
