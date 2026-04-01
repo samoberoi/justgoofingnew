@@ -325,20 +325,6 @@ const HomePage = () => {
             </button>
           ))}
         </div>
-            <button key={f} onClick={() => setVegFilter(f)}
-              disabled={vegMode && f !== 'veg'}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-bold border transition-all ${
-                vegMode && f !== 'veg' ? 'hidden' :
-                vegFilter === f
-                  ? f === 'veg' ? 'bg-green-500/15 text-green-500 border-green-500/30'
-                    : f === 'nonveg' ? 'bg-red-500/15 text-red-500 border-red-500/30'
-                    : 'bg-secondary/15 text-secondary border-secondary/25'
-                  : 'bg-card text-muted-foreground border-border hover:border-muted-foreground/30'
-              }`}>
-              {f === 'all' ? 'All' : f === 'veg' ? '● Veg' : '● Non-Veg'}
-            </button>
-          ))}
-        </div>
 
         {/* Category scroller */}
         {visibleCategories.length > 1 && (
