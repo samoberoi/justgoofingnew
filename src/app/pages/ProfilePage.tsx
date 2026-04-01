@@ -9,7 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 const ProfilePage = () => {
   const navigate = useNavigate();
   const {
-    userName, walletBalance, totalOrders, referralCode, userId,
+    userName, phoneNumber, walletBalance, totalOrders, referralCode, userId,
     musicEnabled, setMusicEnabled, notificationsEnabled, setNotificationsEnabled,
     setLoggedIn, badges,
   } = useAppStore();
