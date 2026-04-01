@@ -35,6 +35,7 @@ import OpsSettingsPage from "./ops/pages/OpsSettingsPage";
 import OpsCustomersPage from "./ops/pages/OpsCustomersPage";
 import KitchenView from "./ops/pages/KitchenView";
 import DeliveryView from "./ops/pages/DeliveryView";
+import RecipeManagerPage from "./ops/pages/RecipeManagerPage";
 
 const queryClient = new QueryClient();
 
