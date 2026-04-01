@@ -344,6 +344,7 @@ const LoginPage = () => {
           </motion.div>
         )}
 
+        {step === 'success' && (
           <motion.div
             key="success"
             initial={{ scale: 0.5, opacity: 0 }}
