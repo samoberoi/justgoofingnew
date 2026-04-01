@@ -830,7 +830,9 @@ export type Database = {
         Row: {
           aadhaar_document_url: string | null
           aadhaar_number: string | null
+          anniversary: string | null
           avatar_url: string | null
+          birthday: string | null
           created_at: string
           designation: string | null
           full_name: string | null
@@ -846,7 +848,9 @@ export type Database = {
         Insert: {
           aadhaar_document_url?: string | null
           aadhaar_number?: string | null
+          anniversary?: string | null
           avatar_url?: string | null
+          birthday?: string | null
           created_at?: string
           designation?: string | null
           full_name?: string | null
@@ -862,7 +866,9 @@ export type Database = {
         Update: {
           aadhaar_document_url?: string | null
           aadhaar_number?: string | null
+          anniversary?: string | null
           avatar_url?: string | null
+          birthday?: string | null
           created_at?: string
           designation?: string | null
           full_name?: string | null
