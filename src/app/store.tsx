@@ -91,6 +91,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
   const [musicEnabled, setMusicEnabled] = useState(true);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [vegMode, setVegModeState] = useState(() => localStorage.getItem('vegMode') === 'true');
   const [referralCode, setReferralCode] = useState('');
   const [savedAddresses] = useState<string[]>([]);
   const [activeCampaigns, setActiveCampaigns] = useState<LoyaltyCampaign[]>([]);
