@@ -185,6 +185,13 @@ const SuperAdminDashboard = () => {
     setTopCustomers(Array.from(map.values()).sort((a, b) => b.spent - a.spent).slice(0, 10));
   };
 
+  const fetchLowStock = async () => {
+    const { data } = await supabase.from('inventory_items').select('name, current_stock, min_stock_level, unit').eq('is_active', true);
+    if (!data) return;
+    const alertItems = (data as any[]).filter(i => i.current_stock <= i.min_stock_level).sort((a, b) => a.current_stock - b.current_stock).slice(0, 5);
+    setLowStockItems(alertItems);
+  };
+
   const selectedLabel = DATE_OPTIONS.find(d => d.key === dateRange)?.label || 'Today';
   const totalTeam = teamStats.superAdmins + teamStats.storeManagers + teamStats.kitchenManagers + teamStats.deliveryPartners;
 
