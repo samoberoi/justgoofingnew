@@ -282,14 +282,11 @@ const RecipeManagerPage = () => {
             <h3 className="text-xs font-bold text-foreground uppercase tracking-wider">Details</h3>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-[11px] text-muted-foreground mb-1 block">Base Servings</label>
-                <Input
-                  value={editRecipe.base_servings || ''}
-                  onChange={e => setEditRecipe(p => ({ ...p, base_servings: e.target.value }))}
-                  placeholder="e.g. 1 plate / 250g"
-                  disabled={isReadOnly}
-                  className="text-sm"
-                />
+                <label className="text-[11px] text-muted-foreground mb-1 block">Base Serving (smallest variant)</label>
+                <div className="flex items-center gap-2 h-9 px-3 rounded-md border border-border bg-muted/30 text-sm text-foreground">
+                  <Scale size={14} className="text-muted-foreground" />
+                  <span className="font-medium">{editRecipe.base_servings || '—'}</span>
+                </div>
               </div>
               <div>
                 <label className="text-[11px] text-muted-foreground mb-1 block">Cooking Time (min)</label>
