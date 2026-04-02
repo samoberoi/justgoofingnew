@@ -9,7 +9,7 @@ import {
   IndianRupee, ShoppingBag, TrendingUp, Clock,
   Store, Users, ChefHat, Truck, Shield, UtensilsCrossed,
   Layers, Tag, Crown, AlertTriangle, Calendar, ChevronDown,
-  ChevronRight, Percent
+  ChevronRight, Percent, Package
 } from 'lucide-react';
 
 type DateRange = 'today' | 'yesterday' | 'this_week' | 'last_week' | 'this_month' | 'custom';
