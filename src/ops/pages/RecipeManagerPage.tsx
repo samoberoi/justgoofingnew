@@ -114,10 +114,18 @@ const RecipeManagerPage = () => {
     });
   }, [menuItems, search, filterCategory]);
 
+  const getSmallestVariant = (itemId: string) => {
+    const item = menuItems.find(i => i.id === itemId);
+    if (!item || item.variants.length === 0) return null;
+    return [...item.variants].sort((a, b) => a.price - b.price)[0];
+  };
+
   const openEditor = async (itemId: string) => {
     const existing = recipes.get(itemId);
+    const smallest = getSmallestVariant(itemId);
+    const baseServing = smallest ? smallest.name : '1 serving';
     if (existing) {
-      setEditRecipe(existing);
+      setEditRecipe({ ...existing, base_servings: baseServing });
       // Fetch ingredients
       const { data } = await supabase
         .from('recipe_ingredients')
@@ -126,7 +134,7 @@ const RecipeManagerPage = () => {
         .order('display_order');
       setEditIngredients(data || []);
     } else {
-      setEditRecipe({ menu_item_id: itemId, base_servings: '1' });
+      setEditRecipe({ menu_item_id: itemId, base_servings: baseServing });
       setEditIngredients([]);
     }
     setSelectedItemId(itemId);
