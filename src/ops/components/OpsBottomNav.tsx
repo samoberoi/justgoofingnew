@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useAuth, AppRole } from '../hooks/useAuth';
 import {
   LayoutDashboard, ShoppingBag, UtensilsCrossed, Truck,
-  BarChart3, Users, Settings, Ticket, LogOut, Crown, ChefHat
+  BarChart3, Users, Settings, Ticket, LogOut, Crown, ChefHat, Package
 } from 'lucide-react';
 
 const navConfig: Record<AppRole, { path: string; icon: any; label: string }[]> = {
