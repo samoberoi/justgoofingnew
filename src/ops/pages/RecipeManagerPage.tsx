@@ -521,6 +521,7 @@ const RecipeManagerPage = () => {
               {/* Variant quick-select */}
               <p className="text-xs text-muted-foreground mb-2">Base: {getSmallestVariant(scaleItem.id)?.name || 'default'}</p>
               {scaleItem.variants.length >= 2 && (
+                <div>
                   <label className="text-xs text-muted-foreground mb-1.5 block">Scale by variant</label>
                   <div className="flex flex-wrap gap-2">
                     {getVariantMultipliers(scaleItem.id).map(v => (
