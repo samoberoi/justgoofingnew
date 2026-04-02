@@ -196,6 +196,139 @@ export type Database = {
         }
         Relationships: []
       }
+      inventory_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          display_order: number
+          id: string
+          is_active: boolean
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          name: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+        }
+        Relationships: []
+      }
+      inventory_items: {
+        Row: {
+          category_id: string | null
+          cost_per_unit: number | null
+          created_at: string
+          current_stock: number
+          id: string
+          is_active: boolean
+          max_stock_level: number | null
+          min_stock_level: number
+          name: string
+          notes: string | null
+          supplier_name: string | null
+          supplier_phone: string | null
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          category_id?: string | null
+          cost_per_unit?: number | null
+          created_at?: string
+          current_stock?: number
+          id?: string
+          is_active?: boolean
+          max_stock_level?: number | null
+          min_stock_level?: number
+          name: string
+          notes?: string | null
+          supplier_name?: string | null
+          supplier_phone?: string | null
+          unit?: string
+          updated_at?: string
+        }
+        Update: {
+          category_id?: string | null
+          cost_per_unit?: number | null
+          created_at?: string
+          current_stock?: number
+          id?: string
+          is_active?: boolean
+          max_stock_level?: number | null
+          min_stock_level?: number
+          name?: string
+          notes?: string | null
+          supplier_name?: string | null
+          supplier_phone?: string | null
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_items_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_transactions: {
+        Row: {
+          created_at: string
+          id: string
+          inventory_item_id: string
+          performed_by: string | null
+          quantity: number
+          reference_note: string | null
+          stock_after: number
+          total_cost: number | null
+          type: string
+          unit_cost: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          inventory_item_id: string
+          performed_by?: string | null
+          quantity?: number
+          reference_note?: string | null
+          stock_after?: number
+          total_cost?: number | null
+          type?: string
+          unit_cost?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          inventory_item_id?: string
+          performed_by?: string | null
+          quantity?: number
+          reference_note?: string | null
+          stock_after?: number
+          total_cost?: number | null
+          type?: string
+          unit_cost?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_transactions_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       loyalty_campaigns: {
         Row: {
           auto_apply: boolean

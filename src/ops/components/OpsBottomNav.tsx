@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useAuth, AppRole } from '../hooks/useAuth';
 import {
   LayoutDashboard, ShoppingBag, UtensilsCrossed, Truck,
-  BarChart3, Users, Settings, Ticket, LogOut, Crown, ChefHat
+  BarChart3, Users, Settings, Ticket, LogOut, Crown, ChefHat, Package
 } from 'lucide-react';
 
 const navConfig: Record<AppRole, { path: string; icon: any; label: string }[]> = {
@@ -11,6 +11,7 @@ const navConfig: Record<AppRole, { path: string; icon: any; label: string }[]> =
     { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/ops-orders', icon: ShoppingBag, label: 'Orders' },
     { path: '/menu', icon: UtensilsCrossed, label: 'Menu' },
+    { path: '/inventory', icon: Package, label: 'Inventory' },
     { path: '/recipes', icon: ChefHat, label: 'Recipes' },
     { path: '/loyalty', icon: Crown, label: 'Loyalty' },
     { path: '/customers', icon: Users, label: 'Customers' },
@@ -20,6 +21,7 @@ const navConfig: Record<AppRole, { path: string; icon: any; label: string }[]> =
     { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/ops-orders', icon: ShoppingBag, label: 'Orders' },
     { path: '/menu', icon: UtensilsCrossed, label: 'Menu' },
+    { path: '/inventory', icon: Package, label: 'Inventory' },
     { path: '/recipes', icon: ChefHat, label: 'Recipes' },
     { path: '/customers', icon: Users, label: 'Customers' },
   ],

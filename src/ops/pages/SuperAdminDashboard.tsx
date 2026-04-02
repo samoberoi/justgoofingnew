@@ -9,7 +9,7 @@ import {
   IndianRupee, ShoppingBag, TrendingUp, Clock,
   Store, Users, ChefHat, Truck, Shield, UtensilsCrossed,
   Layers, Tag, Crown, AlertTriangle, Calendar, ChevronDown,
-  ChevronRight, Percent
+  ChevronRight, Percent, Package
 } from 'lucide-react';
 
 type DateRange = 'today' | 'yesterday' | 'this_week' | 'last_week' | 'this_month' | 'custom';
@@ -76,6 +76,7 @@ const SuperAdminDashboard = () => {
   const [storeCount, setStoreCount] = useState(0);
   const [topSellers, setTopSellers] = useState<any[]>([]);
   const [topCustomers, setTopCustomers] = useState<{ name: string; phone: string; orders: number; spent: number; userId: string | null }[]>([]);
+  const [lowStockItems, setLowStockItems] = useState<{ name: string; current_stock: number; min_stock_level: number; unit: string }[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -89,7 +90,7 @@ const SuperAdminDashboard = () => {
 
   const fetchAll = async () => {
     setLoading(true);
-    await Promise.all([fetchOrderStats(), fetchMenuStats(), fetchTeamStats(), fetchStoreStats(), fetchTopSellers(), fetchTopCustomers()]);
+    await Promise.all([fetchOrderStats(), fetchMenuStats(), fetchTeamStats(), fetchStoreStats(), fetchTopSellers(), fetchTopCustomers(), fetchLowStock()]);
     setLoading(false);
   };
 
@@ -182,6 +183,13 @@ const SuperAdminDashboard = () => {
       else { map.set(key, { name: o.customer_name || 'Guest', phone: o.customer_phone || '-', orders: 1, spent: Number(o.total), userId: o.user_id }); }
     });
     setTopCustomers(Array.from(map.values()).sort((a, b) => b.spent - a.spent).slice(0, 10));
+  };
+
+  const fetchLowStock = async () => {
+    const { data } = await supabase.from('inventory_items').select('name, current_stock, min_stock_level, unit').eq('is_active', true);
+    if (!data) return;
+    const alertItems = (data as any[]).filter(i => i.current_stock <= i.min_stock_level).sort((a, b) => a.current_stock - b.current_stock).slice(0, 5);
+    setLowStockItems(alertItems);
   };
 
   const selectedLabel = DATE_OPTIONS.find(d => d.key === dateRange)?.label || 'Today';
@@ -434,6 +442,40 @@ const SuperAdminDashboard = () => {
             </div>
           )}
         </div>
+
+        {/* ===== INVENTORY ALERTS ===== */}
+        {lowStockItems.length > 0 && (
+          <div>
+            <button onClick={() => navigate('/inventory')}
+              className="w-full flex items-center justify-between mb-2">
+              <h2 className="font-heading text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                <Package size={12} className="text-destructive" /> Inventory Alerts ({lowStockItems.length})
+              </h2>
+              <ChevronRight size={14} className="text-muted-foreground" />
+            </button>
+            <div className="space-y-1.5">
+              {lowStockItems.map((item, idx) => (
+                <motion.div key={idx} initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                  onClick={() => navigate('/inventory')}
+                  className="bg-card border border-destructive/20 rounded-xl p-3 flex items-center gap-3 cursor-pointer active:scale-[0.98] transition-transform">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${item.current_stock <= 0 ? 'bg-destructive/10' : 'bg-yellow-500/10'}`}>
+                    <AlertTriangle size={14} className={item.current_stock <= 0 ? 'text-destructive' : 'text-yellow-500'} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{item.name}</p>
+                    <p className="text-[10px] text-muted-foreground">Min: {item.min_stock_level} {item.unit}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className={`text-sm font-bold ${item.current_stock <= 0 ? 'text-destructive' : 'text-yellow-500'}`}>
+                      {item.current_stock} {item.unit}
+                    </p>
+                    <p className="text-[9px] text-muted-foreground">{item.current_stock <= 0 ? 'OUT' : 'LOW'}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* ===== ALERTS ===== */}
         {orderStats.active > 5 && (
