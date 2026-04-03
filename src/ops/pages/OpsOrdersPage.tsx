@@ -675,57 +675,73 @@ const OpsOrdersPage = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end justify-center"
+            className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-4"
             onClick={() => setRiderPickerOrderId(null)}
           >
             <motion.div
-              initial={{ y: 300 }}
-              animate={{ y: 0 }}
-              exit={{ y: 300 }}
-              transition={{ type: 'spring', damping: 25 }}
-              className="w-full max-w-lg bg-card border-t border-border rounded-t-3xl p-6 space-y-4"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+              className="w-full max-w-md bg-card border border-border rounded-2xl shadow-2xl overflow-hidden"
               onClick={e => e.stopPropagation()}
             >
-              <div className="flex items-center justify-between">
-                <h2 className="font-heading text-lg text-foreground">Assign Delivery Partner</h2>
-                <button onClick={() => setRiderPickerOrderId(null)} className="p-1 text-muted-foreground">
-                  <X size={20} />
+              {/* Modal Header */}
+              <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-muted/30">
+                <div>
+                  <h2 className="font-heading text-base text-foreground">Assign Delivery Partner</h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">Select an available rider</p>
+                </div>
+                <button onClick={() => setRiderPickerOrderId(null)} className="p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground">
+                  <X size={18} />
                 </button>
               </div>
 
-              {ridersLoading ? (
-                <div className="py-8 text-center text-muted-foreground text-sm">Loading available riders...</div>
-              ) : availableRiders.length === 0 ? (
-                <div className="py-8 text-center space-y-2">
-                  <Truck size={40} className="mx-auto text-muted-foreground/30" />
-                  <p className="text-muted-foreground text-sm font-medium">No riders available</p>
-                  <p className="text-muted-foreground text-xs">All delivery partners are currently offline</p>
-                </div>
-              ) : (
-                <div className="space-y-2 max-h-[50vh] overflow-y-auto">
-                  {availableRiders.map(rider => (
-                    <button
-                      key={rider.user_id}
-                      onClick={() => assignRider(riderPickerOrderId, rider.user_id)}
-                      className="w-full flex items-center justify-between p-4 bg-muted/30 border border-border rounded-xl hover:border-secondary/40 transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center">
-                          <Truck size={18} className="text-secondary" />
+              {/* Modal Body */}
+              <div className="p-4">
+                {ridersLoading ? (
+                  <div className="py-12 text-center">
+                    <div className="w-8 h-8 border-2 border-secondary border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                    <p className="text-muted-foreground text-sm">Finding available riders...</p>
+                  </div>
+                ) : availableRiders.length === 0 ? (
+                  <div className="py-12 text-center space-y-3">
+                    <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mx-auto">
+                      <Truck size={28} className="text-muted-foreground/40" />
+                    </div>
+                    <div>
+                      <p className="text-foreground text-sm font-heading">No Riders Online</p>
+                      <p className="text-muted-foreground text-xs mt-1">All delivery partners are currently offline.<br/>Ask a rider to toggle their status to Online.</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2 max-h-[40vh] overflow-y-auto">
+                    <p className="text-xs text-muted-foreground mb-2">{availableRiders.length} rider{availableRiders.length !== 1 ? 's' : ''} online</p>
+                    {availableRiders.map(rider => (
+                      <motion.button
+                        key={rider.user_id}
+                        whileTap={{ scale: 0.97 }}
+                        onClick={() => assignRider(riderPickerOrderId, rider.user_id)}
+                        className="w-full flex items-center justify-between p-3.5 bg-muted/20 border border-border rounded-xl hover:border-secondary/50 hover:bg-secondary/5 transition-all group"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-secondary/10 border border-secondary/20 flex items-center justify-center group-hover:bg-secondary/20 transition-colors">
+                            <Truck size={18} className="text-secondary" />
+                          </div>
+                          <div className="text-left">
+                            <p className="text-sm font-medium text-foreground">{rider.full_name}</p>
+                            <p className="text-xs text-muted-foreground">{rider.phone}</p>
+                          </div>
                         </div>
-                        <div className="text-left">
-                          <p className="text-sm font-medium text-foreground">{rider.full_name}</p>
-                          <p className="text-xs text-muted-foreground">{rider.phone}</p>
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                          <span className="text-green-400 text-xs font-medium">Online</span>
                         </div>
-                      </div>
-                      <div className="flex items-center gap-1 text-green-400 text-xs font-medium">
-                        <span className="w-2 h-2 rounded-full bg-green-400" />
-                        Online
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
+                      </motion.button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </motion.div>
           </motion.div>
         )}
