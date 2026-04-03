@@ -164,9 +164,25 @@ const DeliveryView = () => {
               </p>
             )}
           </div>
-          <button onClick={handleLogout} className="p-2 text-muted-foreground hover:text-destructive transition-colors">
-            <LogOut size={20} />
-          </button>
+          <div className="flex items-center gap-3">
+            {/* Availability Toggle */}
+            {!availLoading && (
+              <button
+                onClick={toggleAvailability}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${
+                  isAvailable
+                    ? 'bg-green-500/15 text-green-400 border-green-500/30'
+                    : 'bg-red-500/15 text-red-400 border-red-500/30'
+                }`}
+              >
+                <Power size={14} />
+                {isAvailable ? 'Online' : 'Offline'}
+              </button>
+            )}
+            <button onClick={handleLogout} className="p-2 text-muted-foreground hover:text-destructive transition-colors">
+              <LogOut size={20} />
+            </button>
+          </div>
         </div>
 
         {/* Tabs */}
