@@ -397,17 +397,24 @@ const OpsOrdersPage = () => {
                         </div>
                       </div>
 
-                      {/* Right: Status + Timer */}
+                       {/* Right: Status + Timer */}
                       <div className="flex flex-col items-end gap-1.5 shrink-0">
                         <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-semibold ${config.bg} ${config.color}`}>
                           <StatusIcon size={12} />
                           {config.label}
                         </div>
                         {order.status !== 'delivered' && order.status !== 'cancelled' && (
-                          <div className={`flex items-center gap-1 text-xs font-mono ${urgStyle.timer} ${urgStyle.pulse ? 'animate-pulse' : ''}`}>
-                            <Clock size={11} />
-                            {formatElapsed(elapsedMins)}
-                          </div>
+                          <>
+                            {/* Total order age — big prominent timer */}
+                            <div className={`flex items-center gap-1 text-sm font-mono font-bold ${urgStyle.timer} ${urgStyle.pulse ? 'animate-pulse' : ''}`}>
+                              <Clock size={12} />
+                              {formatElapsedDetailed(totalElapsedMins)}
+                            </div>
+                            {/* Time in current phase */}
+                            <div className="text-[10px] font-mono text-muted-foreground">
+                              {config.label}: {formatElapsed(statusElapsedMins)}
+                            </div>
+                          </>
                         )}
                       </div>
                     </div>
