@@ -37,6 +37,7 @@ const OrderTrackingPage = () => {
   const [order, setOrder] = useState<any>(null);
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deliveryCoords, setDeliveryCoords] = useState<{ lat: number; lng: number } | null>(null);
 
   useEffect(() => {
     if (!orderId) { setLoading(false); return; }
