@@ -668,6 +668,69 @@ const OpsOrdersPage = () => {
         )}
       </div>
 
+      {/* ── Rider Picker Modal ── */}
+      <AnimatePresence>
+        {riderPickerOrderId && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end justify-center"
+            onClick={() => setRiderPickerOrderId(null)}
+          >
+            <motion.div
+              initial={{ y: 300 }}
+              animate={{ y: 0 }}
+              exit={{ y: 300 }}
+              transition={{ type: 'spring', damping: 25 }}
+              className="w-full max-w-lg bg-card border-t border-border rounded-t-3xl p-6 space-y-4"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between">
+                <h2 className="font-heading text-lg text-foreground">Assign Delivery Partner</h2>
+                <button onClick={() => setRiderPickerOrderId(null)} className="p-1 text-muted-foreground">
+                  <X size={20} />
+                </button>
+              </div>
+
+              {ridersLoading ? (
+                <div className="py-8 text-center text-muted-foreground text-sm">Loading available riders...</div>
+              ) : availableRiders.length === 0 ? (
+                <div className="py-8 text-center space-y-2">
+                  <Truck size={40} className="mx-auto text-muted-foreground/30" />
+                  <p className="text-muted-foreground text-sm font-medium">No riders available</p>
+                  <p className="text-muted-foreground text-xs">All delivery partners are currently offline</p>
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-[50vh] overflow-y-auto">
+                  {availableRiders.map(rider => (
+                    <button
+                      key={rider.user_id}
+                      onClick={() => assignRider(riderPickerOrderId, rider.user_id)}
+                      className="w-full flex items-center justify-between p-4 bg-muted/30 border border-border rounded-xl hover:border-secondary/40 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center">
+                          <Truck size={18} className="text-secondary" />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-sm font-medium text-foreground">{rider.full_name}</p>
+                          <p className="text-xs text-muted-foreground">{rider.phone}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 text-green-400 text-xs font-medium">
+                        <span className="w-2 h-2 rounded-full bg-green-400" />
+                        Online
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <OpsBottomNav />
     </div>
   );
