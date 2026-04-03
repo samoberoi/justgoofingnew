@@ -222,18 +222,13 @@ const OpsOrdersPage = () => {
   const [customFrom, setCustomFrom] = useState('');
   const [customTo, setCustomTo] = useState('');
   const [now, setNow] = useState(Date.now());
-  const [prepTime, setPrepTime] = useState(30); // default prep time in minutes
+  const [orderPrepTimes, setOrderPrepTimes] = useState<Record<string, number>>({}); // orderId -> max prep time
+  const defaultPrepTime = 30; // fallback
 
   // Live timer tick every 10s for responsive urgency updates
   useEffect(() => {
     const interval = setInterval(() => setNow(Date.now()), 10000);
     return () => clearInterval(interval);
-  }, []);
-
-  // Fetch store prep time
-  useEffect(() => {
-    supabase.from('stores').select('default_prep_time').eq('is_active', true).limit(1).maybeSingle()
-      .then(({ data }) => { if (data?.default_prep_time) setPrepTime(data.default_prep_time); });
   }, []);
 
   useEffect(() => {
@@ -253,7 +248,34 @@ const OpsOrdersPage = () => {
     if (filter !== 'all') query = query.eq('status', filter as any);
     if (role === 'store_manager' && storeId) query = query.eq('store_id', storeId);
     const { data } = await query;
-    setOrders(data || []);
+    const fetchedOrders = data || [];
+    setOrders(fetchedOrders);
+
+    // Eagerly fetch ALL order items with their menu_item prep_time
+    if (fetchedOrders.length > 0) {
+      const orderIds = fetchedOrders.map(o => o.id);
+      const { data: allItems } = await supabase
+        .from('order_items')
+        .select('*, menu_items!order_items_menu_item_id_fkey(prep_time)')
+        .in('order_id', orderIds);
+
+      const grouped: Record<string, any[]> = {};
+      const prepTimes: Record<string, number> = {};
+
+      (allItems || []).forEach((item: any) => {
+        // Group items by order
+        if (!grouped[item.order_id]) grouped[item.order_id] = [];
+        grouped[item.order_id].push(item);
+
+        // Track max prep time per order (parallel cooking = max item time)
+        const itemPrep = item.menu_items?.prep_time || defaultPrepTime;
+        prepTimes[item.order_id] = Math.max(prepTimes[item.order_id] || 0, itemPrep);
+      });
+
+      setOrderItems(grouped);
+      setOrderPrepTimes(prepTimes);
+    }
+
     setLoading(false);
   };
 
