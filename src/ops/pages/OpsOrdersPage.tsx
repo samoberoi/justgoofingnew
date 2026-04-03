@@ -52,7 +52,7 @@ const TIMESTAMP_MAP: Record<string, string> = {
 const URGENCY_THRESHOLDS: Record<string, { amber: number; red: number }> = {
   new: { amber: 2, red: 5 },
   accepted: { amber: 3, red: 7 },
-  preparing: { amber: 25, red: 40 },
+  preparing: { amber: 25, red: 40 }, // fallback if no item prep time
   ready: { amber: 5, red: 10 },
   assigned: { amber: 5, red: 10 },
   picked_up: { amber: 10, red: 20 },
@@ -61,14 +61,30 @@ const URGENCY_THRESHOLDS: Record<string, { amber: number; red: number }> = {
 
 type Urgency = 'green' | 'amber' | 'red';
 
-const getUrgency = (status: string, elapsedMins: number, prepTime?: number): Urgency => {
+/** Smart urgency: for 'preparing' status, uses actual item-level prep time */
+const getUrgency = (status: string, elapsedMins: number, orderPrepTime?: number): Urgency => {
   const thresholds = URGENCY_THRESHOLDS[status];
   if (!thresholds) return 'green';
-  const amber = status === 'preparing' && prepTime ? prepTime * 0.8 : thresholds.amber;
-  const red = status === 'preparing' && prepTime ? prepTime * 1.3 : thresholds.red;
+  // For preparing: amber at 80% of expected, red at 100% (delayed!)
+  const amber = status === 'preparing' && orderPrepTime ? orderPrepTime * 0.8 : thresholds.amber;
+  const red = status === 'preparing' && orderPrepTime ? orderPrepTime : thresholds.red;
   if (elapsedMins >= red) return 'red';
   if (elapsedMins >= amber) return 'amber';
   return 'green';
+};
+
+/** Check if order is delayed: total time exceeds expected prep time */
+const isOrderDelayed = (order: any, totalElapsedMins: number, orderPrepTime: number): boolean => {
+  if (order.status === 'delivered' || order.status === 'cancelled') return false;
+  // If order is still in kitchen (new/accepted/preparing) and total time > expected prep
+  const kitchenStatuses = ['new', 'accepted', 'preparing'];
+  if (kitchenStatuses.includes(order.status) && totalElapsedMins > orderPrepTime) return true;
+  // If order is in preparing and phase time > expected prep
+  if (order.status === 'preparing' && order.preparing_at) {
+    const prepElapsed = (Date.now() - new Date(order.preparing_at).getTime()) / 60000;
+    if (prepElapsed > orderPrepTime) return true;
+  }
+  return false;
 };
 
 const URGENCY_STYLES: Record<Urgency, { border: string; timer: string; pulse: boolean; glow: string }> = {
