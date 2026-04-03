@@ -4,6 +4,7 @@ import { ArrowLeft, Package, Phone } from 'lucide-react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import BottomNav from '../components/BottomNav';
+import RiderTracker from '../components/RiderTracker';
 
 const STAGES = [
   { status: 'new', label: 'Order Placed', emoji: '📝', desc: 'Your dawat request has been received' },
