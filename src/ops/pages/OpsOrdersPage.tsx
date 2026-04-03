@@ -52,7 +52,7 @@ const TIMESTAMP_MAP: Record<string, string> = {
 const URGENCY_THRESHOLDS: Record<string, { amber: number; red: number }> = {
   new: { amber: 2, red: 5 },
   accepted: { amber: 3, red: 7 },
-  preparing: { amber: 25, red: 40 },
+  preparing: { amber: 25, red: 40 }, // fallback if no item prep time
   ready: { amber: 5, red: 10 },
   assigned: { amber: 5, red: 10 },
   picked_up: { amber: 10, red: 20 },
@@ -61,14 +61,30 @@ const URGENCY_THRESHOLDS: Record<string, { amber: number; red: number }> = {
 
 type Urgency = 'green' | 'amber' | 'red';
 
-const getUrgency = (status: string, elapsedMins: number, prepTime?: number): Urgency => {
+/** Smart urgency: for 'preparing' status, uses actual item-level prep time */
+const getUrgency = (status: string, elapsedMins: number, orderPrepTime?: number): Urgency => {
   const thresholds = URGENCY_THRESHOLDS[status];
   if (!thresholds) return 'green';
-  const amber = status === 'preparing' && prepTime ? prepTime * 0.8 : thresholds.amber;
-  const red = status === 'preparing' && prepTime ? prepTime * 1.3 : thresholds.red;
+  // For preparing: amber at 80% of expected, red at 100% (delayed!)
+  const amber = status === 'preparing' && orderPrepTime ? orderPrepTime * 0.8 : thresholds.amber;
+  const red = status === 'preparing' && orderPrepTime ? orderPrepTime : thresholds.red;
   if (elapsedMins >= red) return 'red';
   if (elapsedMins >= amber) return 'amber';
   return 'green';
+};
+
+/** Check if order is delayed: total time exceeds expected prep time */
+const isOrderDelayed = (order: any, totalElapsedMins: number, orderPrepTime: number): boolean => {
+  if (order.status === 'delivered' || order.status === 'cancelled') return false;
+  // If order is still in kitchen (new/accepted/preparing) and total time > expected prep
+  const kitchenStatuses = ['new', 'accepted', 'preparing'];
+  if (kitchenStatuses.includes(order.status) && totalElapsedMins > orderPrepTime) return true;
+  // If order is in preparing and phase time > expected prep
+  if (order.status === 'preparing' && order.preparing_at) {
+    const prepElapsed = (Date.now() - new Date(order.preparing_at).getTime()) / 60000;
+    if (prepElapsed > orderPrepTime) return true;
+  }
+  return false;
 };
 
 const URGENCY_STYLES: Record<Urgency, { border: string; timer: string; pulse: boolean; glow: string }> = {
@@ -206,18 +222,13 @@ const OpsOrdersPage = () => {
   const [customFrom, setCustomFrom] = useState('');
   const [customTo, setCustomTo] = useState('');
   const [now, setNow] = useState(Date.now());
-  const [prepTime, setPrepTime] = useState(30); // default prep time in minutes
+  const [orderPrepTimes, setOrderPrepTimes] = useState<Record<string, number>>({}); // orderId -> max prep time
+  const defaultPrepTime = 30; // fallback
 
   // Live timer tick every 10s for responsive urgency updates
   useEffect(() => {
     const interval = setInterval(() => setNow(Date.now()), 10000);
     return () => clearInterval(interval);
-  }, []);
-
-  // Fetch store prep time
-  useEffect(() => {
-    supabase.from('stores').select('default_prep_time').eq('is_active', true).limit(1).maybeSingle()
-      .then(({ data }) => { if (data?.default_prep_time) setPrepTime(data.default_prep_time); });
   }, []);
 
   useEffect(() => {
@@ -237,7 +248,34 @@ const OpsOrdersPage = () => {
     if (filter !== 'all') query = query.eq('status', filter as any);
     if (role === 'store_manager' && storeId) query = query.eq('store_id', storeId);
     const { data } = await query;
-    setOrders(data || []);
+    const fetchedOrders = data || [];
+    setOrders(fetchedOrders);
+
+    // Eagerly fetch ALL order items with their menu_item prep_time
+    if (fetchedOrders.length > 0) {
+      const orderIds = fetchedOrders.map(o => o.id);
+      const { data: allItems } = await supabase
+        .from('order_items')
+        .select('*, menu_items!order_items_menu_item_id_fkey(prep_time)')
+        .in('order_id', orderIds);
+
+      const grouped: Record<string, any[]> = {};
+      const prepTimes: Record<string, number> = {};
+
+      (allItems || []).forEach((item: any) => {
+        // Group items by order
+        if (!grouped[item.order_id]) grouped[item.order_id] = [];
+        grouped[item.order_id].push(item);
+
+        // Track max prep time per order (parallel cooking = max item time)
+        const itemPrep = item.menu_items?.prep_time || defaultPrepTime;
+        prepTimes[item.order_id] = Math.max(prepTimes[item.order_id] || 0, itemPrep);
+      });
+
+      setOrderItems(grouped);
+      setOrderPrepTimes(prepTimes);
+    }
+
     setLoading(false);
   };
 
@@ -349,6 +387,8 @@ const OpsOrdersPage = () => {
         ) : (
           <AnimatePresence>
             {filtered.map((order, index) => {
+              // Per-order expected prep time from actual menu items
+              const expectedPrep = orderPrepTimes[order.id] || defaultPrepTime;
               // Total time since order was placed
               const totalElapsedMs = now - new Date(order.created_at).getTime();
               const totalElapsedMins = totalElapsedMs / 60000;
@@ -356,11 +396,14 @@ const OpsOrdersPage = () => {
               const statusTs = getStatusTimestamp(order);
               const statusElapsedMs = now - new Date(statusTs).getTime();
               const statusElapsedMins = statusElapsedMs / 60000;
-              // Use TOTAL elapsed time for urgency — the whole order lifecycle matters
+              // Urgency based on status phase time + actual prep time
               const urgency = (order.status === 'delivered' || order.status === 'cancelled')
                 ? 'green' as Urgency
-                : getUrgency(order.status, statusElapsedMins, prepTime);
-              const urgStyle = URGENCY_STYLES[urgency];
+                : getUrgency(order.status, statusElapsedMins, expectedPrep);
+              const delayed = isOrderDelayed(order, totalElapsedMins, expectedPrep);
+              // Force red if delayed
+              const finalUrgency = delayed ? 'red' as Urgency : urgency;
+              const urgStyle = URGENCY_STYLES[finalUrgency];
               const config = STATUS_CONFIG[order.status] || STATUS_CONFIG.new;
               const StatusIcon = config.icon;
               const actions = STATUS_FLOW[order.status] || [];
@@ -398,7 +441,14 @@ const OpsOrdersPage = () => {
                       </div>
 
                        {/* Right: Status + Timer */}
-                      <div className="flex flex-col items-end gap-1.5 shrink-0">
+                      <div className="flex flex-col items-end gap-1 shrink-0">
+                        {/* Delayed badge */}
+                        {delayed && (
+                          <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500/20 border border-red-500/40 text-red-400 text-[10px] font-bold animate-pulse">
+                            <AlertTriangle size={10} />
+                            DELAYED
+                          </div>
+                        )}
                         <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-semibold ${config.bg} ${config.color}`}>
                           <StatusIcon size={12} />
                           {config.label}
@@ -410,9 +460,9 @@ const OpsOrdersPage = () => {
                               <Clock size={12} />
                               {formatElapsedDetailed(totalElapsedMins)}
                             </div>
-                            {/* Time in current phase */}
+                            {/* Expected vs elapsed */}
                             <div className="text-[10px] font-mono text-muted-foreground">
-                              {config.label}: {formatElapsed(statusElapsedMins)}
+                              ETA {expectedPrep}m · {config.label}: {formatElapsed(statusElapsedMins)}
                             </div>
                           </>
                         )}

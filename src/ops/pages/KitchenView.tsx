@@ -3,13 +3,22 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import OpsBottomNav from '../components/OpsBottomNav';
 import { useAuth } from '../hooks/useAuth';
-import { Clock, ChefHat, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Clock, ChefHat, CheckCircle, AlertTriangle, Timer } from 'lucide-react';
 
 const KitchenView = () => {
   const { storeId } = useAuth();
   const [orders, setOrders] = useState<any[]>([]);
+  const [orderPrepTimes, setOrderPrepTimes] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
+  const [now, setNow] = useState(Date.now());
   const prevCountRef = useRef(0);
+  const defaultPrepTime = 30;
+
+  // Tick every 10s
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), 10000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     fetchOrders();
@@ -22,12 +31,23 @@ const KitchenView = () => {
 
   const fetchOrders = async () => {
     let query = supabase.from('orders')
-      .select('*, order_items(*)')
+      .select('*, order_items(*, menu_items!order_items_menu_item_id_fkey(prep_time))')
       .in('status', ['accepted', 'preparing'])
       .order('created_at', { ascending: true });
     if (storeId) query = query.eq('store_id', storeId);
     const { data } = await query;
     const newOrders = data || [];
+
+    // Compute per-order expected prep time from actual items
+    const prepTimes: Record<string, number> = {};
+    newOrders.forEach((order: any) => {
+      const maxPrep = (order.order_items || []).reduce((max: number, item: any) => {
+        const itemPrep = item.menu_items?.prep_time || defaultPrepTime;
+        return Math.max(max, itemPrep);
+      }, defaultPrepTime);
+      prepTimes[order.id] = maxPrep;
+    });
+    setOrderPrepTimes(prepTimes);
 
     // Sound alert for new orders
     if (newOrders.length > prevCountRef.current && prevCountRef.current > 0) {
@@ -46,7 +66,7 @@ const KitchenView = () => {
   };
 
   const getElapsedMinutes = (createdAt: string) => {
-    return Math.floor((Date.now() - new Date(createdAt).getTime()) / 60000);
+    return Math.floor((now - new Date(createdAt).getTime()) / 60000);
   };
 
   return (
@@ -76,9 +96,13 @@ const KitchenView = () => {
         ) : (
           <AnimatePresence>
             {orders.map(order => {
+              const expectedPrep = orderPrepTimes[order.id] || defaultPrepTime;
               const elapsed = getElapsedMinutes(order.created_at);
-              const isUrgent = elapsed > 15;
-              const isWarning = !isUrgent && elapsed > 8;
+              const delayed = elapsed > expectedPrep;
+              const isUrgent = delayed || elapsed > expectedPrep * 0.8;
+              const isWarning = !isUrgent && elapsed > expectedPrep * 0.5;
+              // Progress percentage towards expected prep time
+              const progress = Math.min((elapsed / expectedPrep) * 100, 150);
               const formatTime = (m: number) => {
                 if (m < 1) return '0:00';
                 const h = Math.floor(m / 60);
@@ -92,20 +116,41 @@ const KitchenView = () => {
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
-                  className={`bg-card border-2 rounded-xl p-4 space-y-3 ${isUrgent ? 'border-destructive/50' : isWarning ? 'border-amber-500/50' : 'border-border'}`}
+                  className={`bg-card border-2 rounded-xl p-4 space-y-3 ${delayed ? 'border-destructive/60' : isUrgent ? 'border-amber-500/50' : isWarning ? 'border-amber-500/30' : 'border-border'}`}
                 >
                   {/* Header */}
                   <div className="flex items-center justify-between">
-                    <span className="font-heading text-lg text-foreground">{order.order_number}</span>
-                    <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-sm font-bold font-mono ${isUrgent ? 'bg-destructive/20 text-destructive animate-pulse' : isWarning ? 'bg-amber-500/20 text-amber-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
+                    <div className="flex items-center gap-2">
+                      <span className="font-heading text-lg text-foreground">{order.order_number}</span>
+                      {delayed && (
+                        <span className="px-2 py-0.5 rounded-full bg-red-500/20 border border-red-500/40 text-red-400 text-[10px] font-bold animate-pulse flex items-center gap-1">
+                          <AlertTriangle size={10} /> DELAYED
+                        </span>
+                      )}
+                    </div>
+                    <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-sm font-bold font-mono ${delayed ? 'bg-destructive/20 text-destructive animate-pulse' : isUrgent ? 'bg-amber-500/20 text-amber-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
                       <Clock size={14} />
                       {formatTime(elapsed)}
                     </div>
                   </div>
 
-                  {isUrgent && (
-                    <div className="flex items-center gap-2 text-destructive text-xs">
-                      <AlertTriangle size={14} /> Over 15 minutes — prioritize!
+                  {/* Prep time progress bar */}
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                      <span className="flex items-center gap-1"><Timer size={10} /> ETA: {expectedPrep}m</span>
+                      <span>{delayed ? `+${elapsed - expectedPrep}m over` : `${Math.max(expectedPrep - elapsed, 0)}m left`}</span>
+                    </div>
+                    <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-1000 ${delayed ? 'bg-destructive' : progress > 80 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                        style={{ width: `${Math.min(progress, 100)}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {delayed && (
+                    <div className="flex items-center gap-2 text-destructive text-xs font-medium">
+                      <AlertTriangle size={14} /> Exceeded prep time by {elapsed - expectedPrep}m — prioritize!
                     </div>
                   )}
 
