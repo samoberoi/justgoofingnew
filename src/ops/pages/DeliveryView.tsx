@@ -5,7 +5,7 @@ import { useAuth } from '../hooks/useAuth';
 import StatusBadge from '../components/StatusBadge';
 import {
   MapPin, Phone, Navigation, Package, Clock, User,
-  Home, ChevronRight, LogOut, History, Truck, ExternalLink
+  Home, ChevronRight, LogOut, History, Truck, ExternalLink, Power
 } from 'lucide-react';
 
 interface DeliveryOrder {
