@@ -387,6 +387,8 @@ const OpsOrdersPage = () => {
         ) : (
           <AnimatePresence>
             {filtered.map((order, index) => {
+              // Per-order expected prep time from actual menu items
+              const expectedPrep = orderPrepTimes[order.id] || defaultPrepTime;
               // Total time since order was placed
               const totalElapsedMs = now - new Date(order.created_at).getTime();
               const totalElapsedMins = totalElapsedMs / 60000;
@@ -394,11 +396,14 @@ const OpsOrdersPage = () => {
               const statusTs = getStatusTimestamp(order);
               const statusElapsedMs = now - new Date(statusTs).getTime();
               const statusElapsedMins = statusElapsedMs / 60000;
-              // Use TOTAL elapsed time for urgency — the whole order lifecycle matters
+              // Urgency based on status phase time + actual prep time
               const urgency = (order.status === 'delivered' || order.status === 'cancelled')
                 ? 'green' as Urgency
-                : getUrgency(order.status, statusElapsedMins, prepTime);
-              const urgStyle = URGENCY_STYLES[urgency];
+                : getUrgency(order.status, statusElapsedMins, expectedPrep);
+              const delayed = isOrderDelayed(order, totalElapsedMins, expectedPrep);
+              // Force red if delayed
+              const finalUrgency = delayed ? 'red' as Urgency : urgency;
+              const urgStyle = URGENCY_STYLES[finalUrgency];
               const config = STATUS_CONFIG[order.status] || STATUS_CONFIG.new;
               const StatusIcon = config.icon;
               const actions = STATUS_FLOW[order.status] || [];
