@@ -85,6 +85,15 @@ const formatElapsed = (mins: number): string => {
   return `${h}h ${m}m`;
 };
 
+const formatElapsedDetailed = (mins: number): string => {
+  if (mins < 1) return '0:00';
+  const h = Math.floor(mins / 60);
+  const m = Math.floor(mins % 60);
+  const s = Math.floor((mins % 1) * 60);
+  if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  return `${m}:${String(s).padStart(2, '0')}`;
+};
+
 const getStatusTimestamp = (order: any): string => {
   const map: Record<string, string> = {
     new: order.created_at,
