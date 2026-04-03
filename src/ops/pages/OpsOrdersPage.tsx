@@ -208,9 +208,9 @@ const OpsOrdersPage = () => {
   const [now, setNow] = useState(Date.now());
   const [prepTime, setPrepTime] = useState(30); // default prep time in minutes
 
-  // Live timer tick every 30s
+  // Live timer tick every 10s for responsive urgency updates
   useEffect(() => {
-    const interval = setInterval(() => setNow(Date.now()), 30000);
+    const interval = setInterval(() => setNow(Date.now()), 10000);
     return () => clearInterval(interval);
   }, []);
 
