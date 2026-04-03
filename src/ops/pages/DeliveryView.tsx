@@ -38,6 +38,35 @@ const DeliveryView = () => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [now, setNow] = useState(Date.now());
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [isAvailable, setIsAvailable] = useState(false);
+  const [availLoading, setAvailLoading] = useState(true);
+
+  // Fetch availability status
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from('user_roles')
+      .select('is_available')
+      .eq('user_id', user.id)
+      .eq('role', 'delivery_partner' as any)
+      .eq('is_active', true)
+      .maybeSingle()
+      .then(({ data }) => {
+        setIsAvailable(data?.is_available ?? false);
+        setAvailLoading(false);
+      });
+  }, [user]);
+
+  const toggleAvailability = async () => {
+    if (!user) return;
+    const newVal = !isAvailable;
+    setIsAvailable(newVal);
+    await supabase
+      .from('user_roles')
+      .update({ is_available: newVal } as any)
+      .eq('user_id', user.id)
+      .eq('role', 'delivery_partner' as any);
+  };
 
   // Live timer
   useEffect(() => {
