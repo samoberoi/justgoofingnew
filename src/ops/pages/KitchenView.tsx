@@ -31,12 +31,23 @@ const KitchenView = () => {
 
   const fetchOrders = async () => {
     let query = supabase.from('orders')
-      .select('*, order_items(*)')
+      .select('*, order_items(*, menu_items!order_items_menu_item_id_fkey(prep_time))')
       .in('status', ['accepted', 'preparing'])
       .order('created_at', { ascending: true });
     if (storeId) query = query.eq('store_id', storeId);
     const { data } = await query;
     const newOrders = data || [];
+
+    // Compute per-order expected prep time from actual items
+    const prepTimes: Record<string, number> = {};
+    newOrders.forEach((order: any) => {
+      const maxPrep = (order.order_items || []).reduce((max: number, item: any) => {
+        const itemPrep = item.menu_items?.prep_time || defaultPrepTime;
+        return Math.max(max, itemPrep);
+      }, defaultPrepTime);
+      prepTimes[order.id] = maxPrep;
+    });
+    setOrderPrepTimes(prepTimes);
 
     // Sound alert for new orders
     if (newOrders.length > prevCountRef.current && prevCountRef.current > 0) {
@@ -55,7 +66,7 @@ const KitchenView = () => {
   };
 
   const getElapsedMinutes = (createdAt: string) => {
-    return Math.floor((Date.now() - new Date(createdAt).getTime()) / 60000);
+    return Math.floor((now - new Date(createdAt).getTime()) / 60000);
   };
 
   return (
