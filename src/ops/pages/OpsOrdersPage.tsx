@@ -441,7 +441,14 @@ const OpsOrdersPage = () => {
                       </div>
 
                        {/* Right: Status + Timer */}
-                      <div className="flex flex-col items-end gap-1.5 shrink-0">
+                      <div className="flex flex-col items-end gap-1 shrink-0">
+                        {/* Delayed badge */}
+                        {delayed && (
+                          <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500/20 border border-red-500/40 text-red-400 text-[10px] font-bold animate-pulse">
+                            <AlertTriangle size={10} />
+                            DELAYED
+                          </div>
+                        )}
                         <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-semibold ${config.bg} ${config.color}`}>
                           <StatusIcon size={12} />
                           {config.label}
@@ -453,9 +460,9 @@ const OpsOrdersPage = () => {
                               <Clock size={12} />
                               {formatElapsedDetailed(totalElapsedMins)}
                             </div>
-                            {/* Time in current phase */}
+                            {/* Expected vs elapsed */}
                             <div className="text-[10px] font-mono text-muted-foreground">
-                              {config.label}: {formatElapsed(statusElapsedMins)}
+                              ETA {expectedPrep}m · {config.label}: {formatElapsed(statusElapsedMins)}
                             </div>
                           </>
                         )}
