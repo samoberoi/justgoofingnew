@@ -162,7 +162,8 @@ const PaymentPage = () => {
     setLocationDetected(true);
   };
 
-  const fullAddress = houseNumber ? `${houseNumber}, ${address}` : address;
+  // Display-only full address (never stored as customer_address)
+  const fullAddressDisplay = houseNumber ? `${houseNumber}, ${address}` : address;
 
   const handlePay = async () => {
     if (!address.trim() || !customerName.trim() || processing) return;
@@ -193,8 +194,8 @@ const PaymentPage = () => {
         user_id: user?.id || null,
         customer_name: customerName.trim(),
         customer_phone: resolvedPhone,
-        customer_address: fullAddress,
-        house_number: houseNumber || null,
+        customer_address: address.trim(),
+        house_number: houseNumber.trim() || null,
         subtotal,
         discount: Math.abs(firstOrderDiscount) + Math.abs(pointsDiscount),
         tax: 0,
