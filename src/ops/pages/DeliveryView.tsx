@@ -5,7 +5,7 @@ import { useAuth } from '../hooks/useAuth';
 import StatusBadge from '../components/StatusBadge';
 import {
   MapPin, Phone, Navigation, Package, Clock, User,
-  Home, ChevronRight, LogOut, History, Truck, ExternalLink
+  Home, ChevronRight, LogOut, History, Truck, ExternalLink, Power
 } from 'lucide-react';
 
 interface DeliveryOrder {
@@ -38,6 +38,35 @@ const DeliveryView = () => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [now, setNow] = useState(Date.now());
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [isAvailable, setIsAvailable] = useState(false);
+  const [availLoading, setAvailLoading] = useState(true);
+
+  // Fetch availability status
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from('user_roles')
+      .select('is_available')
+      .eq('user_id', user.id)
+      .eq('role', 'delivery_partner' as any)
+      .eq('is_active', true)
+      .maybeSingle()
+      .then(({ data }) => {
+        setIsAvailable(data?.is_available ?? false);
+        setAvailLoading(false);
+      });
+  }, [user]);
+
+  const toggleAvailability = async () => {
+    if (!user) return;
+    const newVal = !isAvailable;
+    setIsAvailable(newVal);
+    await supabase
+      .from('user_roles')
+      .update({ is_available: newVal } as any)
+      .eq('user_id', user.id)
+      .eq('role', 'delivery_partner' as any);
+  };
 
   // Live timer
   useEffect(() => {
@@ -135,9 +164,25 @@ const DeliveryView = () => {
               </p>
             )}
           </div>
-          <button onClick={handleLogout} className="p-2 text-muted-foreground hover:text-destructive transition-colors">
-            <LogOut size={20} />
-          </button>
+          <div className="flex items-center gap-3">
+            {/* Availability Toggle */}
+            {!availLoading && (
+              <button
+                onClick={toggleAvailability}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${
+                  isAvailable
+                    ? 'bg-green-500/15 text-green-400 border-green-500/30'
+                    : 'bg-red-500/15 text-red-400 border-red-500/30'
+                }`}
+              >
+                <Power size={14} />
+                {isAvailable ? 'Online' : 'Offline'}
+              </button>
+            )}
+            <button onClick={handleLogout} className="p-2 text-muted-foreground hover:text-destructive transition-colors">
+              <LogOut size={20} />
+            </button>
+          </div>
         </div>
 
         {/* Tabs */}

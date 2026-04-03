@@ -1,0 +1,1 @@
+ALTER TABLE public.user_roles ADD COLUMN is_available boolean NOT NULL DEFAULT false;

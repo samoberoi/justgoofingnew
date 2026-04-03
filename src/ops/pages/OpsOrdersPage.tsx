@@ -222,8 +222,13 @@ const OpsOrdersPage = () => {
   const [customFrom, setCustomFrom] = useState('');
   const [customTo, setCustomTo] = useState('');
   const [now, setNow] = useState(Date.now());
-  const [orderPrepTimes, setOrderPrepTimes] = useState<Record<string, number>>({}); // orderId -> max prep time
-  const defaultPrepTime = 30; // fallback
+  const [orderPrepTimes, setOrderPrepTimes] = useState<Record<string, number>>({});
+  const defaultPrepTime = 30;
+
+  // Rider assignment state
+  const [riderPickerOrderId, setRiderPickerOrderId] = useState<string | null>(null);
+  const [availableRiders, setAvailableRiders] = useState<{ user_id: string; full_name: string; phone: string }[]>([]);
+  const [ridersLoading, setRidersLoading] = useState(false);
 
   // Live timer tick every 10s for responsive urgency updates
   useEffect(() => {
@@ -294,6 +299,54 @@ const OpsOrdersPage = () => {
     const updates: any = { status: newStatus };
     if (TIMESTAMP_MAP[newStatus]) updates[TIMESTAMP_MAP[newStatus]] = new Date().toISOString();
     await supabase.from('orders').update(updates).eq('id', orderId);
+  };
+
+  const fetchAvailableRiders = async () => {
+    setRidersLoading(true);
+    // Get delivery partners who are available and active
+    const { data: roles } = await supabase
+      .from('user_roles')
+      .select('user_id')
+      .eq('role', 'delivery_partner' as any)
+      .eq('is_active', true)
+      .eq('is_available', true);
+
+    if (roles && roles.length > 0) {
+      const userIds = roles.map(r => r.user_id);
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, full_name, phone')
+        .in('user_id', userIds);
+      setAvailableRiders((profiles || []).map(p => ({
+        user_id: p.user_id,
+        full_name: p.full_name || 'Unnamed',
+        phone: p.phone || '',
+      })));
+    } else {
+      setAvailableRiders([]);
+    }
+    setRidersLoading(false);
+  };
+
+  const openRiderPicker = async (orderId: string) => {
+    setRiderPickerOrderId(orderId);
+    await fetchAvailableRiders();
+  };
+
+  const assignRider = async (orderId: string, riderId: string) => {
+    const ts = new Date().toISOString();
+    // Update order status
+    await supabase.from('orders').update({
+      status: 'assigned' as any,
+      assigned_at: ts,
+    }).eq('id', orderId);
+    // Create delivery assignment
+    await supabase.from('delivery_assignments').insert({
+      order_id: orderId,
+      delivery_partner_id: riderId,
+      status: 'assigned',
+    });
+    setRiderPickerOrderId(null);
   };
 
   const filtered = orders.filter(o =>
@@ -474,7 +527,14 @@ const OpsOrdersPage = () => {
                       <div className="flex gap-2 mt-3" onClick={e => e.stopPropagation()}>
                         {actions.map(a => (
                           <button key={a.next}
-                            onClick={(e) => { e.stopPropagation(); updateStatus(order.id, a.next); }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (a.next === 'assigned') {
+                                openRiderPicker(order.id);
+                              } else {
+                                updateStatus(order.id, a.next);
+                              }
+                            }}
                             className={`flex-1 py-2 rounded-xl text-xs font-bold tracking-wide transition-all active:scale-95 ${a.color}`}>
                             {a.label}
                           </button>
@@ -607,6 +667,69 @@ const OpsOrdersPage = () => {
           </AnimatePresence>
         )}
       </div>
+
+      {/* ── Rider Picker Modal ── */}
+      <AnimatePresence>
+        {riderPickerOrderId && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end justify-center"
+            onClick={() => setRiderPickerOrderId(null)}
+          >
+            <motion.div
+              initial={{ y: 300 }}
+              animate={{ y: 0 }}
+              exit={{ y: 300 }}
+              transition={{ type: 'spring', damping: 25 }}
+              className="w-full max-w-lg bg-card border-t border-border rounded-t-3xl p-6 space-y-4"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between">
+                <h2 className="font-heading text-lg text-foreground">Assign Delivery Partner</h2>
+                <button onClick={() => setRiderPickerOrderId(null)} className="p-1 text-muted-foreground">
+                  <X size={20} />
+                </button>
+              </div>
+
+              {ridersLoading ? (
+                <div className="py-8 text-center text-muted-foreground text-sm">Loading available riders...</div>
+              ) : availableRiders.length === 0 ? (
+                <div className="py-8 text-center space-y-2">
+                  <Truck size={40} className="mx-auto text-muted-foreground/30" />
+                  <p className="text-muted-foreground text-sm font-medium">No riders available</p>
+                  <p className="text-muted-foreground text-xs">All delivery partners are currently offline</p>
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-[50vh] overflow-y-auto">
+                  {availableRiders.map(rider => (
+                    <button
+                      key={rider.user_id}
+                      onClick={() => assignRider(riderPickerOrderId, rider.user_id)}
+                      className="w-full flex items-center justify-between p-4 bg-muted/30 border border-border rounded-xl hover:border-secondary/40 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center">
+                          <Truck size={18} className="text-secondary" />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-sm font-medium text-foreground">{rider.full_name}</p>
+                          <p className="text-xs text-muted-foreground">{rider.phone}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 text-green-400 text-xs font-medium">
+                        <span className="w-2 h-2 rounded-full bg-green-400" />
+                        Online
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <OpsBottomNav />
     </div>
