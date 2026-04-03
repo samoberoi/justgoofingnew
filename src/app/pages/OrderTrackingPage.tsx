@@ -136,6 +136,8 @@ const OrderTrackingPage = () => {
           deliveryLat={deliveryCoords?.lat}
           deliveryLng={deliveryCoords?.lng}
           orderStatus={order.status}
+          pickedUpAt={order.picked_up_at}
+          outForDeliveryAt={order.out_for_delivery_at}
         />
       )}
 
