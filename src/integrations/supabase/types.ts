@@ -1222,6 +1222,41 @@ export type Database = {
           },
         ]
       }
+      rider_locations: {
+        Row: {
+          created_at: string
+          delivery_assignment_id: string
+          id: string
+          lat: number
+          lng: number
+          rider_id: string
+        }
+        Insert: {
+          created_at?: string
+          delivery_assignment_id: string
+          id?: string
+          lat: number
+          lng: number
+          rider_id: string
+        }
+        Update: {
+          created_at?: string
+          delivery_assignment_id?: string
+          id?: string
+          lat?: number
+          lng?: number
+          rider_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rider_locations_delivery_assignment_id_fkey"
+            columns: ["delivery_assignment_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_assignments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stores: {
         Row: {
           address: string | null

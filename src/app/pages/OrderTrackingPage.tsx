@@ -4,6 +4,7 @@ import { ArrowLeft, Package, Phone } from 'lucide-react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import BottomNav from '../components/BottomNav';
+import RiderTracker from '../components/RiderTracker';
 
 const STAGES = [
   { status: 'new', label: 'Order Placed', emoji: '📝', desc: 'Your dawat request has been received' },
@@ -36,6 +37,7 @@ const OrderTrackingPage = () => {
   const [order, setOrder] = useState<any>(null);
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deliveryCoords, setDeliveryCoords] = useState<{ lat: number; lng: number } | null>(null);
 
   useEffect(() => {
     if (!orderId) { setLoading(false); return; }
@@ -46,6 +48,18 @@ const OrderTrackingPage = () => {
       if (data) {
         const { data: orderItems } = await supabase.from('order_items').select('*').eq('order_id', data.id);
         setItems(orderItems || []);
+        // Fetch delivery address coordinates if user has saved address
+        if (data.user_id) {
+          const { data: addr } = await supabase
+            .from('addresses')
+            .select('lat, lng')
+            .eq('user_id', data.user_id)
+            .not('lat', 'is', null)
+            .limit(1);
+          if (addr?.[0]?.lat && addr?.[0]?.lng) {
+            setDeliveryCoords({ lat: Number(addr[0].lat), lng: Number(addr[0].lng) });
+          }
+        }
       }
       setLoading(false);
     };
@@ -113,6 +127,16 @@ const OrderTrackingPage = () => {
             </div>
           </div>
         </motion.div>
+      )}
+
+      {/* Live Rider Tracker — shows after pickup */}
+      {!isCancelled && order && (
+        <RiderTracker
+          orderId={order.id}
+          deliveryLat={deliveryCoords?.lat}
+          deliveryLng={deliveryCoords?.lng}
+          orderStatus={order.status}
+        />
       )}
 
       {isCancelled ? (

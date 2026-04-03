@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '../hooks/useAuth';
@@ -40,6 +40,48 @@ const DeliveryView = () => {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [isAvailable, setIsAvailable] = useState(false);
   const [availLoading, setAvailLoading] = useState(true);
+  const locationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Send rider GPS location every 2 minutes for active (picked_up / out_for_delivery) deliveries
+  useEffect(() => {
+    if (!user) return;
+    const activeDeliveries = deliveries.filter(d => d.status === 'picked_up' || d.status === 'out_for_delivery');
+    
+    // Clear previous interval
+    if (locationIntervalRef.current) {
+      clearInterval(locationIntervalRef.current);
+      locationIntervalRef.current = null;
+    }
+
+    if (activeDeliveries.length === 0) return;
+
+    const sendLocation = () => {
+      if (!navigator.geolocation) return;
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const { latitude, longitude } = pos.coords;
+          activeDeliveries.forEach(d => {
+            supabase.from('rider_locations' as any).insert({
+              delivery_assignment_id: d.id,
+              rider_id: user.id,
+              lat: latitude,
+              lng: longitude,
+            }).then(() => {});
+          });
+        },
+        (err) => console.warn('[Location] GPS error:', err.message),
+        { enableHighAccuracy: true, timeout: 15000 }
+      );
+    };
+
+    // Send immediately, then every 2 minutes
+    sendLocation();
+    locationIntervalRef.current = setInterval(sendLocation, 120000);
+
+    return () => {
+      if (locationIntervalRef.current) clearInterval(locationIntervalRef.current);
+    };
+  }, [user, deliveries]);
 
   // Fetch availability status
   useEffect(() => {
