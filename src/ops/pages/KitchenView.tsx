@@ -8,8 +8,17 @@ import { Clock, ChefHat, CheckCircle, AlertTriangle, Timer } from 'lucide-react'
 const KitchenView = () => {
   const { storeId } = useAuth();
   const [orders, setOrders] = useState<any[]>([]);
+  const [orderPrepTimes, setOrderPrepTimes] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
+  const [now, setNow] = useState(Date.now());
   const prevCountRef = useRef(0);
+  const defaultPrepTime = 30;
+
+  // Tick every 10s
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), 10000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     fetchOrders();
