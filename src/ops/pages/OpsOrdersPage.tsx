@@ -85,6 +85,15 @@ const formatElapsed = (mins: number): string => {
   return `${h}h ${m}m`;
 };
 
+const formatElapsedDetailed = (mins: number): string => {
+  if (mins < 1) return '0:00';
+  const h = Math.floor(mins / 60);
+  const m = Math.floor(mins % 60);
+  const s = Math.floor((mins % 1) * 60);
+  if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  return `${m}:${String(s).padStart(2, '0')}`;
+};
+
 const getStatusTimestamp = (order: any): string => {
   const map: Record<string, string> = {
     new: order.created_at,
@@ -199,9 +208,9 @@ const OpsOrdersPage = () => {
   const [now, setNow] = useState(Date.now());
   const [prepTime, setPrepTime] = useState(30); // default prep time in minutes
 
-  // Live timer tick every 30s
+  // Live timer tick every 10s for responsive urgency updates
   useEffect(() => {
-    const interval = setInterval(() => setNow(Date.now()), 30000);
+    const interval = setInterval(() => setNow(Date.now()), 10000);
     return () => clearInterval(interval);
   }, []);
 
@@ -340,12 +349,17 @@ const OpsOrdersPage = () => {
         ) : (
           <AnimatePresence>
             {filtered.map((order, index) => {
+              // Total time since order was placed
+              const totalElapsedMs = now - new Date(order.created_at).getTime();
+              const totalElapsedMins = totalElapsedMs / 60000;
+              // Time in current status phase
               const statusTs = getStatusTimestamp(order);
-              const elapsedMs = now - new Date(statusTs).getTime();
-              const elapsedMins = elapsedMs / 60000;
+              const statusElapsedMs = now - new Date(statusTs).getTime();
+              const statusElapsedMins = statusElapsedMs / 60000;
+              // Use TOTAL elapsed time for urgency — the whole order lifecycle matters
               const urgency = (order.status === 'delivered' || order.status === 'cancelled')
                 ? 'green' as Urgency
-                : getUrgency(order.status, elapsedMins, prepTime);
+                : getUrgency(order.status, statusElapsedMins, prepTime);
               const urgStyle = URGENCY_STYLES[urgency];
               const config = STATUS_CONFIG[order.status] || STATUS_CONFIG.new;
               const StatusIcon = config.icon;
@@ -383,17 +397,24 @@ const OpsOrdersPage = () => {
                         </div>
                       </div>
 
-                      {/* Right: Status + Timer */}
+                       {/* Right: Status + Timer */}
                       <div className="flex flex-col items-end gap-1.5 shrink-0">
                         <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-semibold ${config.bg} ${config.color}`}>
                           <StatusIcon size={12} />
                           {config.label}
                         </div>
                         {order.status !== 'delivered' && order.status !== 'cancelled' && (
-                          <div className={`flex items-center gap-1 text-xs font-mono ${urgStyle.timer} ${urgStyle.pulse ? 'animate-pulse' : ''}`}>
-                            <Clock size={11} />
-                            {formatElapsed(elapsedMins)}
-                          </div>
+                          <>
+                            {/* Total order age — big prominent timer */}
+                            <div className={`flex items-center gap-1 text-sm font-mono font-bold ${urgStyle.timer} ${urgStyle.pulse ? 'animate-pulse' : ''}`}>
+                              <Clock size={12} />
+                              {formatElapsedDetailed(totalElapsedMins)}
+                            </div>
+                            {/* Time in current phase */}
+                            <div className="text-[10px] font-mono text-muted-foreground">
+                              {config.label}: {formatElapsed(statusElapsedMins)}
+                            </div>
+                          </>
                         )}
                       </div>
                     </div>
