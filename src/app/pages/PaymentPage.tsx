@@ -162,7 +162,8 @@ const PaymentPage = () => {
     setLocationDetected(true);
   };
 
-  const fullAddress = houseNumber ? `${houseNumber}, ${address}` : address;
+  // Display-only full address (never stored as customer_address)
+  const fullAddressDisplay = houseNumber ? `${houseNumber}, ${address}` : address;
 
   const handlePay = async () => {
     if (!address.trim() || !customerName.trim() || processing) return;
