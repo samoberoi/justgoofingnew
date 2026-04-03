@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import OpsBottomNav from '../components/OpsBottomNav';
 import { useAuth } from '../hooks/useAuth';
-import { Clock, ChefHat, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Clock, ChefHat, CheckCircle, AlertTriangle, Timer } from 'lucide-react';
 
 const KitchenView = () => {
   const { storeId } = useAuth();
