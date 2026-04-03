@@ -222,8 +222,13 @@ const OpsOrdersPage = () => {
   const [customFrom, setCustomFrom] = useState('');
   const [customTo, setCustomTo] = useState('');
   const [now, setNow] = useState(Date.now());
-  const [orderPrepTimes, setOrderPrepTimes] = useState<Record<string, number>>({}); // orderId -> max prep time
-  const defaultPrepTime = 30; // fallback
+  const [orderPrepTimes, setOrderPrepTimes] = useState<Record<string, number>>({});
+  const defaultPrepTime = 30;
+
+  // Rider assignment state
+  const [riderPickerOrderId, setRiderPickerOrderId] = useState<string | null>(null);
+  const [availableRiders, setAvailableRiders] = useState<{ user_id: string; full_name: string; phone: string }[]>([]);
+  const [ridersLoading, setRidersLoading] = useState(false);
 
   // Live timer tick every 10s for responsive urgency updates
   useEffect(() => {
