@@ -78,6 +78,13 @@ const KitchenView = () => {
             {orders.map(order => {
               const elapsed = getElapsedMinutes(order.created_at);
               const isUrgent = elapsed > 15;
+              const isWarning = !isUrgent && elapsed > 8;
+              const formatTime = (m: number) => {
+                if (m < 1) return '0:00';
+                const h = Math.floor(m / 60);
+                const mins = m % 60;
+                return h > 0 ? `${h}:${String(mins).padStart(2, '0')}` : `${mins}m`;
+              };
               return (
                 <motion.div
                   key={order.id}
@@ -85,14 +92,14 @@ const KitchenView = () => {
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
-                  className={`bg-card border-2 rounded-xl p-4 space-y-3 ${isUrgent ? 'border-destructive/50' : 'border-border'}`}
+                  className={`bg-card border-2 rounded-xl p-4 space-y-3 ${isUrgent ? 'border-destructive/50' : isWarning ? 'border-amber-500/50' : 'border-border'}`}
                 >
                   {/* Header */}
                   <div className="flex items-center justify-between">
                     <span className="font-heading text-lg text-foreground">{order.order_number}</span>
-                    <div className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium ${isUrgent ? 'bg-destructive/20 text-destructive' : 'bg-secondary/20 text-secondary'}`}>
-                      <Clock size={12} />
-                      {elapsed}m
+                    <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-sm font-bold font-mono ${isUrgent ? 'bg-destructive/20 text-destructive animate-pulse' : isWarning ? 'bg-amber-500/20 text-amber-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
+                      <Clock size={14} />
+                      {formatTime(elapsed)}
                     </div>
                   </div>
 
