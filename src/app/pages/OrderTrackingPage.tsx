@@ -129,6 +129,16 @@ const OrderTrackingPage = () => {
         </motion.div>
       )}
 
+      {/* Live Rider Tracker — shows after pickup */}
+      {!isCancelled && order && (
+        <RiderTracker
+          orderId={order.id}
+          deliveryLat={deliveryCoords?.lat}
+          deliveryLng={deliveryCoords?.lng}
+          orderStatus={order.status}
+        />
+      )}
+
       {isCancelled ? (
         <div className="px-6 pt-16 text-center">
           <div className="text-5xl mb-4">❌</div>
