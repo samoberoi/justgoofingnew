@@ -301,6 +301,54 @@ const OpsOrdersPage = () => {
     await supabase.from('orders').update(updates).eq('id', orderId);
   };
 
+  const fetchAvailableRiders = async () => {
+    setRidersLoading(true);
+    // Get delivery partners who are available and active
+    const { data: roles } = await supabase
+      .from('user_roles')
+      .select('user_id')
+      .eq('role', 'delivery_partner' as any)
+      .eq('is_active', true)
+      .eq('is_available', true);
+
+    if (roles && roles.length > 0) {
+      const userIds = roles.map(r => r.user_id);
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, full_name, phone')
+        .in('user_id', userIds);
+      setAvailableRiders((profiles || []).map(p => ({
+        user_id: p.user_id,
+        full_name: p.full_name || 'Unnamed',
+        phone: p.phone || '',
+      })));
+    } else {
+      setAvailableRiders([]);
+    }
+    setRidersLoading(false);
+  };
+
+  const openRiderPicker = async (orderId: string) => {
+    setRiderPickerOrderId(orderId);
+    await fetchAvailableRiders();
+  };
+
+  const assignRider = async (orderId: string, riderId: string) => {
+    const ts = new Date().toISOString();
+    // Update order status
+    await supabase.from('orders').update({
+      status: 'assigned' as any,
+      assigned_at: ts,
+    }).eq('id', orderId);
+    // Create delivery assignment
+    await supabase.from('delivery_assignments').insert({
+      order_id: orderId,
+      delivery_partner_id: riderId,
+      status: 'assigned',
+    });
+    setRiderPickerOrderId(null);
+  };
+
   const filtered = orders.filter(o =>
     !search || o.order_number?.toLowerCase().includes(search.toLowerCase()) ||
     o.customer_name?.toLowerCase().includes(search.toLowerCase()) ||
