@@ -48,6 +48,18 @@ const OrderTrackingPage = () => {
       if (data) {
         const { data: orderItems } = await supabase.from('order_items').select('*').eq('order_id', data.id);
         setItems(orderItems || []);
+        // Fetch delivery address coordinates if user has saved address
+        if (data.user_id) {
+          const { data: addr } = await supabase
+            .from('addresses')
+            .select('lat, lng')
+            .eq('user_id', data.user_id)
+            .not('lat', 'is', null)
+            .limit(1);
+          if (addr?.[0]?.lat && addr?.[0]?.lng) {
+            setDeliveryCoords({ lat: Number(addr[0].lat), lng: Number(addr[0].lng) });
+          }
+        }
       }
       setLoading(false);
     };
