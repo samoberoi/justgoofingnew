@@ -349,12 +349,17 @@ const OpsOrdersPage = () => {
         ) : (
           <AnimatePresence>
             {filtered.map((order, index) => {
+              // Total time since order was placed
+              const totalElapsedMs = now - new Date(order.created_at).getTime();
+              const totalElapsedMins = totalElapsedMs / 60000;
+              // Time in current status phase
               const statusTs = getStatusTimestamp(order);
-              const elapsedMs = now - new Date(statusTs).getTime();
-              const elapsedMins = elapsedMs / 60000;
+              const statusElapsedMs = now - new Date(statusTs).getTime();
+              const statusElapsedMins = statusElapsedMs / 60000;
+              // Use TOTAL elapsed time for urgency — the whole order lifecycle matters
               const urgency = (order.status === 'delivered' || order.status === 'cancelled')
                 ? 'green' as Urgency
-                : getUrgency(order.status, elapsedMins, prepTime);
+                : getUrgency(order.status, statusElapsedMins, prepTime);
               const urgStyle = URGENCY_STYLES[urgency];
               const config = STATUS_CONFIG[order.status] || STATUS_CONFIG.new;
               const StatusIcon = config.icon;
