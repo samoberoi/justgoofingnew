@@ -527,7 +527,14 @@ const OpsOrdersPage = () => {
                       <div className="flex gap-2 mt-3" onClick={e => e.stopPropagation()}>
                         {actions.map(a => (
                           <button key={a.next}
-                            onClick={(e) => { e.stopPropagation(); updateStatus(order.id, a.next); }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (a.next === 'assigned') {
+                                openRiderPicker(order.id);
+                              } else {
+                                updateStatus(order.id, a.next);
+                              }
+                            }}
                             className={`flex-1 py-2 rounded-xl text-xs font-bold tracking-wide transition-all active:scale-95 ${a.color}`}>
                             {a.label}
                           </button>
