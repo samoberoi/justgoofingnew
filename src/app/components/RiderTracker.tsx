@@ -56,12 +56,12 @@ const RiderTracker = ({ orderId, deliveryLat, deliveryLng, orderStatus }: RiderT
     if (!assignmentId || !isTracking) return;
 
     const fetchLatest = async () => {
-      const { data } = await supabase
+      const { data } = await (supabase
         .from('rider_locations' as any)
         .select('lat, lng, created_at')
         .eq('delivery_assignment_id', assignmentId)
         .order('created_at', { ascending: false })
-        .limit(1);
+        .limit(1) as any);
       if (data?.[0]) {
         setRiderLocation(data[0] as RiderLocation);
       }
