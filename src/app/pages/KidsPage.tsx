@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Plus, Cake, GraduationCap, Trash2, Edit3, X, Check } from 'lucide-react';
+import { ArrowLeft, Plus, Cake, GraduationCap, Trash2, Edit3, X, Check, Camera, Loader2 } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAppStore } from '../store';
-import { useKids, calcAge, Kid } from '../hooks/useKids';
+import { useKids, calcAge, Kid, uploadKidPhoto } from '../hooks/useKids';
 import { Star, Sparkle, Cloud } from '../components/Stickers';
 import { toast } from 'sonner';
 
@@ -28,9 +28,10 @@ interface FormState {
   date_of_birth: string;
   school: string;
   notes: string;
+  photo_url: string;
 }
 
-const empty: FormState = { name: '', gender: '', date_of_birth: '', school: '', notes: '' };
+const empty: FormState = { name: '', gender: '', date_of_birth: '', school: '', notes: '', photo_url: '' };
 
 const KidsPage = () => {
   const navigate = useNavigate();
@@ -42,6 +43,8 @@ const KidsPage = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(empty);
   const [saving, setSaving] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const today = new Date().toISOString().split('T')[0];
 
@@ -71,6 +74,7 @@ const KidsPage = () => {
       date_of_birth: kid.date_of_birth || '',
       school: kid.school || '',
       notes: kid.notes || '',
+      photo_url: kid.photo_url || '',
     });
     setEditingId(kid.id);
     setShowForm(true);
@@ -80,6 +84,25 @@ const KidsPage = () => {
     setShowForm(false);
     setEditingId(null);
     setForm(empty);
+  };
+
+  const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !userId) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Photo must be under 5MB');
+      return;
+    }
+    setUploadingPhoto(true);
+    const url = await uploadKidPhoto(userId, file);
+    setUploadingPhoto(false);
+    if (url) {
+      setForm(f => ({ ...f, photo_url: url }));
+      toast.success('Photo uploaded!');
+    } else {
+      toast.error('Upload failed. Try again.');
+    }
+    e.target.value = '';
   };
 
   const handleSave = async () => {
@@ -94,6 +117,7 @@ const KidsPage = () => {
       date_of_birth: form.date_of_birth || null,
       school: form.school.trim() || null,
       notes: form.notes.trim() || null,
+      photo_url: form.photo_url || null,
     };
     if (editingId) {
       await updateKid(editingId, payload as any);
@@ -184,8 +208,12 @@ const KidsPage = () => {
                   className="bg-card border-2 border-ink/8 rounded-3xl p-4 shadow-pop"
                 >
                   <div className="flex items-start gap-3">
-                    <div className={`w-16 h-16 rounded-2xl ${colorClass} flex items-center justify-center text-white font-display text-2xl shrink-0`}>
-                      {initial}
+                    <div className={`w-16 h-16 rounded-2xl ${colorClass} flex items-center justify-center text-white font-display text-2xl shrink-0 overflow-hidden`}>
+                      {kid.photo_url ? (
+                        <img src={kid.photo_url} alt={kid.name} className="w-full h-full object-cover" />
+                      ) : (
+                        initial
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
@@ -283,6 +311,38 @@ const KidsPage = () => {
               </div>
 
               <div className="p-5 space-y-4">
+                {/* Photo */}
+                <div className="flex flex-col items-center gap-2 -mt-1">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={handlePhotoSelect}
+                    className="hidden"
+                  />
+                  <motion.button
+                    whileTap={{ scale: 0.94 }}
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadingPhoto}
+                    className="relative w-24 h-24 rounded-3xl bg-gradient-coral shadow-pop-coral flex items-center justify-center overflow-hidden border-4 border-card"
+                  >
+                    {uploadingPhoto ? (
+                      <Loader2 size={28} className="text-white animate-spin" />
+                    ) : form.photo_url ? (
+                      <img src={form.photo_url} alt="Kid" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-4xl">👶</span>
+                    )}
+                    <div className="absolute bottom-0 right-0 w-8 h-8 rounded-2xl bg-mint shadow-pop-mint flex items-center justify-center border-2 border-background">
+                      <Camera size={14} className="text-white" />
+                    </div>
+                  </motion.button>
+                  <p className="text-[11px] text-ink/55 font-heading">
+                    {form.photo_url ? 'Tap to change photo' : 'Tap to add a cute photo'}
+                  </p>
+                </div>
+
                 {/* Name */}
                 <div>
                   <label className="text-xs font-heading text-ink/70 mb-1.5 block">Kid's Name *</label>

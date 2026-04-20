@@ -9,9 +9,21 @@ export interface Kid {
   date_of_birth: string | null;
   school: string | null;
   notes: string | null;
+  photo_url: string | null;
   is_active: boolean;
   created_at: string;
 }
+
+export const uploadKidPhoto = async (userId: string, file: File): Promise<string | null> => {
+  const ext = file.name.split('.').pop() || 'jpg';
+  const path = `kids/${userId}/${Date.now()}.${ext}`;
+  const { error } = await supabase.storage
+    .from('profile-pictures')
+    .upload(path, file, { upsert: true, contentType: file.type });
+  if (error) return null;
+  const { data } = supabase.storage.from('profile-pictures').getPublicUrl(path);
+  return data.publicUrl;
+};
 
 export const useKids = (userId: string | null) => {
   const [kids, setKids] = useState<Kid[]>([]);

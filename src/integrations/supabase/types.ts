@@ -447,6 +447,7 @@ export type Database = {
           name: string
           notes: string | null
           parent_user_id: string
+          photo_url: string | null
           school: string | null
           updated_at: string
         }
@@ -459,6 +460,7 @@ export type Database = {
           name: string
           notes?: string | null
           parent_user_id: string
+          photo_url?: string | null
           school?: string | null
           updated_at?: string
         }
@@ -471,6 +473,7 @@ export type Database = {
           name?: string
           notes?: string | null
           parent_user_id?: string
+          photo_url?: string | null
           school?: string | null
           updated_at?: string
         }
