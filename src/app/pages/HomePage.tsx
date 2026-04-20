@@ -17,15 +17,8 @@ const SpiceIndicator = ({ level }: { level: number }) => (
   </div>
 );
 
-const VegBadge = ({ isVeg }: { isVeg: boolean }) => (
-  <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold border ${
-    isVeg
-      ? 'text-green-500 border-green-500/40 bg-green-500/10'
-      : 'text-red-500 border-red-500/40 bg-red-500/10'
-  }`}>
-    {isVeg ? '●  VEG' : '●  NON-VEG'}
-  </span>
-);
+
+
 
 const ItemCard = ({ item, index }: { item: MenuItem; index: number }) => {
   const { cart, addToCart, updateQuantity } = useAppStore();
@@ -86,7 +79,6 @@ const ItemCard = ({ item, index }: { item: MenuItem; index: number }) => {
           <div>
             <div className="flex items-start justify-between gap-2">
               <div className="space-y-1">
-                <VegBadge isVeg={item.is_veg} />
                 <h3 className="font-heading text-sm text-foreground leading-snug">{item.name}</h3>
               </div>
             </div>
@@ -154,20 +146,13 @@ const ACTIVE_STATUS_LABELS: Record<string, { label: string; emoji: string }> = {
 
 const HomePage = () => {
   const navigate = useNavigate();
-  const { cart, activeCampaigns, totalOrders, userId, vegMode, setVegMode } = useAppStore();
+  const { cart, activeCampaigns, totalOrders, userId } = useAppStore();
   const { selectedStore, outOfArea, locationLoading } = useStoreSelection();
   const { categories, grouped, uncategorized, loading, items } = useMenu(selectedStore?.id);
-  const [vegFilter, setVegFilter] = useState<'all' | 'veg' | 'nonveg'>(vegMode ? 'veg' : 'all');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeOrders, setActiveOrders] = useState<any[]>([]);
   const [activeCatId, setActiveCatId] = useState<string | null>(null);
   const catScrollRef = useRef<HTMLDivElement>(null);
-
-  // Sync vegMode from profile toggle
-  useEffect(() => {
-    if (vegMode) setVegFilter('veg');
-    else setVegFilter('all');
-  }, [vegMode]);
 
   useEffect(() => {
     if (!userId) return;
@@ -198,14 +183,9 @@ const HomePage = () => {
   });
 
   const filterItems = (list: MenuItem[]) => {
-    let result = list;
-    if (vegFilter === 'veg') result = result.filter(i => i.is_veg);
-    else if (vegFilter === 'nonveg') result = result.filter(i => !i.is_veg);
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      result = result.filter(i => i.name.toLowerCase().includes(q) || i.description?.toLowerCase().includes(q));
-    }
-    return result;
+    if (!searchQuery.trim()) return list;
+    const q = searchQuery.toLowerCase();
+    return list.filter(i => i.name.toLowerCase().includes(q) || i.description?.toLowerCase().includes(q));
   };
 
   if (locationLoading) {
@@ -309,22 +289,8 @@ const HomePage = () => {
         </div>
       </div>
 
-      {/* Category Pills + Veg Filter */}
+      {/* Category Pills */}
       <div className="px-4 pt-3 space-y-2">
-        <div className="flex gap-2">
-          {(vegMode ? (['veg'] as const) : (['all', 'veg', 'nonveg'] as const)).map(f => (
-            <button key={f} onClick={() => setVegFilter(f)}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-bold border transition-all ${
-                vegFilter === f
-                  ? f === 'veg' ? 'bg-green-500/15 text-green-500 border-green-500/30'
-                    : f === 'nonveg' ? 'bg-red-500/15 text-red-500 border-red-500/30'
-                    : 'bg-secondary/15 text-secondary border-secondary/25'
-                  : 'bg-card text-muted-foreground border-border hover:border-muted-foreground/30'
-              }`}>
-              {f === 'all' ? 'All' : f === 'veg' ? '● Veg' : '● Non-Veg'}
-            </button>
-          ))}
-        </div>
 
         {/* Category scroller */}
         {visibleCategories.length > 1 && (

@@ -53,7 +53,6 @@ interface AppState {
   transactions: WalletTransaction[];
   musicEnabled: boolean;
   notificationsEnabled: boolean;
-  vegMode: boolean;
   referralCode: string;
   savedAddresses: string[];
   activeCampaigns: LoyaltyCampaign[];
@@ -68,7 +67,6 @@ interface AppState {
   clearCart: () => void;
   setMusicEnabled: (v: boolean) => void;
   setNotificationsEnabled: (v: boolean) => void;
-  setVegMode: (v: boolean) => void;
   refreshUserData: () => Promise<void>;
 }
 
@@ -91,7 +89,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
   const [musicEnabled, setMusicEnabled] = useState(true);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [vegMode, setVegModeState] = useState(() => localStorage.getItem('vegMode') === 'true');
   const [referralCode, setReferralCode] = useState('');
   const [savedAddresses] = useState<string[]>([]);
   const [activeCampaigns, setActiveCampaigns] = useState<LoyaltyCampaign[]>([]);
@@ -191,16 +188,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     // Fetch profile (phone + name)
     const { data: profile } = await supabase
       .from('profiles')
-      .select('phone, full_name, diet_preference')
+      .select('phone, full_name')
       .eq('user_id', userId)
       .maybeSingle() as any;
     if (profile?.phone) setPhoneNumber(profile.phone);
     if (profile?.full_name) setUserName(profile.full_name);
-    if (profile?.diet_preference) {
-      const isVeg = profile.diet_preference === 'veg';
-      setVegModeState(isVeg);
-      localStorage.setItem('vegMode', String(isVeg));
-    }
 
     // Fetch badges
     const { data: userBadges } = await supabase
@@ -232,22 +224,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setCart(prev => prev.map(c => c.id === id ? { ...c, quantity: qty } : c));
   };
   const clearCart = () => setCart([]);
-  const setVegMode = (v: boolean) => {
-    setVegModeState(v);
-    localStorage.setItem('vegMode', String(v));
-    // Persist to DB
-    if (userId) {
-      supabase.from('profiles').update({ diet_preference: v ? 'veg' : 'nonveg' } as any).eq('user_id', userId).then(() => {});
-    }
-  };
 
   return (
     <AppContext.Provider value={{
       isLoggedIn, userId, phoneNumber, userName, walletBalance, totalOrders,
-      cart, transactions, musicEnabled, notificationsEnabled, vegMode, referralCode,
+      cart, transactions, musicEnabled, notificationsEnabled, referralCode,
       savedAddresses, activeCampaigns, badges,
       setLoggedIn, setPhoneNumber, setUserName, addToCart, removeFromCart,
-      updateQuantity, clearCart, setMusicEnabled, setNotificationsEnabled, setVegMode, refreshUserData,
+      updateQuantity, clearCart, setMusicEnabled, setNotificationsEnabled, refreshUserData,
     }}>
       {children}
     </AppContext.Provider>
