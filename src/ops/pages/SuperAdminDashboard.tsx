@@ -435,50 +435,57 @@ const SuperAdminDashboard = () => {
         </div>
 
         {/* ===== ALERTS ===== */}
-        {orderStats.active > 5 && (
+        {revStats.activeOrders > 5 && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
             className="flex items-center gap-3 bg-destructive/10 border border-destructive/30 rounded-xl p-3">
             <AlertTriangle size={18} className="text-destructive shrink-0" />
-            <span className="text-sm text-destructive">{orderStats.active} orders in pipeline — monitor delays</span>
+            <span className="text-sm text-destructive">{revStats.activeOrders} food orders in pipeline — monitor delays</span>
           </motion.div>
         )}
 
-        {/* ===== RECENT ORDERS ===== */}
+        {/* ===== RECENT ACTIVITY ===== */}
         <div>
           <button onClick={() => navigate('/ops-orders')}
             className="w-full flex items-center justify-between mb-2">
             <h2 className="font-heading text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-              <ShoppingBag size={12} /> Recent Orders
+              <ShoppingBag size={12} /> Recent Activity
             </h2>
             <ChevronRight size={14} className="text-muted-foreground" />
           </button>
-          {recentOrders.length === 0 ? (
+          {recentTxns.length === 0 ? (
             <div className="bg-card border border-border rounded-xl p-8 text-center">
               <ShoppingBag size={32} className="mx-auto mb-2 text-muted-foreground/30" />
-              <p className="text-xs text-muted-foreground">No orders yet</p>
+              <p className="text-xs text-muted-foreground">No activity yet in this period</p>
             </div>
           ) : (
             <div className="space-y-2">
-              {recentOrders.map(order => (
-                <motion.div key={order.id} whileTap={{ scale: 0.98 }}
-                  onClick={() => navigate('/ops-orders')}
-                  className="bg-card border border-border rounded-xl p-3 cursor-pointer active:bg-muted/50 transition-colors">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-heading text-sm text-foreground">{order.order_number}</span>
-                    <StatusBadge status={order.status} />
-                  </div>
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>{order.customer_name || 'Guest'} {order.customer_phone ? `• ${order.customer_phone}` : ''}</span>
-                    <span className="font-medium text-foreground">₹{Number(order.total).toLocaleString('en-IN')}</span>
-                  </div>
-                  {Number(order.discount) > 0 && (
-                    <div className="flex items-center gap-1 mt-1">
-                      <Percent size={10} className="text-orange-400" />
-                      <span className="text-[10px] text-orange-400">Discount: ₹{Number(order.discount).toLocaleString('en-IN')}</span>
+              {recentTxns.map(t => {
+                const typeBadge =
+                  t.source === 'pack' ? { label: 'PACK', cls: 'bg-purple-500/15 text-purple-400 border-purple-500/30' }
+                  : t.source === 'booking' ? { label: 'BOOKING', cls: 'bg-blue-500/15 text-blue-400 border-blue-500/30' }
+                  : { label: 'ORDER', cls: 'bg-secondary/15 text-secondary border-secondary/30' };
+                const subtitle =
+                  t.source === 'pack' ? `${t.pack_name} · ${t.total_hours}h pack`
+                  : t.source === 'booking' ? `${t.package_name} · ${t.booking_date}`
+                  : 'Food order';
+                return (
+                  <motion.div key={`${t.source}-${t.id}`} whileTap={{ scale: 0.98 }}
+                    onClick={() => navigate('/ops-orders')}
+                    className="bg-card border border-border rounded-xl p-3 cursor-pointer active:bg-muted/50 transition-colors">
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border ${typeBadge.cls}`}>{typeBadge.label}</span>
+                        <span className="font-heading text-sm text-foreground truncate">{t.number}</span>
+                      </div>
+                      <span className="font-heading text-sm text-secondary shrink-0">₹{t.amount.toLocaleString('en-IN')}</span>
                     </div>
-                  )}
-                </motion.div>
-              ))}
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span className="truncate">{t.customer_name} {t.customer_phone ? `• ${t.customer_phone}` : ''}</span>
+                      <span className="text-[10px] text-muted-foreground/80 shrink-0 ml-2 truncate max-w-[40%]">{subtitle}</span>
+                    </div>
+                  </motion.div>
+                );
+              })}
             </div>
           )}
         </div>
