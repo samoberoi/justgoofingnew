@@ -10,7 +10,7 @@ const navConfig: Record<AppRole, { path: string; icon: any; label: string }[]> =
   super_admin: [
     { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/ops-orders', icon: ShoppingBag, label: 'Orders' },
-    { path: '/menu', icon: UtensilsCrossed, label: 'Menu' },
+    { path: '/ops-menu', icon: UtensilsCrossed, label: 'Menu' },
     { path: '/loyalty', icon: Crown, label: 'Loyalty' },
     { path: '/customers', icon: Users, label: 'Customers' },
     { path: '/settings', icon: Settings, label: 'Settings' },
@@ -18,7 +18,7 @@ const navConfig: Record<AppRole, { path: string; icon: any; label: string }[]> =
   store_manager: [
     { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/ops-orders', icon: ShoppingBag, label: 'Orders' },
-    { path: '/menu', icon: UtensilsCrossed, label: 'Menu' },
+    { path: '/ops-menu', icon: UtensilsCrossed, label: 'Menu' },
     { path: '/customers', icon: Users, label: 'Customers' },
   ],
   kitchen_manager: [

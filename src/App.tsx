@@ -9,7 +9,11 @@ import { OpsAuthProvider, useAuth } from "./ops/hooks/useAuth";
 import SplashScreen from "./app/pages/SplashScreen";
 import LoginPage from "./app/pages/LoginPage";
 import WelcomePage from "./app/pages/WelcomePage";
-import HomePage from "./app/pages/HomePage";
+import DashboardPage from "./app/pages/DashboardPage";
+import MenuPage from "./app/pages/MenuPage";
+import BuyPackPage from "./app/pages/BuyPackPage";
+import MyQRPage from "./app/pages/MyQRPage";
+import ExtendSessionPage from "./app/pages/ExtendSessionPage";
 import BookingPage from "./app/pages/BookingPage";
 import BookingConfirmedPage from "./app/pages/BookingConfirmedPage";
 import WalletPage from "./app/pages/WalletPage";
@@ -66,7 +70,11 @@ const App = () => (
 
               {/* Customer routes */}
               <Route path="/welcome" element={<WelcomePage />} />
-              <Route path="/home" element={<HomePage />} />
+              <Route path="/home" element={<DashboardPage />} />
+              <Route path="/menu" element={<MenuPage />} />
+              <Route path="/buy-pack/:packId" element={<BuyPackPage />} />
+              <Route path="/my-qr" element={<MyQRPage />} />
+              <Route path="/extend-session/:sessionId" element={<ExtendSessionPage />} />
               <Route path="/book/:itemId" element={<BookingPage />} />
               <Route path="/booking-confirmed/:bookingId" element={<BookingConfirmedPage />} />
               <Route path="/wallet" element={<WalletPage />} />
@@ -87,7 +95,7 @@ const App = () => (
                   <OpsOrdersPage />
                 </OpsRoute>
               } />
-              <Route path="/menu" element={
+              <Route path="/ops-menu" element={
                 <OpsRoute allowedRoles={['super_admin', 'store_manager']}>
                   <OpsMenuPage />
                 </OpsRoute>

@@ -1,11 +1,11 @@
-import { Home, CalendarCheck, Wallet, User } from 'lucide-react';
+import { LayoutDashboard, BookOpen, Gift, User } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
 const tabs = [
-  { path: '/home', icon: Home, label: 'Home' },
-  { path: '/orders', icon: CalendarCheck, label: 'Bookings' },
-  { path: '/wallet', icon: Wallet, label: 'Rewards' },
+  { path: '/home', icon: LayoutDashboard, label: 'Dashboard' },
+  { path: '/menu', icon: BookOpen, label: 'Menu' },
+  { path: '/wallet', icon: Gift, label: 'Rewards' },
   { path: '/profile', icon: User, label: 'Profile' },
 ];
 

@@ -984,6 +984,120 @@ export type Database = {
           },
         ]
       }
+      play_packs: {
+        Row: {
+          created_at: string
+          description: string | null
+          display_order: number
+          id: string
+          image_url: string | null
+          is_active: boolean
+          name: string
+          pack_type: string
+          price: number
+          total_hours: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name: string
+          pack_type?: string
+          price?: number
+          total_hours?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name?: string
+          pack_type?: string
+          price?: number
+          total_hours?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      play_sessions: {
+        Row: {
+          booking_id: string | null
+          checked_in_at: string
+          checked_out_at: string | null
+          created_at: string
+          extended_hours: number
+          hours_consumed: number
+          id: string
+          kid_name: string | null
+          notes: string | null
+          num_kids: number
+          staff_user_id: string | null
+          status: string
+          store_id: string | null
+          updated_at: string
+          user_id: string
+          user_pack_id: string | null
+        }
+        Insert: {
+          booking_id?: string | null
+          checked_in_at?: string
+          checked_out_at?: string | null
+          created_at?: string
+          extended_hours?: number
+          hours_consumed?: number
+          id?: string
+          kid_name?: string | null
+          notes?: string | null
+          num_kids?: number
+          staff_user_id?: string | null
+          status?: string
+          store_id?: string | null
+          updated_at?: string
+          user_id: string
+          user_pack_id?: string | null
+        }
+        Update: {
+          booking_id?: string | null
+          checked_in_at?: string
+          checked_out_at?: string | null
+          created_at?: string
+          extended_hours?: number
+          hours_consumed?: number
+          id?: string
+          kid_name?: string | null
+          notes?: string | null
+          num_kids?: number
+          staff_user_id?: string | null
+          status?: string
+          store_id?: string | null
+          updated_at?: string
+          user_id?: string
+          user_pack_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "play_sessions_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "play_sessions_user_pack_id_fkey"
+            columns: ["user_pack_id"]
+            isOneToOne: false
+            referencedRelation: "user_packs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       points_settings: {
         Row: {
           earning_enabled: boolean
@@ -1491,6 +1605,62 @@ export type Database = {
             columns: ["badge_id"]
             isOneToOne: false
             referencedRelation: "badges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_packs: {
+        Row: {
+          amount_paid: number
+          created_at: string
+          hours_used: number
+          id: string
+          is_free_welcome: boolean
+          pack_id: string | null
+          pack_name: string
+          purchased_at: string
+          status: string
+          store_id: string | null
+          total_hours: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount_paid?: number
+          created_at?: string
+          hours_used?: number
+          id?: string
+          is_free_welcome?: boolean
+          pack_id?: string | null
+          pack_name: string
+          purchased_at?: string
+          status?: string
+          store_id?: string | null
+          total_hours?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount_paid?: number
+          created_at?: string
+          hours_used?: number
+          id?: string
+          is_free_welcome?: boolean
+          pack_id?: string | null
+          pack_name?: string
+          purchased_at?: string
+          status?: string
+          store_id?: string | null
+          total_hours?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_packs_pack_id_fkey"
+            columns: ["pack_id"]
+            isOneToOne: false
+            referencedRelation: "play_packs"
             referencedColumns: ["id"]
           },
         ]
