@@ -74,6 +74,7 @@ const KidsPage = () => {
       date_of_birth: kid.date_of_birth || '',
       school: kid.school || '',
       notes: kid.notes || '',
+      photo_url: kid.photo_url || '',
     });
     setEditingId(kid.id);
     setShowForm(true);
@@ -83,6 +84,25 @@ const KidsPage = () => {
     setShowForm(false);
     setEditingId(null);
     setForm(empty);
+  };
+
+  const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !userId) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Photo must be under 5MB');
+      return;
+    }
+    setUploadingPhoto(true);
+    const url = await uploadKidPhoto(userId, file);
+    setUploadingPhoto(false);
+    if (url) {
+      setForm(f => ({ ...f, photo_url: url }));
+      toast.success('Photo uploaded!');
+    } else {
+      toast.error('Upload failed. Try again.');
+    }
+    e.target.value = '';
   };
 
   const handleSave = async () => {
@@ -97,6 +117,7 @@ const KidsPage = () => {
       date_of_birth: form.date_of_birth || null,
       school: form.school.trim() || null,
       notes: form.notes.trim() || null,
+      photo_url: form.photo_url || null,
     };
     if (editingId) {
       await updateKid(editingId, payload as any);
