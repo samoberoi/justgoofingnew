@@ -38,6 +38,7 @@ interface ActiveSession {
   plus_one: boolean;
   checked_in_at: string;
   hours_consumed: number;
+  extended_hours: number;
   user_id: string;
 }
 
