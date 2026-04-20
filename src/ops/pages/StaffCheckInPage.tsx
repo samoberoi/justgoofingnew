@@ -815,16 +815,21 @@ const StaffCheckInPage = () => {
                 <p className="text-xs text-ink/55 mt-1">Kids checked in will appear here</p>
               </div>
             ) : (
-              activeSessions.map(s => (
-                <ActiveSessionCard
-                  key={s.id}
-                  session={s}
-                  now={now}
-                  busy={extendingId === s.id}
-                  onExtend={() => handleExtend(s.id)}
-                  onCheckOut={() => handleCheckOut(s.id)}
-                />
-              ))
+              [...activeSessions]
+                .sort((a, b) => {
+                  // Oldest check-in (least time remaining) on top
+                  return new Date(a.checked_in_at).getTime() - new Date(b.checked_in_at).getTime();
+                })
+                .map(s => (
+                  <ActiveSessionCard
+                    key={s.id}
+                    session={s}
+                    now={now}
+                    busy={extendingId === s.id}
+                    onExtend={() => handleExtend(s.id)}
+                    onCheckOut={() => handleCheckOut(s.id)}
+                  />
+                ))
             )}
           </div>
         )}
@@ -856,11 +861,11 @@ const ActiveSessionCard = ({
   const remainingMs = allowedMs - elapsedMs; // can go negative (overrun)
   const minsLeft = remainingMs / 60000;
 
-  // Color phases
+  // Color phases: green > 30 min, amber 10–30 min, red < 10 min, over = expired
   let phase: 'green' | 'amber' | 'red' | 'over' = 'green';
   if (remainingMs <= 0) phase = 'over';
-  else if (minsLeft <= 3) phase = 'red';
-  else if (minsLeft <= 10) phase = 'amber';
+  else if (minsLeft < 10) phase = 'red';
+  else if (minsLeft < 30) phase = 'amber';
 
   const phaseStyle = {
     green: { bar: 'bg-mint', text: 'text-mint', ring: 'border-mint/30', chip: 'bg-mint/15 text-mint' },
