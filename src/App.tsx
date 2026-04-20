@@ -133,16 +133,6 @@ const App = () => (
                   <DeliveryView />
                 </OpsRoute>
               } />
-              <Route path="/recipes" element={
-                <OpsRoute allowedRoles={['super_admin', 'store_manager', 'kitchen_manager']}>
-                  <RecipeManagerPage />
-                </OpsRoute>
-              } />
-              <Route path="/inventory" element={
-                <OpsRoute allowedRoles={['super_admin', 'store_manager', 'kitchen_manager']}>
-                  <InventoryManagerPage />
-                </OpsRoute>
-              } />
             </Routes>
           </BrowserRouter>
         </OpsAuthProvider>
