@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Search, UserPlus, CheckCircle2, Clock, Users, X, LogOut } from 'lucide-react';
+import { ArrowLeft, Search, UserPlus, CheckCircle2, Clock, Users, X, LogOut, ScanLine, Wallet, IndianRupee } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '../hooks/useAuth';
 import OpsBottomNav from '../components/OpsBottomNav';
+import QrScanner from '../components/QrScanner';
 import { calcAge } from '../../app/hooks/useKids';
 import { toast } from 'sonner';
 
@@ -40,12 +41,24 @@ interface ActiveSession {
   user_id: string;
 }
 
+interface PendingPack {
+  id: string;
+  pack_name: string;
+  total_hours: number;
+  amount_paid: number;
+  user_id: string;
+  purchased_at: string;
+  customer_name?: string | null;
+  customer_phone?: string | null;
+}
+
 const StaffCheckInPage = () => {
   const navigate = useNavigate();
   const { user, storeId } = useAuth();
 
-  const [tab, setTab] = useState<'checkin' | 'active'>('checkin');
+  const [tab, setTab] = useState<'checkin' | 'active' | 'pending'>('checkin');
   const [search, setSearch] = useState('');
+  const [scannerOpen, setScannerOpen] = useState(false);
   const [scannedBooking, setScannedBooking] = useState<Booking | null>(null);
   const [parentKids, setParentKids] = useState<KidRow[]>([]);
   const [selectedKidId, setSelectedKidId] = useState<string | null>(null);
@@ -53,6 +66,8 @@ const StaffCheckInPage = () => {
   const [submitting, setSubmitting] = useState(false);
 
   const [activeSessions, setActiveSessions] = useState<ActiveSession[]>([]);
+  const [pendingPacks, setPendingPacks] = useState<PendingPack[]>([]);
+  const [settlingId, setSettlingId] = useState<string | null>(null);
   const [now, setNow] = useState(Date.now());
 
   // Live clock for active session timers
@@ -73,14 +88,100 @@ const StaffCheckInPage = () => {
     setActiveSessions((data as any) || []);
   };
 
+  // Load packs awaiting payment settlement (this store, or all if super-admin with no store)
+  const loadPending = async () => {
+    let q = supabase
+      .from('user_packs' as any)
+      .select('id, pack_name, total_hours, amount_paid, user_id, purchased_at')
+      .eq('status', 'pending')
+      .order('purchased_at', { ascending: false });
+    if (storeId) q = q.eq('store_id', storeId);
+    const { data: packsData } = await q;
+    const list = (packsData as any[]) || [];
+    if (list.length === 0) { setPendingPacks([]); return; }
+    const userIds = Array.from(new Set(list.map(p => p.user_id)));
+    const { data: profs } = await supabase
+      .from('profiles')
+      .select('user_id, full_name, phone')
+      .in('user_id', userIds);
+    const profMap = new Map<string, any>((profs || []).map((p: any) => [p.user_id, p]));
+    setPendingPacks(list.map(p => ({
+      ...p,
+      customer_name: profMap.get(p.user_id)?.full_name || null,
+      customer_phone: profMap.get(p.user_id)?.phone || null,
+    })));
+  };
+
   useEffect(() => {
     loadActive();
+    loadPending();
     const ch = supabase
       .channel('staff-checkin-sessions')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'play_sessions' }, () => loadActive())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_packs' }, () => loadPending())
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [storeId]);
+
+  // Settle payment for a pending pack
+  const handleSettlePayment = async (packId: string, method: 'cash' | 'upi' | 'card' | 'online') => {
+    setSettlingId(packId);
+    const { error } = await supabase
+      .from('user_packs' as any)
+      .update({
+        status: 'active',
+        payment_status: 'paid',
+        payment_method: method,
+        paid_at: new Date().toISOString(),
+        settled_by: user?.id || null,
+      } as any)
+      .eq('id', packId);
+
+    if (error) {
+      toast.error('Could not settle payment', { description: error.message });
+      setSettlingId(null);
+      return;
+    }
+
+    // Award Goofy Points on settlement
+    const pack = pendingPacks.find(p => p.id === packId);
+    if (pack && Number(pack.amount_paid) > 0) {
+      const { data: settings } = await supabase
+        .from('points_settings')
+        .select('earning_enabled, earning_percent, max_earn_per_order, expiry_days')
+        .limit(1).maybeSingle();
+      if (settings?.earning_enabled) {
+        let earned = Math.floor((Number(pack.amount_paid) * Number(settings.earning_percent)) / 100);
+        if (settings.max_earn_per_order) earned = Math.min(earned, Number(settings.max_earn_per_order));
+        if (earned > 0) {
+          const { data: prevTx } = await supabase
+            .from('points_transactions')
+            .select('balance_after')
+            .eq('user_id', pack.user_id)
+            .order('created_at', { ascending: false })
+            .limit(1).maybeSingle();
+          const balanceAfter = Number(prevTx?.balance_after || 0) + earned;
+          const expiresAt = settings.expiry_days
+            ? new Date(Date.now() + Number(settings.expiry_days) * 86400000).toISOString()
+            : null;
+          await supabase.from('points_transactions').insert({
+            user_id: pack.user_id,
+            type: 'earned',
+            amount: earned,
+            balance_after: balanceAfter,
+            description: `Earned on ${pack.pack_name}`,
+            expires_at: expiresAt,
+          });
+        }
+      }
+    }
+
+    toast.success(`Payment settled via ${method.toUpperCase()} ✅`, {
+      description: 'Pack is now active for the customer.',
+    });
+    setSettlingId(null);
+    loadPending();
+  };
 
   // Search booking by QR code or booking number
   const handleSearch = async () => {
@@ -237,18 +338,26 @@ const StaffCheckInPage = () => {
           </button>
         </div>
         {/* Tabs */}
-        <div className="flex gap-2 px-4 pb-3">
+        <div className="flex gap-1.5 px-4 pb-3">
           <button
             onClick={() => setTab('checkin')}
-            className={`flex-1 py-2.5 rounded-2xl text-sm font-heading border-2 transition-all ${
+            className={`flex-1 py-2.5 rounded-2xl text-xs font-heading border-2 transition-all ${
               tab === 'checkin' ? 'bg-coral text-white border-coral shadow-pop-coral' : 'bg-card text-ink/60 border-ink/8'
             }`}
           >
-            ✨ New Check-In
+            ✨ Check-In
+          </button>
+          <button
+            onClick={() => setTab('pending')}
+            className={`flex-1 py-2.5 rounded-2xl text-xs font-heading border-2 transition-all ${
+              tab === 'pending' ? 'bg-butter text-ink border-butter shadow-pop-butter' : 'bg-card text-ink/60 border-ink/8'
+            }`}
+          >
+            💰 Pay ({pendingPacks.length})
           </button>
           <button
             onClick={() => setTab('active')}
-            className={`flex-1 py-2.5 rounded-2xl text-sm font-heading border-2 transition-all relative ${
+            className={`flex-1 py-2.5 rounded-2xl text-xs font-heading border-2 transition-all ${
               tab === 'active' ? 'bg-mint text-ink border-mint shadow-pop-mint' : 'bg-card text-ink/60 border-ink/8'
             }`}
           >
@@ -257,6 +366,19 @@ const StaffCheckInPage = () => {
         </div>
       </div>
 
+      <AnimatePresence>
+        {scannerOpen && (
+          <QrScanner
+            onClose={() => setScannerOpen(false)}
+            onResult={(text) => {
+              setScannerOpen(false);
+              setSearch(text);
+              setTimeout(() => handleSearch(), 50);
+            }}
+          />
+        )}
+      </AnimatePresence>
+
       <div className="px-4 pt-5">
         {tab === 'checkin' && (
           <>
@@ -264,21 +386,29 @@ const StaffCheckInPage = () => {
             <div className="bg-card border-2 border-ink/8 rounded-3xl p-4 shadow-pop">
               <p className="text-xs font-heading text-ink/60 mb-2">Scan QR or enter booking #</p>
               <div className="flex gap-2">
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setScannerOpen(true)}
+                  className="px-3 py-3 bg-ink rounded-2xl text-cream shadow-pop flex items-center gap-1.5"
+                  title="Open camera scanner"
+                >
+                  <ScanLine size={18} />
+                  <span className="text-xs font-heading hidden sm:inline">Scan</span>
+                </motion.button>
                 <div className="flex-1 relative">
                   <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink/40" />
                   <input
-                    autoFocus
                     value={search}
                     onChange={e => setSearch(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && handleSearch()}
-                    placeholder="QR code or GOOF-12345"
+                    placeholder="QR or GOOF-12345"
                     className="w-full pl-10 pr-3 py-3 bg-background border-2 border-ink/8 rounded-2xl text-sm text-ink focus:outline-none focus:border-coral transition-colors"
                   />
                 </div>
                 <motion.button
                   whileTap={{ scale: 0.95 }}
                   onClick={handleSearch}
-                  className="px-5 py-3 bg-gradient-coral rounded-2xl text-sm font-heading text-white shadow-pop-coral"
+                  className="px-4 py-3 bg-gradient-coral rounded-2xl text-sm font-heading text-white shadow-pop-coral"
                 >
                   Find
                 </motion.button>
@@ -420,6 +550,27 @@ const StaffCheckInPage = () => {
           </>
         )}
 
+        {tab === 'pending' && (
+          <div className="space-y-3">
+            {pendingPacks.length === 0 ? (
+              <div className="bg-card border-2 border-ink/8 rounded-3xl p-8 text-center shadow-soft">
+                <div className="w-16 h-16 rounded-3xl bg-butter/30 flex items-center justify-center mx-auto mb-3 text-3xl">💰</div>
+                <p className="font-display text-lg text-ink">All paid up!</p>
+                <p className="text-xs text-ink/55 mt-1">No packs waiting for payment</p>
+              </div>
+            ) : (
+              pendingPacks.map(p => (
+                <SettleCard
+                  key={p.id}
+                  pack={p}
+                  onSettle={(method) => handleSettlePayment(p.id, method)}
+                  busy={settlingId === p.id}
+                />
+              ))
+            )}
+          </div>
+        )}
+
         {tab === 'active' && (
           <div className="space-y-3">
             {activeSessions.length === 0 ? (
@@ -472,6 +623,68 @@ const StaffCheckInPage = () => {
 
       <OpsBottomNav />
     </div>
+  );
+};
+
+const SettleCard = ({ pack, onSettle, busy }: { pack: PendingPack; onSettle: (m: 'cash' | 'upi' | 'card' | 'online') => void; busy: boolean }) => {
+  const [picking, setPicking] = useState(false);
+  const methods: { key: 'cash' | 'upi' | 'card' | 'online'; label: string; emoji: string }[] = [
+    { key: 'cash', label: 'Cash', emoji: '💵' },
+    { key: 'upi', label: 'UPI / Paytm', emoji: '📱' },
+    { key: 'card', label: 'Card', emoji: '💳' },
+    { key: 'online', label: 'Online', emoji: '🌐' },
+  ];
+  return (
+    <motion.div layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="bg-card border-2 border-ink/8 rounded-3xl p-4 shadow-pop">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="font-display text-base text-ink truncate">{pack.pack_name}</p>
+            <span className="text-[9px] px-2 py-0.5 rounded-full bg-coral text-white font-display">PENDING</span>
+          </div>
+          <p className="text-xs text-ink/70 mt-1">
+            👤 {pack.customer_name || 'Guest'} · 📞 {pack.customer_phone || '—'}
+          </p>
+          <p className="text-xs text-ink/60 mt-0.5">
+            {pack.total_hours} hrs · reserved {new Date(pack.purchased_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+          </p>
+        </div>
+        <div className="text-right shrink-0">
+          <p className="font-display text-2xl text-ink leading-none">₹{Number(pack.amount_paid)}</p>
+        </div>
+      </div>
+      {!picking ? (
+        <motion.button
+          whileTap={{ scale: 0.97 }}
+          onClick={() => setPicking(true)}
+          disabled={busy}
+          className="mt-3 w-full py-3 bg-gradient-coral rounded-2xl text-sm font-heading text-white shadow-pop-coral flex items-center justify-center gap-2 disabled:opacity-50"
+        >
+          <Wallet size={16} /> Settle Payment
+        </motion.button>
+      ) : (
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          {methods.map(m => (
+            <motion.button
+              key={m.key}
+              whileTap={{ scale: 0.96 }}
+              onClick={() => onSettle(m.key)}
+              disabled={busy}
+              className="py-3 bg-mint/20 border-2 border-ink/8 rounded-2xl text-xs font-heading text-ink hover:bg-mint/40 transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5"
+            >
+              <span>{m.emoji}</span> {m.label}
+            </motion.button>
+          ))}
+          <button
+            onClick={() => setPicking(false)}
+            disabled={busy}
+            className="col-span-2 py-2 text-xs text-ink/50 font-heading"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
+    </motion.div>
   );
 };
 
