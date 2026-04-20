@@ -199,7 +199,7 @@ const OpsOrdersPage = () => {
   });
 
   const goToCustomer = (s: Sale) => {
-    navigate('/ops/customers', {
+    navigate('/customers', {
       state: { openCustomer: { phone: s.customer_phone, name: s.customer_name, userId: s.user_id } },
     });
   };
