@@ -303,7 +303,7 @@ const HomePage = () => {
             type="text"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            placeholder="Search the royal menu…"
+            placeholder="Search the menu…"
             className="w-full pl-10 pr-4 py-3 bg-card border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-secondary/30 transition-colors"
           />
         </div>
@@ -349,7 +349,7 @@ const HomePage = () => {
 
       {/* Menu Section Title */}
       <div className="px-4 pt-4 pb-1">
-        <h2 className="font-heading text-base text-foreground">The Royal Menu</h2>
+        <h2 className="font-heading text-base text-foreground">The Menu</h2>
         {selectedStore && (
           <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1">
             <MapPin size={10} /> Serving from {selectedStore.name}
