@@ -111,7 +111,7 @@ const OpsMenuPage = () => {
       {/* Header */}
       <div className="sticky top-0 z-40 bg-card/95 backdrop-blur-xl border-b border-border">
         <div className="px-4 py-3 flex items-center justify-between">
-          <h1 className="font-heading text-lg text-gradient-gold">Menu</h1>
+          <h1 className="font-heading text-lg text-gradient-gold">Playbook</h1>
           <div className="flex items-center gap-2">
             {tab === 'items' && role === 'super_admin' && (
               <>
