@@ -1,26 +1,19 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import OpsBottomNav from '../components/OpsBottomNav';
-import { Users, Phone, ShoppingBag, Search, ArrowLeft } from 'lucide-react';
+import { Users, Phone, Search, ArrowLeft, Ticket, CalendarCheck, ShoppingBag } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useLocation } from 'react-router-dom';
-
-interface Customer {
-  name: string;
-  phone: string;
-  userId: string | null;
-  orders: number;
-  spent: number;
-  lastOrderDate: string;
-}
+import { fetchUnifiedTransactions, aggregateCustomers, type UnifiedCustomer, type UnifiedTxn } from '../lib/unifiedTransactions';
 
 const OpsCustomersPage = () => {
   const location = useLocation();
-  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [customers, setCustomers] = useState<UnifiedCustomer[]>([]);
+  const [allTxns, setAllTxns] = useState<UnifiedTxn[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
-  const [customerOrders, setCustomerOrders] = useState<any[]>([]);
+  const [selectedCustomer, setSelectedCustomer] = useState<UnifiedCustomer | null>(null);
+  const [customerTxns, setCustomerTxns] = useState<UnifiedTxn[]>([]);
   const [customerAddresses, setCustomerAddresses] = useState<any[]>([]);
 
   useEffect(() => {
@@ -37,69 +30,24 @@ const OpsCustomersPage = () => {
   }, [customers, location.state]);
 
   const fetchCustomers = async () => {
-    // Fetch orders and profiles in parallel
-    const [ordersRes, profilesRes] = await Promise.all([
-      supabase.from('orders').select('customer_name, customer_phone, total, created_at, user_id').order('created_at', { ascending: false }),
-      supabase.from('profiles').select('user_id, phone, full_name'),
-    ]);
-
-    const orders = ordersRes.data;
-    const profiles = profilesRes.data || [];
-    if (!orders) { setLoading(false); return; }
-
-    // Build a profile lookup by user_id
-    const profileMap = new Map<string, { phone: string | null; name: string | null }>();
-    profiles.forEach(p => profileMap.set(p.user_id, { phone: p.phone, name: p.full_name }));
-
-    // Aggregate by user_id first, fallback to phone/name
-    const map = new Map<string, Customer>();
-    orders.forEach(o => {
-      const profile = o.user_id ? profileMap.get(o.user_id) : null;
-      const phone = o.customer_phone || profile?.phone || '';
-      const name = o.customer_name || profile?.name || 'Guest';
-      const key = o.user_id || phone || name;
-
-      const existing = map.get(key);
-      if (existing) {
-        existing.orders += 1;
-        existing.spent += Number(o.total);
-        // Update phone/name if we now have better data
-        if (!existing.phone && phone) existing.phone = phone;
-        if (existing.name === 'Guest' && name !== 'Guest') existing.name = name;
-      } else {
-        map.set(key, {
-          name,
-          phone: phone || '-',
-          userId: o.user_id || null,
-          orders: 1,
-          spent: Number(o.total),
-          lastOrderDate: o.created_at,
-        });
-      }
-    });
-
-    setCustomers(Array.from(map.values()).sort((a, b) => b.spent - a.spent));
+    const txns = await fetchUnifiedTransactions();
+    setAllTxns(txns);
+    setCustomers(aggregateCustomers(txns));
     setLoading(false);
   };
 
-  const viewCustomer = async (customer: Customer) => {
+  const viewCustomer = async (customer: UnifiedCustomer) => {
     setSelectedCustomer(customer);
     window.scrollTo(0, 0);
 
-    // Build query based on available identifiers
-    let ordersQuery = supabase.from('orders').select('*').order('created_at', { ascending: false }).limit(20);
-    if (customer.userId) {
-      ordersQuery = ordersQuery.eq('user_id', customer.userId);
-    } else if (customer.phone && customer.phone !== '-') {
-      ordersQuery = ordersQuery.eq('customer_phone', customer.phone);
-    } else {
-      ordersQuery = ordersQuery.eq('customer_name', customer.name);
-    }
+    // filter all txns for this customer
+    const matched = allTxns.filter(t => {
+      if (customer.userId && t.user_id === customer.userId) return true;
+      if (!customer.userId && t.customer_phone && t.customer_phone === customer.phone) return true;
+      return false;
+    });
+    setCustomerTxns(matched);
 
-    const ordersRes = await ordersQuery;
-    setCustomerOrders(ordersRes.data || []);
-
-    // Fetch addresses if we have a userId
     if (customer.userId) {
       const addrsRes = await supabase.from('addresses').select('*').eq('user_id', customer.userId).order('created_at', { ascending: false });
       setCustomerAddresses(addrsRes.data || []);
