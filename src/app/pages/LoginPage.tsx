@@ -214,7 +214,6 @@ const LoginPage = () => {
             <div className="bg-gradient-butter rounded-2xl p-3.5 text-xs text-ink border-2 border-ink/10 shadow-soft">
               <p className="font-display mb-1">🔑 Dev Login</p>
               <p className="font-medium">Admin: <span className="font-display">8373914073</span> · OTP: <span className="font-display">111111</span></p>
-              <p className="mt-0.5 font-medium">Delivery: <span className="font-display">7777777777</span> · OTP: <span className="font-display">111111</span></p>
             </div>
           </motion.div>
         )}
