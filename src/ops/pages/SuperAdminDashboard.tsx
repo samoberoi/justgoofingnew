@@ -436,40 +436,6 @@ const SuperAdminDashboard = () => {
           )}
         </div>
 
-        {/* ===== INVENTORY ALERTS ===== */}
-        {lowStockItems.length > 0 && (
-          <div>
-            <button onClick={() => navigate('/inventory')}
-              className="w-full flex items-center justify-between mb-2">
-              <h2 className="font-heading text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                <Package size={12} className="text-destructive" /> Inventory Alerts ({lowStockItems.length})
-              </h2>
-              <ChevronRight size={14} className="text-muted-foreground" />
-            </button>
-            <div className="space-y-1.5">
-              {lowStockItems.map((item, idx) => (
-                <motion.div key={idx} initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                  onClick={() => navigate('/inventory')}
-                  className="bg-card border border-destructive/20 rounded-xl p-3 flex items-center gap-3 cursor-pointer active:scale-[0.98] transition-transform">
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${item.current_stock <= 0 ? 'bg-destructive/10' : 'bg-yellow-500/10'}`}>
-                    <AlertTriangle size={14} className={item.current_stock <= 0 ? 'text-destructive' : 'text-yellow-500'} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{item.name}</p>
-                    <p className="text-[10px] text-muted-foreground">Min: {item.min_stock_level} {item.unit}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className={`text-sm font-bold ${item.current_stock <= 0 ? 'text-destructive' : 'text-yellow-500'}`}>
-                      {item.current_stock} {item.unit}
-                    </p>
-                    <p className="text-[9px] text-muted-foreground">{item.current_stock <= 0 ? 'OUT' : 'LOW'}</p>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        )}
-
         {/* ===== ALERTS ===== */}
         {orderStats.active > 5 && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
