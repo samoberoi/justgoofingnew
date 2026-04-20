@@ -238,21 +238,21 @@ const SuperAdminDashboard = () => {
           )}
         </div>
 
-        {/* ===== ORDERS & REVENUE ===== */}
+        {/* ===== REVENUE OVERVIEW ===== */}
         <div>
           <button onClick={() => navigate('/ops-orders')}
             className="w-full flex items-center justify-between mb-2">
             <h2 className="font-heading text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-              <ShoppingBag size={12} /> Orders & Revenue
+              <ShoppingBag size={12} /> Revenue Overview
             </h2>
             <ChevronRight size={14} className="text-muted-foreground" />
           </button>
           <div className="grid grid-cols-2 gap-2">
             {[
-              { label: 'Revenue', value: `₹${orderStats.revenue.toLocaleString('en-IN')}`, icon: IndianRupee, color: 'text-green-400', bg: 'bg-green-500/10' },
-              { label: 'Total Orders', value: orderStats.total, icon: ShoppingBag, color: 'text-secondary', bg: 'bg-secondary/10' },
-              { label: 'Active', value: orderStats.active, icon: Clock, color: 'text-yellow-400', bg: 'bg-yellow-500/10' },
-              { label: 'Delivered', value: orderStats.delivered, icon: TrendingUp, color: 'text-blue-400', bg: 'bg-blue-500/10' },
+              { label: 'Total Revenue', value: `₹${revStats.revenue.toLocaleString('en-IN')}`, icon: IndianRupee, color: 'text-green-400', bg: 'bg-green-500/10' },
+              { label: 'Total Sales', value: revStats.total, icon: ShoppingBag, color: 'text-secondary', bg: 'bg-secondary/10' },
+              { label: 'Play Packs', value: revStats.packs, icon: Ticket, color: 'text-purple-400', bg: 'bg-purple-500/10' },
+              { label: 'Bookings', value: revStats.bookings, icon: CalendarCheck, color: 'text-blue-400', bg: 'bg-blue-500/10' },
             ].map((stat, i) => (
               <motion.div key={stat.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
                 onClick={() => navigate('/ops-orders')}
@@ -267,12 +267,12 @@ const SuperAdminDashboard = () => {
               </motion.div>
             ))}
           </div>
-          {/* Avg Order & Discounts row */}
+          {/* Avg Ticket & Discounts row */}
           <div className="grid grid-cols-2 gap-2 mt-2">
-            {orderStats.avgOrder > 0 && (
+            {revStats.avgTicket > 0 && (
               <div className="bg-card border border-border rounded-xl p-3 flex items-center justify-between">
-                <span className="text-[10px] text-muted-foreground">Avg Order</span>
-                <span className="font-heading text-sm text-secondary">₹{orderStats.avgOrder}</span>
+                <span className="text-[10px] text-muted-foreground">Avg Ticket</span>
+                <span className="font-heading text-sm text-secondary">₹{revStats.avgTicket}</span>
               </div>
             )}
             <div className="bg-card border border-border rounded-xl p-3 flex items-center justify-between">
@@ -280,7 +280,7 @@ const SuperAdminDashboard = () => {
                 <Percent size={12} className="text-orange-400" />
                 <span className="text-[10px] text-muted-foreground">Discounts</span>
               </div>
-              <span className="font-heading text-sm text-orange-400">₹{orderStats.totalDiscount.toLocaleString('en-IN')}</span>
+              <span className="font-heading text-sm text-orange-400">₹{revStats.totalDiscount.toLocaleString('en-IN')}</span>
             </div>
           </div>
         </div>
