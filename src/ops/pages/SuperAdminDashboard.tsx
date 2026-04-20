@@ -321,7 +321,7 @@ const SuperAdminDashboard = () => {
 
         {/* ===== MENU SECTION ===== */}
         <div>
-          <button onClick={() => navigate('/menu')}
+          <button onClick={() => navigate('/ops-menu')}
             className="w-full flex items-center justify-between mb-2">
             <h2 className="font-heading text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
               <UtensilsCrossed size={12} /> Menu Overview
@@ -336,7 +336,7 @@ const SuperAdminDashboard = () => {
               { label: 'Variants', value: menuStats.variants, icon: Crown, color: 'text-yellow-400' },
             ].map((stat, i) => (
               <motion.div key={stat.label} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2 + i * 0.05 }}
-                onClick={() => navigate('/menu')}
+                onClick={() => navigate('/ops-menu')}
                 className="bg-card border border-border rounded-xl p-3 text-center cursor-pointer active:scale-[0.98] transition-transform">
                 <stat.icon size={16} className={`${stat.color} mx-auto mb-1`} />
                 <p className="font-heading text-lg text-foreground">{stat.value}</p>
