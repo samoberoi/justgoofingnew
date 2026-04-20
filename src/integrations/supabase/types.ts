@@ -89,6 +89,114 @@ export type Database = {
         }
         Relationships: []
       }
+      bookings: {
+        Row: {
+          booking_date: string
+          booking_number: string
+          cancelled_at: string | null
+          checked_in_at: string | null
+          completed_at: string | null
+          created_at: string
+          customer_name: string | null
+          customer_phone: string | null
+          discount: number
+          duration_hours: number
+          id: string
+          is_free_welcome: boolean
+          kid_age: number | null
+          kid_name: string | null
+          menu_item_id: string | null
+          num_kids: number
+          package_name: string
+          package_price: number
+          payment_method: string | null
+          payment_status: string
+          qr_code: string
+          slot_time: string
+          special_instructions: string | null
+          status: string
+          store_id: string
+          total_amount: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          booking_date: string
+          booking_number: string
+          cancelled_at?: string | null
+          checked_in_at?: string | null
+          completed_at?: string | null
+          created_at?: string
+          customer_name?: string | null
+          customer_phone?: string | null
+          discount?: number
+          duration_hours?: number
+          id?: string
+          is_free_welcome?: boolean
+          kid_age?: number | null
+          kid_name?: string | null
+          menu_item_id?: string | null
+          num_kids?: number
+          package_name: string
+          package_price?: number
+          payment_method?: string | null
+          payment_status?: string
+          qr_code: string
+          slot_time: string
+          special_instructions?: string | null
+          status?: string
+          store_id: string
+          total_amount?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          booking_date?: string
+          booking_number?: string
+          cancelled_at?: string | null
+          checked_in_at?: string | null
+          completed_at?: string | null
+          created_at?: string
+          customer_name?: string | null
+          customer_phone?: string | null
+          discount?: number
+          duration_hours?: number
+          id?: string
+          is_free_welcome?: boolean
+          kid_age?: number | null
+          kid_name?: string | null
+          menu_item_id?: string | null
+          num_kids?: number
+          package_name?: string
+          package_price?: number
+          payment_method?: string | null
+          payment_status?: string
+          qr_code?: string
+          slot_time?: string
+          special_instructions?: string | null
+          status?: string
+          store_id?: string
+          total_amount?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_menu_item_id_fkey"
+            columns: ["menu_item_id"]
+            isOneToOne: false
+            referencedRelation: "menu_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coupons: {
         Row: {
           code: string
