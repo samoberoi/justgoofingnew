@@ -269,7 +269,7 @@ const StaffCheckInPage = () => {
       .order('created_at', { ascending: true });
     setParentKids((kids as any) || []);
     setSelectedKidId(null);
-    setPlusOne(false);
+    setAccompanying(0);
   };
 
   // Search booking by QR code, booking number, customer QR token, or phone number
@@ -336,7 +336,7 @@ const StaffCheckInPage = () => {
       .order('created_at', { ascending: true });
     setParentKids((kids as any) || []);
     setSelectedKidId(null);
-    setPlusOne(false);
+    setAccompanying(0);
   };
 
   const handleCheckIn = async () => {
@@ -344,7 +344,8 @@ const StaffCheckInPage = () => {
     setSubmitting(true);
 
     const kid = parentKids.find(k => k.id === selectedKidId);
-    const kidsCount = plusOne ? 2 : 1;
+    const kidsCount = 1 + accompanying; // selected kid + accompanying
+    const hasPlusOne = accompanying > 0;
 
     const isWalkIn = !scannedBooking.id;
 
@@ -356,7 +357,7 @@ const StaffCheckInPage = () => {
         kid_id: selectedKidId,
         kid_name: kid?.name || null,
         num_kids: kidsCount,
-        plus_one: plusOne,
+        plus_one: hasPlusOne,
         store_id: storeId,
         staff_user_id: user?.id,
         status: 'active',
@@ -376,17 +377,67 @@ const StaffCheckInPage = () => {
     }
 
     toast.success(`${kid?.name} checked in! 🎉`, {
-      description: plusOne ? 'With a +1 friend — 2× hours will be deducted at check-out' : '1× hours per hour',
+      description: hasPlusOne
+        ? `+${accompanying} accompanying — ${kidsCount}× hours will be deducted at check-out`
+        : '1× hours per hour',
     });
 
     setScannedBooking(null);
     setParentKids([]);
     setSelectedKidId(null);
-    setPlusOne(false);
+    setAccompanying(0);
     setSearch('');
     setSubmitting(false);
     loadActive();
     setTab('active');
+  };
+
+  // Helper: hours remaining across the customer's active packs
+  const getRemainingHoursFor = async (uid: string): Promise<number> => {
+    const { data } = await supabase
+      .from('user_packs' as any)
+      .select('total_hours, hours_used')
+      .eq('user_id', uid)
+      .eq('status', 'active');
+    return ((data as any[]) || []).reduce(
+      (sum, p) => sum + Math.max(0, Number(p.total_hours) - Number(p.hours_used)),
+      0
+    );
+  };
+
+  // Extend session by 1 hour (records on play_sessions; deducted at checkout)
+  const handleExtend = async (sessionId: string) => {
+    const session = activeSessions.find(s => s.id === sessionId);
+    if (!session) return;
+    setExtendingId(sessionId);
+
+    const remaining = await getRemainingHoursFor(session.user_id);
+    const multiplier = session.num_kids || (session.plus_one ? 2 : 1);
+    const needed = 1 * multiplier;
+
+    if (remaining < needed) {
+      toast.error('No more hours available 👋', {
+        description: `Customer needs ${needed}h to extend (has ${remaining.toFixed(2)}h). Auto-checking out.`,
+      });
+      setExtendingId(null);
+      await handleCheckOut(sessionId, true);
+      return;
+    }
+
+    const { error } = await supabase
+      .from('play_sessions' as any)
+      .update({ extended_hours: Number(session.extended_hours || 0) + 1 })
+      .eq('id', sessionId);
+
+    if (error) {
+      toast.error('Could not extend', { description: error.message });
+    } else {
+      toast.success('Extended by 1 hour ⏱️', {
+        description: `${needed}h will be deducted at checkout.`,
+      });
+    }
+    setExtendingId(null);
+    loadActive();
   };
 
   const handleCheckOut = async (sessionId: string) => {
