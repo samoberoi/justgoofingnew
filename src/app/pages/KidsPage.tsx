@@ -208,8 +208,12 @@ const KidsPage = () => {
                   className="bg-card border-2 border-ink/8 rounded-3xl p-4 shadow-pop"
                 >
                   <div className="flex items-start gap-3">
-                    <div className={`w-16 h-16 rounded-2xl ${colorClass} flex items-center justify-center text-white font-display text-2xl shrink-0`}>
-                      {initial}
+                    <div className={`w-16 h-16 rounded-2xl ${colorClass} flex items-center justify-center text-white font-display text-2xl shrink-0 overflow-hidden`}>
+                      {kid.photo_url ? (
+                        <img src={kid.photo_url} alt={kid.name} className="w-full h-full object-cover" />
+                      ) : (
+                        initial
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
