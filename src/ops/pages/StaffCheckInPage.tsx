@@ -503,8 +503,9 @@ const StaffCheckInPage = () => {
     if (!session) return;
 
     const elapsedMs = now - new Date(session.checked_in_at).getTime();
-    const hoursElapsed = Math.max(0.25, elapsedMs / 3600000); // round-up min 15min
-    const billableHours = Math.ceil(hoursElapsed * 4) / 4; // round to 15min
+    const hoursElapsed = elapsedMs / 3600000;
+    // Minimum 1 hour billed; beyond that, round up to next full hour
+    const billableHours = Math.max(1, Math.ceil(hoursElapsed));
     const multiplier = session.num_kids || (session.plus_one ? 2 : 1);
     const totalHours = billableHours * multiplier;
 
