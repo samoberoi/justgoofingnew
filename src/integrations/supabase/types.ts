@@ -437,6 +437,45 @@ export type Database = {
           },
         ]
       }
+      kids: {
+        Row: {
+          created_at: string
+          date_of_birth: string | null
+          gender: string | null
+          id: string
+          is_active: boolean
+          name: string
+          notes: string | null
+          parent_user_id: string
+          school: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date_of_birth?: string | null
+          gender?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          notes?: string | null
+          parent_user_id: string
+          school?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date_of_birth?: string | null
+          gender?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          notes?: string | null
+          parent_user_id?: string
+          school?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       loyalty_campaigns: {
         Row: {
           auto_apply: boolean
@@ -1035,9 +1074,11 @@ export type Database = {
           extended_hours: number
           hours_consumed: number
           id: string
+          kid_id: string | null
           kid_name: string | null
           notes: string | null
           num_kids: number
+          plus_one: boolean
           staff_user_id: string | null
           status: string
           store_id: string | null
@@ -1053,9 +1094,11 @@ export type Database = {
           extended_hours?: number
           hours_consumed?: number
           id?: string
+          kid_id?: string | null
           kid_name?: string | null
           notes?: string | null
           num_kids?: number
+          plus_one?: boolean
           staff_user_id?: string | null
           status?: string
           store_id?: string | null
@@ -1071,9 +1114,11 @@ export type Database = {
           extended_hours?: number
           hours_consumed?: number
           id?: string
+          kid_id?: string | null
           kid_name?: string | null
           notes?: string | null
           num_kids?: number
+          plus_one?: boolean
           staff_user_id?: string | null
           status?: string
           store_id?: string | null
@@ -1087,6 +1132,13 @@ export type Database = {
             columns: ["booking_id"]
             isOneToOne: false
             referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "play_sessions_kid_id_fkey"
+            columns: ["kid_id"]
+            isOneToOne: false
+            referencedRelation: "kids"
             referencedColumns: ["id"]
           },
           {
