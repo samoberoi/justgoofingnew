@@ -51,7 +51,7 @@ const BuyPackPage = () => {
     setPurchasing(true);
     const isFree = pack.pack_type === 'welcome_free';
 
-    const { error } = await supabase.from('user_packs' as any).insert({
+    const { data: newPack, error } = await supabase.from('user_packs' as any).insert({
       user_id: userId,
       pack_id: pack.id,
       pack_name: pack.name,
@@ -67,7 +67,49 @@ const BuyPackPage = () => {
       setPurchasing(false);
       return;
     }
-    toast.success(isFree ? '1 Hour FREE Claimed! 🎉' : `${pack.total_hours} hours added!`);
+
+    // Award Goofy Points (only on paid packs)
+    let earned = 0;
+    if (!isFree && pack.price > 0) {
+      const { data: settings } = await supabase
+        .from('points_settings')
+        .select('earning_enabled, earning_percent, max_earn_per_order, expiry_days')
+        .limit(1)
+        .maybeSingle();
+      if (settings?.earning_enabled) {
+        earned = Math.floor((Number(pack.price) * Number(settings.earning_percent)) / 100);
+        if (settings.max_earn_per_order) earned = Math.min(earned, Number(settings.max_earn_per_order));
+        if (earned > 0) {
+          const { data: prevTx } = await supabase
+            .from('points_transactions')
+            .select('balance_after')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          const balanceAfter = Number(prevTx?.balance_after || 0) + earned;
+          const expiresAt = settings.expiry_days
+            ? new Date(Date.now() + Number(settings.expiry_days) * 86400000).toISOString()
+            : null;
+          await supabase.from('points_transactions').insert({
+            user_id: userId,
+            type: 'earned',
+            amount: earned,
+            balance_after: balanceAfter,
+            description: `Earned on ${pack.name}`,
+            expires_at: expiresAt,
+          });
+        }
+      }
+    }
+
+    toast.success(
+      isFree
+        ? '1 Hour FREE Claimed! 🎉'
+        : earned > 0
+          ? `${pack.total_hours} hours added! +${earned} Goofy Points 🎉`
+          : `${pack.total_hours} hours added!`
+    );
     navigate('/home');
   };
 
