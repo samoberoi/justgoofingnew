@@ -49,10 +49,19 @@ const OpsCustomersPage = () => {
     setCustomerTxns(matched);
 
     if (customer.userId) {
-      const addrsRes = await supabase.from('addresses').select('*').eq('user_id', customer.userId).order('created_at', { ascending: false });
+      const [addrsRes, sessionsRes, storesRes] = await Promise.all([
+        supabase.from('addresses').select('*').eq('user_id', customer.userId).order('created_at', { ascending: false }),
+        supabase.from('play_sessions').select('*').eq('user_id', customer.userId).order('checked_in_at', { ascending: false }),
+        supabase.from('stores').select('id, name'),
+      ]);
       setCustomerAddresses(addrsRes.data || []);
+      setCustomerSessions(sessionsRes.data || []);
+      const sm = new Map<string, string>();
+      (storesRes.data || []).forEach((s: any) => sm.set(s.id, s.name));
+      setStoreMap(sm);
     } else {
       setCustomerAddresses([]);
+      setCustomerSessions([]);
     }
   };
 
