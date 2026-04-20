@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '../hooks/useAuth';
 import OpsBottomNav from '../components/OpsBottomNav';
 import UserManagement from '../components/UserManagement';
-import { Plus, Store, Clock, MapPin, Phone, ChevronDown, ChevronUp, Pencil, ExternalLink, Truck } from 'lucide-react';
+import { Plus, Store, Clock, MapPin, Phone, ChevronDown, ChevronUp, Pencil, ExternalLink } from 'lucide-react';
 
 interface StoreForm {
   name: string;
@@ -12,7 +12,6 @@ interface StoreForm {
   opening_time: string;
   closing_time: string;
   delivery_radius: string;
-  default_prep_time: string;
   tax_percent: string;
   latitude: string;
   longitude: string;
@@ -27,7 +26,6 @@ const defaultForm: StoreForm = {
   opening_time: '09:00',
   closing_time: '23:00',
   delivery_radius: '5',
-  default_prep_time: '30',
   tax_percent: '5',
   latitude: '',
   longitude: '',
@@ -69,14 +67,10 @@ const StoreFormFields = ({ form, setForm, onSave, onCancel, saving, submitLabel 
         <input type="time" value={form.closing_time} onChange={e => setForm(p => ({ ...p, closing_time: e.target.value }))} className={inputClass} />
       </div>
     </div>
-    <div className="grid grid-cols-3 gap-3">
+    <div className="grid grid-cols-2 gap-3">
       <div>
-        <label className={labelClass}>Delivery Radius (km)</label>
+        <label className={labelClass}>Service Radius (km)</label>
         <input type="number" min="1" max="50" value={form.delivery_radius} onChange={e => setForm(p => ({ ...p, delivery_radius: e.target.value }))} className={inputClass} />
-      </div>
-      <div>
-        <label className={labelClass}>Prep Time (min)</label>
-        <input type="number" min="5" max="120" value={form.default_prep_time} onChange={e => setForm(p => ({ ...p, default_prep_time: e.target.value }))} className={inputClass} />
       </div>
       <div>
         <label className={labelClass}>GST %</label>
