@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Plus, Cake, GraduationCap, Trash2, Edit3, X, Check } from 'lucide-react';
+import { ArrowLeft, Plus, Cake, GraduationCap, Trash2, Edit3, X, Check, Camera, Loader2 } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAppStore } from '../store';
-import { useKids, calcAge, Kid } from '../hooks/useKids';
+import { useKids, calcAge, Kid, uploadKidPhoto } from '../hooks/useKids';
 import { Star, Sparkle, Cloud } from '../components/Stickers';
 import { toast } from 'sonner';
 
