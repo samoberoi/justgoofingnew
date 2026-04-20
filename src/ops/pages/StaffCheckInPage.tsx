@@ -63,17 +63,18 @@ const StaffCheckInPage = () => {
   const [scannedBooking, setScannedBooking] = useState<Booking | null>(null);
   const [parentKids, setParentKids] = useState<KidRow[]>([]);
   const [selectedKidId, setSelectedKidId] = useState<string | null>(null);
-  const [plusOne, setPlusOne] = useState(false);
+  const [accompanying, setAccompanying] = useState(0); // 0..4 extra kids
   const [submitting, setSubmitting] = useState(false);
 
   const [activeSessions, setActiveSessions] = useState<ActiveSession[]>([]);
   const [pendingPacks, setPendingPacks] = useState<PendingPack[]>([]);
   const [settlingId, setSettlingId] = useState<string | null>(null);
   const [now, setNow] = useState(Date.now());
+  const [extendingId, setExtendingId] = useState<string | null>(null);
 
-  // Live clock for active session timers
+  // Live clock for active session timers (tick every second for countdown precision)
   useEffect(() => {
-    const i = setInterval(() => setNow(Date.now()), 30000);
+    const i = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(i);
   }, []);
 
