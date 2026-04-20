@@ -520,6 +520,14 @@ const StaffCheckInPage = () => {
         {/* Tabs */}
         <div className="flex gap-1.5 px-4 pb-3">
           <button
+            onClick={() => setTab('active')}
+            className={`flex-1 py-2.5 rounded-2xl text-xs font-heading border-2 transition-all ${
+              tab === 'active' ? 'bg-mint text-ink border-mint shadow-pop-mint' : 'bg-card text-ink/60 border-ink/8'
+            }`}
+          >
+            🟢 Active ({activeSessions.length})
+          </button>
+          <button
             onClick={() => setTab('checkin')}
             className={`flex-1 py-2.5 rounded-2xl text-xs font-heading border-2 transition-all ${
               tab === 'checkin' ? 'bg-coral text-white border-coral shadow-pop-coral' : 'bg-card text-ink/60 border-ink/8'
@@ -534,14 +542,6 @@ const StaffCheckInPage = () => {
             }`}
           >
             💰 Pay ({pendingPacks.length})
-          </button>
-          <button
-            onClick={() => setTab('active')}
-            className={`flex-1 py-2.5 rounded-2xl text-xs font-heading border-2 transition-all ${
-              tab === 'active' ? 'bg-mint text-ink border-mint shadow-pop-mint' : 'bg-card text-ink/60 border-ink/8'
-            }`}
-          >
-            🟢 Active ({activeSessions.length})
           </button>
         </div>
       </div>
