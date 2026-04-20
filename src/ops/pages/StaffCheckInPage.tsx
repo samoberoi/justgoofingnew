@@ -440,16 +440,20 @@ const StaffCheckInPage = () => {
     loadActive();
   };
 
-  const handleCheckOut = async (sessionId: string) => {
+  const handleCheckOut = async (sessionId: string, silent = false) => {
     const session = activeSessions.find(s => s.id === sessionId);
     if (!session) return;
 
     const elapsedMs = now - new Date(session.checked_in_at).getTime();
     const hoursElapsed = Math.max(0.25, elapsedMs / 3600000); // round-up min 15min
     const billableHours = Math.ceil(hoursElapsed * 4) / 4; // round to 15min
-    const totalHours = billableHours * (session.plus_one ? 2 : 1);
+    const multiplier = session.num_kids || (session.plus_one ? 2 : 1);
+    const totalHours = billableHours * multiplier;
 
-    if (!confirm(`Check out? Will deduct ${totalHours} hours${session.plus_one ? ' (×2 for +1 friend)' : ''} from parent's pack.`)) return;
+    if (!silent) {
+      const note = multiplier > 1 ? ` (×${multiplier} for ${multiplier} kids)` : '';
+      if (!confirm(`Check out? Will deduct ${totalHours} hours${note} from parent's pack.`)) return;
+    }
 
     // Update session
     await supabase
