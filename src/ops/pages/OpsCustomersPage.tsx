@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import OpsBottomNav from '../components/OpsBottomNav';
-import { Users, Phone, Search, ArrowLeft, Ticket, CalendarCheck, ShoppingBag } from 'lucide-react';
+import { Users, Phone, Search, ArrowLeft, Ticket, CalendarCheck, ShoppingBag, Clock, MapPin, Hourglass } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useLocation } from 'react-router-dom';
 import { fetchUnifiedTransactions, aggregateCustomers, type UnifiedCustomer, type UnifiedTxn } from '../lib/unifiedTransactions';
@@ -15,6 +15,8 @@ const OpsCustomersPage = () => {
   const [selectedCustomer, setSelectedCustomer] = useState<UnifiedCustomer | null>(null);
   const [customerTxns, setCustomerTxns] = useState<UnifiedTxn[]>([]);
   const [customerAddresses, setCustomerAddresses] = useState<any[]>([]);
+  const [customerSessions, setCustomerSessions] = useState<any[]>([]);
+  const [storeMap, setStoreMap] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
     fetchCustomers();
@@ -47,10 +49,19 @@ const OpsCustomersPage = () => {
     setCustomerTxns(matched);
 
     if (customer.userId) {
-      const addrsRes = await supabase.from('addresses').select('*').eq('user_id', customer.userId).order('created_at', { ascending: false });
+      const [addrsRes, sessionsRes, storesRes] = await Promise.all([
+        supabase.from('addresses').select('*').eq('user_id', customer.userId).order('created_at', { ascending: false }),
+        supabase.from('play_sessions').select('*').eq('user_id', customer.userId).order('checked_in_at', { ascending: false }),
+        supabase.from('stores').select('id, name'),
+      ]);
       setCustomerAddresses(addrsRes.data || []);
+      setCustomerSessions(sessionsRes.data || []);
+      const sm = new Map<string, string>();
+      (storesRes.data || []).forEach((s: any) => sm.set(s.id, s.name));
+      setStoreMap(sm);
     } else {
       setCustomerAddresses([]);
+      setCustomerSessions([]);
     }
   };
 
@@ -79,7 +90,7 @@ const OpsCustomersPage = () => {
       <div className="min-h-screen bg-background pb-20">
         <div className="sticky top-0 z-40 bg-card/95 backdrop-blur-xl border-b border-border px-4 py-3">
           <div className="flex items-center gap-3">
-            <button onClick={() => { setSelectedCustomer(null); setCustomerTxns([]); setCustomerAddresses([]); }}>
+            <button onClick={() => { setSelectedCustomer(null); setCustomerTxns([]); setCustomerAddresses([]); setCustomerSessions([]); }}>
               <ArrowLeft size={20} className="text-foreground" />
             </button>
             <h1 className="font-heading text-lg text-foreground">{selectedCustomer.name}</h1>
@@ -138,6 +149,65 @@ const OpsCustomersPage = () => {
                     </p>
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {customerSessions.length > 0 && (
+            <div>
+              <h2 className="font-heading text-xs text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                <Hourglass size={11} className="text-purple-400" /> Pack Usage History
+              </h2>
+              <div className="space-y-2">
+                {customerSessions.map((s: any) => {
+                  const checkedIn = new Date(s.checked_in_at);
+                  const checkedOut = s.checked_out_at ? new Date(s.checked_out_at) : null;
+                  const durationMin = checkedOut ? Math.round((checkedOut.getTime() - checkedIn.getTime()) / 60000) : null;
+                  const storeName = s.store_id ? storeMap.get(s.store_id) : null;
+                  const isActive = s.status === 'active';
+                  return (
+                    <div key={s.id} className="bg-card border border-border rounded-lg p-3 space-y-1.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase ${
+                            isActive ? 'bg-green-500/15 text-green-500' :
+                            s.status === 'completed' ? 'bg-muted text-muted-foreground' :
+                            'bg-amber-500/15 text-amber-500'
+                          }`}>
+                            {s.status}
+                          </span>
+                          {s.kid_name && (
+                            <span className="text-xs font-medium text-foreground">{s.kid_name}</span>
+                          )}
+                          {s.plus_one && (
+                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-secondary/15 text-secondary font-bold">+1</span>
+                          )}
+                        </div>
+                        <span className="text-xs font-heading text-purple-400">
+                          {Number(s.hours_consumed || 0).toFixed(2)}h used
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-[11px] text-muted-foreground gap-2 flex-wrap">
+                        <span className="flex items-center gap-1">
+                          <Clock size={10} />
+                          {checkedIn.toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                          {checkedOut && (
+                            <> → {checkedOut.toLocaleString('en-IN', { hour: '2-digit', minute: '2-digit' })}</>
+                          )}
+                          {durationMin !== null && <span className="opacity-70">({durationMin}m)</span>}
+                        </span>
+                        {storeName && (
+                          <span className="flex items-center gap-1">
+                            <MapPin size={10} /> {storeName}
+                          </span>
+                        )}
+                      </div>
+                      {s.num_kids > 1 && (
+                        <p className="text-[10px] text-muted-foreground">{s.num_kids} kids in session</p>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
