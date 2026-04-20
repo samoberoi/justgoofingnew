@@ -336,7 +336,7 @@ const LoginPage = () => {
                 </div>
                 <div>
                   <p className="font-heading text-foreground text-sm">Non-Vegetarian</p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">The full royal feast</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">The full menu</p>
                 </div>
               </motion.button>
             </div>

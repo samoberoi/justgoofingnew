@@ -227,7 +227,7 @@ const HomePage = () => {
           </div>
           <h2 className="font-heading text-xl text-foreground mb-2">We're Not in Your Area Yet</h2>
           <p className="text-sm text-muted-foreground max-w-xs mx-auto leading-relaxed">
-            BIRYAAN is currently not delivering to your location. We're expanding fast — check back soon!
+            Just Goofing is currently not available in your location. We're expanding fast — check back soon!
           </p>
           <motion.button
             whileTap={{ scale: 0.97 }}
@@ -423,7 +423,7 @@ const HomePage = () => {
               </div>
               <span className="font-heading text-sm text-primary-foreground">{cartCount} item{cartCount > 1 ? 's' : ''}</span>
             </div>
-            <span className="font-heading text-sm text-primary-foreground">View Dawat →</span>
+            <span className="font-heading text-sm text-primary-foreground">View Cart →</span>
           </motion.button>
         )}
       </AnimatePresence>

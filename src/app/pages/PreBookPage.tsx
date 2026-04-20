@@ -35,8 +35,8 @@ const PreBookPage = () => {
       <div className="fixed inset-0 bg-background flex flex-col items-center justify-center px-6">
         <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring' }} className="text-center space-y-4">
           <div className="text-6xl">📅</div>
-          <h1 className="font-heading text-xl text-gradient-gold">Your Royal Feast<br />Has Been Reserved</h1>
-          <p className="text-muted-foreground text-sm">Your Dum Preparation Begins at the Scheduled Hour</p>
+          <h1 className="font-heading text-xl text-gradient-gold">Your Order<br />Has Been Reserved</h1>
+          <p className="text-muted-foreground text-sm">Preparation begins at the scheduled hour</p>
           <button onClick={() => navigate('/app')} className="px-6 py-3 bg-gradient-saffron rounded-lg text-xs font-heading text-primary-foreground">
             Go Home
           </button>
@@ -57,7 +57,7 @@ const PreBookPage = () => {
       <div className="px-4 pt-4 space-y-6">
         <div className="bg-card border border-secondary/20 rounded-xl p-4 text-center">
           <Calendar size={24} className="text-secondary mx-auto mb-2" />
-          <p className="font-heading text-sm text-foreground">Reserve Your Royal Feast</p>
+          <p className="font-heading text-sm text-foreground">Reserve Your Order</p>
           <p className="text-xs text-muted-foreground mt-1">Schedule up to 7 days ahead</p>
         </div>
 

@@ -72,7 +72,7 @@ const OrdersPage = () => {
               <Package size={28} className="text-muted-foreground/40" />
             </div>
             <p className="font-heading text-base text-foreground">No Orders Yet</p>
-            <p className="text-xs text-muted-foreground mt-1">Your royal feast history will appear here</p>
+            <p className="text-xs text-muted-foreground mt-1">Your order history will appear here</p>
             <motion.button whileTap={{ scale: 0.97 }} onClick={() => navigate('/home')}
               className="mt-5 px-6 py-3 bg-gradient-saffron rounded-xl text-xs font-heading text-primary-foreground uppercase tracking-wider">
               Browse Menu
