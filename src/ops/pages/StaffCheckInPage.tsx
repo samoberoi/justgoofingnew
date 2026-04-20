@@ -338,18 +338,26 @@ const StaffCheckInPage = () => {
           </button>
         </div>
         {/* Tabs */}
-        <div className="flex gap-2 px-4 pb-3">
+        <div className="flex gap-1.5 px-4 pb-3">
           <button
             onClick={() => setTab('checkin')}
-            className={`flex-1 py-2.5 rounded-2xl text-sm font-heading border-2 transition-all ${
+            className={`flex-1 py-2.5 rounded-2xl text-xs font-heading border-2 transition-all ${
               tab === 'checkin' ? 'bg-coral text-white border-coral shadow-pop-coral' : 'bg-card text-ink/60 border-ink/8'
             }`}
           >
-            ✨ New Check-In
+            ✨ Check-In
+          </button>
+          <button
+            onClick={() => setTab('pending')}
+            className={`flex-1 py-2.5 rounded-2xl text-xs font-heading border-2 transition-all ${
+              tab === 'pending' ? 'bg-butter text-ink border-butter shadow-pop-butter' : 'bg-card text-ink/60 border-ink/8'
+            }`}
+          >
+            💰 Pay ({pendingPacks.length})
           </button>
           <button
             onClick={() => setTab('active')}
-            className={`flex-1 py-2.5 rounded-2xl text-sm font-heading border-2 transition-all relative ${
+            className={`flex-1 py-2.5 rounded-2xl text-xs font-heading border-2 transition-all ${
               tab === 'active' ? 'bg-mint text-ink border-mint shadow-pop-mint' : 'bg-card text-ink/60 border-ink/8'
             }`}
           >
@@ -358,6 +366,19 @@ const StaffCheckInPage = () => {
         </div>
       </div>
 
+      <AnimatePresence>
+        {scannerOpen && (
+          <QrScanner
+            onClose={() => setScannerOpen(false)}
+            onResult={(text) => {
+              setScannerOpen(false);
+              setSearch(text);
+              setTimeout(() => handleSearch(), 50);
+            }}
+          />
+        )}
+      </AnimatePresence>
+
       <div className="px-4 pt-5">
         {tab === 'checkin' && (
           <>
@@ -365,21 +386,29 @@ const StaffCheckInPage = () => {
             <div className="bg-card border-2 border-ink/8 rounded-3xl p-4 shadow-pop">
               <p className="text-xs font-heading text-ink/60 mb-2">Scan QR or enter booking #</p>
               <div className="flex gap-2">
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setScannerOpen(true)}
+                  className="px-3 py-3 bg-ink rounded-2xl text-cream shadow-pop flex items-center gap-1.5"
+                  title="Open camera scanner"
+                >
+                  <ScanLine size={18} />
+                  <span className="text-xs font-heading hidden sm:inline">Scan</span>
+                </motion.button>
                 <div className="flex-1 relative">
                   <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink/40" />
                   <input
-                    autoFocus
                     value={search}
                     onChange={e => setSearch(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && handleSearch()}
-                    placeholder="QR code or GOOF-12345"
+                    placeholder="QR or GOOF-12345"
                     className="w-full pl-10 pr-3 py-3 bg-background border-2 border-ink/8 rounded-2xl text-sm text-ink focus:outline-none focus:border-coral transition-colors"
                   />
                 </div>
                 <motion.button
                   whileTap={{ scale: 0.95 }}
                   onClick={handleSearch}
-                  className="px-5 py-3 bg-gradient-coral rounded-2xl text-sm font-heading text-white shadow-pop-coral"
+                  className="px-4 py-3 bg-gradient-coral rounded-2xl text-sm font-heading text-white shadow-pop-coral"
                 >
                   Find
                 </motion.button>
