@@ -22,7 +22,7 @@ const LoginPage = () => {
   const [sending, setSending] = useState(false);
   const [verifying, setVerifying] = useState(false);
 
-  const mockEmail = (p: string) => `${p}@ops.biryaan.app`;
+  const mockEmail = (p: string) => `${p}@ops.justgoofing.app`;
 
   const handlePhoneSubmit = () => {
     if (phone.length < 10) return;
@@ -41,7 +41,7 @@ const LoginPage = () => {
     setError('');
 
     const email = mockEmail(phone);
-    const password = `${phone}-biryaan-2024`;
+    const password = `${phone}-justgoofing-2024`;
 
     try {
       // Step 1: Try sign in
@@ -211,8 +211,8 @@ const LoginPage = () => {
             className="w-full max-w-sm space-y-8 text-center"
           >
             <div>
-              <span className="font-display text-3xl text-gradient-gold">BIRYAAN</span>
-              <p className="mt-2 text-muted-foreground text-sm">Enter the Sultanat</p>
+              <img src="/logo.png" alt="Just Goofing" className="h-20 mx-auto" />
+              <p className="mt-3 text-muted-foreground text-sm">Where Fun Meets Innovation</p>
             </div>
 
             <div className="space-y-4">
@@ -241,7 +241,7 @@ const LoginPage = () => {
             </div>
 
             <div className="flex items-center justify-center gap-2 text-muted-foreground text-xs">
-              <Shield size={12} /> Your number is safe with the Sultanat
+              <Shield size={12} /> Your number is safe with us
             </div>
 
             <div className="bg-card/50 border border-border rounded-lg p-3 text-xs text-muted-foreground">
@@ -336,7 +336,7 @@ const LoginPage = () => {
                 </div>
                 <div>
                   <p className="font-heading text-foreground text-sm">Non-Vegetarian</p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">The full royal feast</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">The full menu</p>
                 </div>
               </motion.button>
             </div>
@@ -358,10 +358,10 @@ const LoginPage = () => {
               transition={{ duration: 0.8 }}
               className="text-7xl"
             >
-              🏛️
+              🎉
             </motion.div>
-            <p className="font-heading text-xl text-gradient-gold">Royal Seal Verified</p>
-            <p className="text-muted-foreground text-sm">Entering the Sultanat...</p>
+            <p className="font-heading text-xl text-gradient-gold">You're In!</p>
+            <p className="text-muted-foreground text-sm">Let the goofing begin...</p>
           </motion.div>
         )}
       </AnimatePresence>

@@ -7,14 +7,14 @@ import BottomNav from '../components/BottomNav';
 import RiderTracker from '../components/RiderTracker';
 
 const STAGES = [
-  { status: 'new', label: 'Order Placed', emoji: '📝', desc: 'Your dawat request has been received' },
-  { status: 'accepted', label: 'Accepted', emoji: '✅', desc: 'The royal kitchen has accepted your order' },
-  { status: 'preparing', label: 'Dum Ceremony', emoji: '🔥', desc: 'Your biryani is being prepared with love' },
-  { status: 'ready', label: 'Fragrance Rises', emoji: '✨', desc: 'Your biryani is ready and packed' },
-  { status: 'assigned', label: 'Rider Assigned', emoji: '🏇', desc: 'A royal rider has been assigned' },
+  { status: 'new', label: 'Order Placed', emoji: '📝', desc: 'Your order has been received' },
+  { status: 'accepted', label: 'Accepted', emoji: '✅', desc: 'The kitchen has accepted your order' },
+  { status: 'preparing', label: 'Preparing', emoji: '🔥', desc: 'Your order is being prepared with love' },
+  { status: 'ready', label: 'Ready', emoji: '✨', desc: 'Your order is ready and packed' },
+  { status: 'assigned', label: 'Rider Assigned', emoji: '🛵', desc: 'A delivery partner has been assigned' },
   { status: 'picked_up', label: 'Picked Up', emoji: '📦', desc: 'Your order has been picked up' },
-  { status: 'out_for_delivery', label: 'On the Way', emoji: '🛵', desc: 'Your royal feast is en route' },
-  { status: 'delivered', label: 'Delivered', emoji: '👑', desc: 'Enjoy your dawat!' },
+  { status: 'out_for_delivery', label: 'On the Way', emoji: '🛵', desc: 'Your order is en route' },
+  { status: 'delivered', label: 'Delivered', emoji: '🎉', desc: 'Enjoy your order!' },
 ];
 
 const STATUS_MESSAGES: Record<string, string> = {

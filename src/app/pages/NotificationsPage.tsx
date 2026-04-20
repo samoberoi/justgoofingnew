@@ -4,10 +4,10 @@ import { useNavigate } from 'react-router-dom';
 
 const notifications = [
   { id: '1', title: 'The Court Awaits Your Presence This Week', body: 'Order now to keep your streak alive!', time: '2 hours ago', icon: '🏛️' },
-  { id: '2', title: 'Your Royal Fortune Wheel Awaits', body: 'You have 1 free spin available this week.', time: '1 day ago', icon: '🎡' },
-  { id: '3', title: 'You Rise in the Court of Flavor', body: 'Just 13 orders to reach Nawab tier!', time: '2 days ago', icon: '👑' },
-  { id: '4', title: 'The Sultan Announces a Flash Dawat', body: 'Badshahi Murgh at ₹249 for 1 hour only!', time: '3 days ago', icon: '⚡' },
-  { id: '5', title: 'The Sultanat Remembers You', body: 'It has been a while since your last feast. Return, royal one.', time: '5 days ago', icon: '💌' },
+  { id: '2', title: 'Your Lucky Wheel Awaits', body: 'You have 1 free spin available this week.', time: '1 day ago', icon: '🎡' },
+  { id: '3', title: 'Climbing the Ranks', body: 'Just 13 orders to reach the next tier!', time: '2 days ago', icon: '🏆' },
+  { id: '4', title: 'Flash Deal Drop', body: 'Special offer at ₹249 for 1 hour only!', time: '3 days ago', icon: '⚡' },
+  { id: '5', title: 'We Miss You', body: 'It has been a while since your last order. Come back!', time: '5 days ago', icon: '💌' },
 ];
 
 const NotificationsPage = () => {
@@ -18,7 +18,7 @@ const NotificationsPage = () => {
       <header className="sticky top-0 z-40 bg-card/95 backdrop-blur-xl border-b border-border">
         <div className="flex items-center gap-3 px-4 h-14">
           <button onClick={() => navigate(-1)}><ArrowLeft size={20} className="text-foreground" /></button>
-          <h1 className="font-heading text-lg text-foreground">Royal Notifications</h1>
+          <h1 className="font-heading text-lg text-foreground">Notifications</h1>
         </div>
       </header>
 

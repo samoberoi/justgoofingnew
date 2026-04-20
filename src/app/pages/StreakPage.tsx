@@ -34,7 +34,7 @@ const StreakPage = () => {
       <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-2xl border-b border-secondary/10">
         <div className="flex items-center gap-3 px-4 h-14">
           <button onClick={() => navigate(-1)}><ArrowLeft size={20} className="text-foreground" /></button>
-          <h1 className="font-heading text-lg text-foreground">The Sultan's Streak</h1>
+          <h1 className="font-heading text-lg text-foreground">Order Streak</h1>
         </div>
       </header>
 

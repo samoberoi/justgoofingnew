@@ -47,7 +47,7 @@ const PointsSettingsTab = () => {
     setSaving(true);
     const { id, ...rest } = config;
     await supabase.from('points_settings').update({ ...rest, updated_at: new Date().toISOString() }).eq('id', id) as any;
-    toast.success('Biryan Points settings updated');
+    toast.success('Goofy Points settings updated');
     setSaving(false);
   };
 
@@ -57,7 +57,7 @@ const PointsSettingsTab = () => {
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="font-heading text-sm text-foreground">Biryan Points Configuration</h2>
+        <h2 className="font-heading text-sm text-foreground">Goofy Points Configuration</h2>
         <p className="text-[10px] text-muted-foreground">Configure earning, redemption & expiry rules</p>
       </div>
 

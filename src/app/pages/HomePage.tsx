@@ -227,7 +227,7 @@ const HomePage = () => {
           </div>
           <h2 className="font-heading text-xl text-foreground mb-2">We're Not in Your Area Yet</h2>
           <p className="text-sm text-muted-foreground max-w-xs mx-auto leading-relaxed">
-            BIRYAAN is currently not delivering to your location. We're expanding fast — check back soon!
+            Just Goofing is currently not available in your location. We're expanding fast — check back soon!
           </p>
           <motion.button
             whileTap={{ scale: 0.97 }}
@@ -303,7 +303,7 @@ const HomePage = () => {
             type="text"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            placeholder="Search the royal menu…"
+            placeholder="Search the menu…"
             className="w-full pl-10 pr-4 py-3 bg-card border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-secondary/30 transition-colors"
           />
         </div>
@@ -349,7 +349,7 @@ const HomePage = () => {
 
       {/* Menu Section Title */}
       <div className="px-4 pt-4 pb-1">
-        <h2 className="font-heading text-base text-foreground">The Royal Menu</h2>
+        <h2 className="font-heading text-base text-foreground">The Menu</h2>
         {selectedStore && (
           <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1">
             <MapPin size={10} /> Serving from {selectedStore.name}
@@ -423,7 +423,7 @@ const HomePage = () => {
               </div>
               <span className="font-heading text-sm text-primary-foreground">{cartCount} item{cartCount > 1 ? 's' : ''}</span>
             </div>
-            <span className="font-heading text-sm text-primary-foreground">View Dawat →</span>
+            <span className="font-heading text-sm text-primary-foreground">View Cart →</span>
           </motion.button>
         )}
       </AnimatePresence>

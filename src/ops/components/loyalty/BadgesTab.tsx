@@ -79,7 +79,7 @@ const BadgesTab = () => {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="font-heading text-sm text-foreground">Sultanate Badges</h2>
+          <h2 className="font-heading text-sm text-foreground">Loyalty Badges</h2>
           <p className="text-[10px] text-muted-foreground">Gamify with collectible badges</p>
         </div>
         <button onClick={() => { setShowForm(true); setEditId(null); setForm({ ...emptyBadge }); }}
@@ -147,7 +147,7 @@ const BadgesTab = () => {
       ) : badges.length === 0 ? (
         <div className="bg-card border border-border rounded-xl p-8 text-center">
           <Award size={32} className="text-muted-foreground mx-auto mb-2" />
-          <p className="text-sm text-muted-foreground">No badges — create Sultanate badges to reward loyalty</p>
+          <p className="text-sm text-muted-foreground">No badges — create badges to reward loyalty</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-2">

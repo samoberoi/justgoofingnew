@@ -253,7 +253,7 @@ const PaymentPage = () => {
         await supabase.from('profiles').update({ full_name: customerName.trim() }).eq('user_id', user.id);
       }
 
-      // Earn Biryan Points
+      // Earn Goofy Points
       if (user && pointsSettings?.earning_enabled) {
         const earnPercent = pointsSettings.earning_percent || 2.5;
         let pointsEarned = Math.floor(total * earnPercent / 100);
@@ -307,7 +307,7 @@ const PaymentPage = () => {
           <motion.div animate={{ rotate: [0, 360] }} transition={{ duration: 1 }} className="inline-block">
             <CheckCircle2 size={80} className="text-secondary" />
           </motion.div>
-          <h1 className="font-heading text-2xl text-gradient-gold leading-tight">Your Royal Dawat<br />Has Been Sealed</h1>
+          <h1 className="font-heading text-2xl text-gradient-gold leading-tight">Order Confirmed!<br />Hang Tight</h1>
           <p className="text-muted-foreground text-sm">Order #{orderNumber}</p>
           <motion.button whileTap={{ scale: 0.97 }} onClick={() => navigate('/tracking', { state: { orderId } })}
             className="w-full py-4 bg-gradient-saffron rounded-xl font-heading text-sm uppercase tracking-widest text-primary-foreground">
@@ -439,7 +439,7 @@ const PaymentPage = () => {
         {walletBalance > 0 && (
           <button onClick={() => setUsePoints(!usePoints)}
             className={`w-full flex items-center justify-between p-3 rounded-xl border transition-colors ${usePoints ? 'bg-secondary/10 border-secondary/30' : 'bg-card border-border'}`}>
-            <span className="text-sm text-foreground">Use Biryan Points ({walletBalance} pts)</span>
+            <span className="text-sm text-foreground">Use Goofy Points ({walletBalance} pts)</span>
             <div className={`w-10 h-5 rounded-full transition-colors ${usePoints ? 'bg-secondary' : 'bg-muted'} flex items-center`}>
               <div className={`w-4 h-4 rounded-full bg-foreground transition-transform ${usePoints ? 'translate-x-5' : 'translate-x-0.5'}`} />
             </div>

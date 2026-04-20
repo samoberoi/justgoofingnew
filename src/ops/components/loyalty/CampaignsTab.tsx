@@ -184,7 +184,7 @@ const CampaignsTab = () => {
             <div>
               <label className="text-[10px] text-muted-foreground">Coupon Code (optional)</label>
               <input value={form.coupon_code || ''} onChange={e => setForm(f => ({ ...f, coupon_code: e.target.value.toUpperCase() }))}
-                placeholder="e.g. SULTAN20" className="w-full px-2 py-2 bg-muted border border-border rounded-lg text-sm text-foreground font-mono" />
+                placeholder="e.g. GOOFY20" className="w-full px-2 py-2 bg-muted border border-border rounded-lg text-sm text-foreground font-mono" />
             </div>
             <div>
               <label className="text-[10px] text-muted-foreground">Max Discount (cap)</label>

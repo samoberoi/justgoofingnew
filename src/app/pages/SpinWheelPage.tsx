@@ -75,9 +75,9 @@ const SpinWheelPage = () => {
   const getResultMessage = () => {
     if (!result) return '';
     switch (result.type) {
-      case 'points': return `${result.value} Biryan Points added to your wallet!`;
+      case 'points': return `${result.value} Goofy Points added to your wallet!`;
       case 'addon': return 'Free Raita will be added to your next order!';
-      case 'double': return 'Your next order earns 2× Biryan Points!';
+      case 'double': return 'Your next order earns 2× Goofy Points!';
       case 'biryani': return 'A FREE Biryani has been unlocked! 🎉';
       default: return '';
     }
@@ -88,7 +88,7 @@ const SpinWheelPage = () => {
       <header className="sticky top-0 z-40 bg-card/95 backdrop-blur-xl border-b border-border">
         <div className="flex items-center gap-3 px-4 h-14">
           <button onClick={() => navigate(-1)}><ArrowLeft size={20} className="text-foreground" /></button>
-          <h1 className="font-heading text-lg text-foreground">Spin the Royal Wheel</h1>
+          <h1 className="font-heading text-lg text-foreground">Spin the Wheel</h1>
         </div>
       </header>
 

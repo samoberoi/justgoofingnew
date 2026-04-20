@@ -36,8 +36,7 @@ const RoyalHeader = () => {
       <div className="flex items-center justify-between px-4 h-16 max-w-lg mx-auto">
         {/* Left — Logo */}
         <div className="flex items-center gap-2">
-          <Crown size={18} className="text-secondary" />
-          <span className="font-display text-lg text-gradient-gold tracking-wide">BIRYAAN</span>
+          <img src="/logo.png" alt="Just Goofing" className="h-9 w-auto" />
         </div>
 
         {/* Right — Actions */}

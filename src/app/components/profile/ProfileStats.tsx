@@ -9,7 +9,7 @@ interface ProfileStatsProps {
 const ProfileStats = ({ totalOrders, walletBalance, badgeCount }: ProfileStatsProps) => {
   const stats = [
     { label: 'Orders', value: totalOrders.toString(), icon: '📦', color: 'from-primary/10 to-primary/5' },
-    { label: 'Biryan Points', value: `${walletBalance}`, icon: '💰', color: 'from-secondary/10 to-secondary/5' },
+    { label: 'Goofy Points', value: `${walletBalance}`, icon: '💰', color: 'from-secondary/10 to-secondary/5' },
     { label: 'Badges', value: badgeCount.toString(), icon: '🏅', color: 'from-accent/10 to-accent/5' },
   ];
 

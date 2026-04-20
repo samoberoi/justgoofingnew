@@ -4,10 +4,10 @@ import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store';
 
 const tiers = [
-  { name: 'Sipahi', orders: 0, perks: ['Base earning rate'], color: 'bg-muted', textColor: 'text-muted-foreground', icon: '⚔️' },
-  { name: 'Wazir', orders: 10, perks: ['5% extra points'], color: 'bg-secondary/20', textColor: 'text-secondary', icon: '🏛️' },
-  { name: 'Nawab', orders: 25, perks: ['10% extra points', 'Early Flash Dawat access'], color: 'bg-primary/20', textColor: 'text-primary', icon: '🏰' },
-  { name: 'Sultan', orders: 50, perks: ['15% extra points', 'Priority preparation', 'Exclusive offers'], color: 'bg-accent/20', textColor: 'text-accent', icon: '👑' },
+  { name: 'Rookie', orders: 0, perks: ['Base earning rate'], color: 'bg-muted', textColor: 'text-muted-foreground', icon: '🌱' },
+  { name: 'Pro', orders: 10, perks: ['5% extra points'], color: 'bg-secondary/20', textColor: 'text-secondary', icon: '⭐' },
+  { name: 'Elite', orders: 25, perks: ['10% extra points', 'Early Flash Deal access'], color: 'bg-primary/20', textColor: 'text-primary', icon: '🏆' },
+  { name: 'Legend', orders: 50, perks: ['15% extra points', 'Priority preparation', 'Exclusive offers'], color: 'bg-accent/20', textColor: 'text-accent', icon: '👑' },
 ];
 
 const TiersPage = () => {
@@ -23,7 +23,7 @@ const TiersPage = () => {
       <header className="sticky top-0 z-40 bg-card/95 backdrop-blur-xl border-b border-border">
         <div className="flex items-center gap-3 px-4 h-14">
           <button onClick={() => navigate(-1)}><ArrowLeft size={20} className="text-foreground" /></button>
-          <h1 className="font-heading text-lg text-foreground">Royalty Tiers</h1>
+          <h1 className="font-heading text-lg text-foreground">Loyalty Tiers</h1>
         </div>
       </header>
 

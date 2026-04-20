@@ -59,22 +59,21 @@ const SplashScreen = () => {
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
             className="relative z-10 text-center"
           >
-            <motion.div
+            <motion.img
+              src="/logo.png"
+              alt="Just Goofing"
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.3, duration: 0.6 }}
-            >
-              <span className="font-display text-5xl md:text-6xl text-gradient-gold tracking-wider">
-                BIRYAAN
-              </span>
-            </motion.div>
+              className="w-56 md:w-72 mx-auto"
+            />
             <motion.p
               initial={{ y: 10, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.8, duration: 0.6 }}
-              className="mt-3 text-sm font-heading text-secondary/70 tracking-[0.3em] uppercase"
+              className="mt-3 text-sm font-heading text-secondary/80 tracking-[0.3em] uppercase"
             >
-              Sultanat of Biryani
+              Where Fun Meets Innovation
             </motion.p>
           </motion.div>
 
@@ -85,14 +84,14 @@ const SplashScreen = () => {
             className="absolute top-1/2 translate-y-12 w-48 h-px bg-gradient-to-r from-transparent via-secondary to-transparent"
           />
 
-          {/* Crown */}
+          {/* Sparkle */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1.2, duration: 0.8 }}
             className="absolute bottom-20 text-4xl"
           >
-            👑
+            🎉
           </motion.div>
         </motion.div>
       )}
