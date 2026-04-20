@@ -507,7 +507,7 @@ const StaffCheckInPage = () => {
           <>
             {/* Search */}
             <div className="bg-card border-2 border-ink/8 rounded-3xl p-4 shadow-pop">
-              <p className="text-xs font-heading text-ink/60 mb-2">Scan QR or enter booking #</p>
+              <p className="text-xs font-heading text-ink/60 mb-2">Scan customer QR · or type booking # / phone</p>
               <div className="flex gap-2">
                 <motion.button
                   whileTap={{ scale: 0.95 }}
