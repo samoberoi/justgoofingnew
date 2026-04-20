@@ -625,7 +625,7 @@ const StaffCheckInPage = () => {
                 </div>
                 <motion.button
                   whileTap={{ scale: 0.95 }}
-                  onClick={handleSearch}
+                  onClick={() => handleSearch()}
                   className="px-4 py-3 bg-gradient-coral rounded-2xl text-sm font-heading text-white shadow-pop-coral"
                 >
                   Find
