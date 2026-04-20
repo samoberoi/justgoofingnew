@@ -141,33 +141,7 @@ const OpsSettingsPage = () => {
   const [saving, setSaving] = useState(false);
 
   // Delivery settings
-  const [deliveryFee, setDeliveryFee] = useState('30');
-  const [freeAbove, setFreeAbove] = useState('500');
-  const [deliverySettingsId, setDeliverySettingsId] = useState<string | null>(null);
-  const [savingDelivery, setSavingDelivery] = useState(false);
-
-  useEffect(() => { fetchData(); fetchDeliverySettings(); }, []);
-
-  const fetchDeliverySettings = async () => {
-    const { data } = await supabase.from('delivery_settings' as any).select('*').limit(1).single();
-    if (data) {
-      setDeliverySettingsId((data as any).id);
-      setDeliveryFee(String((data as any).base_delivery_fee ?? 30));
-      setFreeAbove(String((data as any).free_delivery_above ?? 500));
-    }
-  };
-
-  const saveDeliverySettings = async () => {
-    setSavingDelivery(true);
-    const payload = { base_delivery_fee: parseFloat(deliveryFee) || 30, free_delivery_above: parseFloat(freeAbove) || 500 };
-    if (deliverySettingsId) {
-      await supabase.from('delivery_settings' as any).update(payload).eq('id', deliverySettingsId);
-    } else {
-      await supabase.from('delivery_settings' as any).insert(payload);
-    }
-    setSavingDelivery(false);
-    fetchDeliverySettings();
-  };
+  useEffect(() => { fetchData(); }, []);
 
   const fetchData = async () => {
     const { data } = await supabase.from('stores').select('*').order('created_at');
@@ -181,7 +155,6 @@ const OpsSettingsPage = () => {
     opening_time: form.opening_time || '09:00',
     closing_time: form.closing_time || '23:00',
     delivery_radius: parseFloat(form.delivery_radius) || 5,
-    default_prep_time: parseInt(form.default_prep_time) || 30,
     tax_percent: parseFloat(form.tax_percent) || 5,
     latitude: form.latitude ? parseFloat(form.latitude) : null,
     longitude: form.longitude ? parseFloat(form.longitude) : null,
@@ -209,7 +182,6 @@ const OpsSettingsPage = () => {
       opening_time: store.opening_time?.slice(0, 5) || '09:00',
       closing_time: store.closing_time?.slice(0, 5) || '23:00',
       delivery_radius: String(store.delivery_radius ?? 5),
-      default_prep_time: String(store.default_prep_time ?? 30),
       tax_percent: String(store.tax_percent ?? 5),
       latitude: store.latitude ? String(store.latitude) : '',
       longitude: store.longitude ? String(store.longitude) : '',
@@ -292,7 +264,6 @@ const OpsSettingsPage = () => {
                           <div className="flex items-center gap-1.5 text-muted-foreground"><Phone size={12} /><span>{store.phone || '—'}</span></div>
                           <div className="flex items-center gap-1.5 text-muted-foreground"><Clock size={12} /><span>{store.opening_time?.slice(0, 5) || '09:00'} – {store.closing_time?.slice(0, 5) || '23:00'}</span></div>
                           <div className="flex items-center gap-1.5 text-muted-foreground"><MapPin size={12} /><span>{store.delivery_radius || 5} km radius</span></div>
-                          <div className="text-muted-foreground">Prep: {store.default_prep_time || 30} min</div>
                           <div className="text-muted-foreground">GST: {store.tax_percent || 5}%</div>
                         </div>
                         {store.latitude && store.longitude && (
@@ -338,26 +309,7 @@ const OpsSettingsPage = () => {
           </div>
         </div>
 
-        {/* Delivery Fee Settings */}
-        <div>
-          <h2 className="font-heading text-sm text-foreground flex items-center gap-2 mb-3"><Truck size={16} /> Delivery Fee Settings</h2>
-          <div className="bg-card border border-border rounded-xl p-4 space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className={labelClass}>Base Delivery Fee (₹)</label>
-                <input type="number" min="0" value={deliveryFee} onChange={e => setDeliveryFee(e.target.value)} className={inputClass} />
-              </div>
-              <div>
-                <label className={labelClass}>Free Delivery Above (₹)</label>
-                <input type="number" min="0" value={freeAbove} onChange={e => setFreeAbove(e.target.value)} className={inputClass} />
-              </div>
-            </div>
-            <p className="text-xs text-muted-foreground">Orders above ₹{freeAbove} get free delivery. Others pay ₹{deliveryFee}.</p>
-            <button onClick={saveDeliverySettings} disabled={savingDelivery} className="w-full py-2.5 bg-gradient-saffron rounded-lg text-xs font-medium text-primary-foreground disabled:opacity-40">
-              {savingDelivery ? 'Saving...' : 'Save Delivery Settings'}
-            </button>
-          </div>
-        </div>
+
 
         {/* User Management */}
         <UserManagement />
