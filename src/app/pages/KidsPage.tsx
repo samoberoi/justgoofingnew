@@ -359,6 +359,67 @@ const KidsPage = () => {
                   />
                 </div>
 
+                {/* Parents section */}
+                <div className="pt-2">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="h-px flex-1 bg-ink/8" />
+                    <span className="text-[10px] font-heading text-ink/50 uppercase tracking-wider">Parents / Guardians</span>
+                    <div className="h-px flex-1 bg-ink/8" />
+                  </div>
+
+                  {/* Parent 1 */}
+                  <div className="bg-coral/5 rounded-2xl p-3 space-y-2 mb-2.5 border-2 border-coral/15">
+                    <p className="text-[10px] font-heading text-coral uppercase tracking-wider flex items-center gap-1">
+                      <User size={10} /> Parent 1
+                    </p>
+                    <input
+                      value={form.parent1_name}
+                      onChange={e => setForm({ ...form, parent1_name: e.target.value })}
+                      placeholder="Parent name"
+                      className="w-full px-3.5 py-3 bg-card border-2 border-ink/8 rounded-xl text-sm text-ink placeholder:text-ink/35 focus:outline-none focus:border-coral transition-colors"
+                    />
+                    <div className="flex items-center gap-2 bg-card border-2 border-ink/8 rounded-xl px-3.5 py-3 focus-within:border-coral transition-colors">
+                      <Phone size={13} className="text-coral shrink-0" />
+                      <span className="text-sm text-ink/50">+91</span>
+                      <input
+                        type="tel"
+                        inputMode="numeric"
+                        maxLength={10}
+                        value={form.parent1_phone}
+                        onChange={e => setForm({ ...form, parent1_phone: e.target.value.replace(/\D/g, '') })}
+                        placeholder="98765 43210"
+                        className="flex-1 bg-transparent text-sm text-ink placeholder:text-ink/35 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Parent 2 */}
+                  <div className="bg-mint/5 rounded-2xl p-3 space-y-2 border-2 border-mint/15">
+                    <p className="text-[10px] font-heading text-mint uppercase tracking-wider flex items-center gap-1">
+                      <User size={10} /> Parent 2 <span className="text-ink/40 normal-case">(optional)</span>
+                    </p>
+                    <input
+                      value={form.parent2_name}
+                      onChange={e => setForm({ ...form, parent2_name: e.target.value })}
+                      placeholder="Parent name"
+                      className="w-full px-3.5 py-3 bg-card border-2 border-ink/8 rounded-xl text-sm text-ink placeholder:text-ink/35 focus:outline-none focus:border-mint transition-colors"
+                    />
+                    <div className="flex items-center gap-2 bg-card border-2 border-ink/8 rounded-xl px-3.5 py-3 focus-within:border-mint transition-colors">
+                      <Phone size={13} className="text-mint shrink-0" />
+                      <span className="text-sm text-ink/50">+91</span>
+                      <input
+                        type="tel"
+                        inputMode="numeric"
+                        maxLength={10}
+                        value={form.parent2_phone}
+                        onChange={e => setForm({ ...form, parent2_phone: e.target.value.replace(/\D/g, '') })}
+                        placeholder="98765 43210"
+                        className="flex-1 bg-transparent text-sm text-ink placeholder:text-ink/35 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+
                 {/* Notes */}
                 <div>
                   <label className="text-xs font-heading text-ink/70 mb-1.5 block">Notes (allergies, anything we should know)</label>
