@@ -524,7 +524,7 @@ const StaffCheckInPage = () => {
                     value={search}
                     onChange={e => setSearch(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && handleSearch()}
-                    placeholder="QR or GOOF-12345"
+                    placeholder="QR / GOOF-12345 / phone"
                     className="w-full pl-10 pr-3 py-3 bg-background border-2 border-ink/8 rounded-2xl text-sm text-ink focus:outline-none focus:border-coral transition-colors"
                   />
                 </div>
