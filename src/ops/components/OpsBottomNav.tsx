@@ -11,7 +11,7 @@ const navConfig: Record<AppRole, { path: string; icon: any; label: string }[]> =
     { path: '/dashboard', icon: LayoutDashboard, label: 'Home' },
     { path: '/check-in', icon: ScanLine, label: 'Check-In' },
     { path: '/ops-orders', icon: ShoppingBag, label: 'Orders' },
-    { path: '/ops-menu', icon: UtensilsCrossed, label: 'Menu' },
+    { path: '/ops-menu', icon: UtensilsCrossed, label: 'Playbook' },
     { path: '/loyalty', icon: Crown, label: 'Loyalty' },
     { path: '/customers', icon: Users, label: 'Users' },
     { path: '/settings', icon: Settings, label: 'Settings' },
@@ -20,7 +20,7 @@ const navConfig: Record<AppRole, { path: string; icon: any; label: string }[]> =
     { path: '/dashboard', icon: LayoutDashboard, label: 'Home' },
     { path: '/check-in', icon: ScanLine, label: 'Check-In' },
     { path: '/ops-orders', icon: ShoppingBag, label: 'Orders' },
-    { path: '/ops-menu', icon: UtensilsCrossed, label: 'Menu' },
+    { path: '/ops-menu', icon: UtensilsCrossed, label: 'Playbook' },
     { path: '/customers', icon: Users, label: 'Users' },
   ],
   kitchen_manager: [
