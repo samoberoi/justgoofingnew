@@ -88,14 +88,100 @@ const StaffCheckInPage = () => {
     setActiveSessions((data as any) || []);
   };
 
+  // Load packs awaiting payment settlement (this store, or all if super-admin with no store)
+  const loadPending = async () => {
+    let q = supabase
+      .from('user_packs' as any)
+      .select('id, pack_name, total_hours, amount_paid, user_id, purchased_at')
+      .eq('status', 'pending')
+      .order('purchased_at', { ascending: false });
+    if (storeId) q = q.eq('store_id', storeId);
+    const { data: packsData } = await q;
+    const list = (packsData as any[]) || [];
+    if (list.length === 0) { setPendingPacks([]); return; }
+    const userIds = Array.from(new Set(list.map(p => p.user_id)));
+    const { data: profs } = await supabase
+      .from('profiles')
+      .select('user_id, full_name, phone')
+      .in('user_id', userIds);
+    const profMap = new Map<string, any>((profs || []).map((p: any) => [p.user_id, p]));
+    setPendingPacks(list.map(p => ({
+      ...p,
+      customer_name: profMap.get(p.user_id)?.full_name || null,
+      customer_phone: profMap.get(p.user_id)?.phone || null,
+    })));
+  };
+
   useEffect(() => {
     loadActive();
+    loadPending();
     const ch = supabase
       .channel('staff-checkin-sessions')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'play_sessions' }, () => loadActive())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_packs' }, () => loadPending())
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [storeId]);
+
+  // Settle payment for a pending pack
+  const handleSettlePayment = async (packId: string, method: 'cash' | 'upi' | 'card' | 'online') => {
+    setSettlingId(packId);
+    const { error } = await supabase
+      .from('user_packs' as any)
+      .update({
+        status: 'active',
+        payment_status: 'paid',
+        payment_method: method,
+        paid_at: new Date().toISOString(),
+        settled_by: user?.id || null,
+      } as any)
+      .eq('id', packId);
+
+    if (error) {
+      toast.error('Could not settle payment', { description: error.message });
+      setSettlingId(null);
+      return;
+    }
+
+    // Award Goofy Points on settlement
+    const pack = pendingPacks.find(p => p.id === packId);
+    if (pack && Number(pack.amount_paid) > 0) {
+      const { data: settings } = await supabase
+        .from('points_settings')
+        .select('earning_enabled, earning_percent, max_earn_per_order, expiry_days')
+        .limit(1).maybeSingle();
+      if (settings?.earning_enabled) {
+        let earned = Math.floor((Number(pack.amount_paid) * Number(settings.earning_percent)) / 100);
+        if (settings.max_earn_per_order) earned = Math.min(earned, Number(settings.max_earn_per_order));
+        if (earned > 0) {
+          const { data: prevTx } = await supabase
+            .from('points_transactions')
+            .select('balance_after')
+            .eq('user_id', pack.user_id)
+            .order('created_at', { ascending: false })
+            .limit(1).maybeSingle();
+          const balanceAfter = Number(prevTx?.balance_after || 0) + earned;
+          const expiresAt = settings.expiry_days
+            ? new Date(Date.now() + Number(settings.expiry_days) * 86400000).toISOString()
+            : null;
+          await supabase.from('points_transactions').insert({
+            user_id: pack.user_id,
+            type: 'earned',
+            amount: earned,
+            balance_after: balanceAfter,
+            description: `Earned on ${pack.pack_name}`,
+            expires_at: expiresAt,
+          });
+        }
+      }
+    }
+
+    toast.success(`Payment settled via ${method.toUpperCase()} ✅`, {
+      description: 'Pack is now active for the customer.',
+    });
+    setSettlingId(null);
+    loadPending();
+  };
 
   // Search booking by QR code or booking number
   const handleSearch = async () => {
