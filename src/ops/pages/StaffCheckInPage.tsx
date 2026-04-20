@@ -57,7 +57,7 @@ const StaffCheckInPage = () => {
   const navigate = useNavigate();
   const { user, storeId } = useAuth();
 
-  const [tab, setTab] = useState<'checkin' | 'active' | 'pending'>('checkin');
+  const [tab, setTab] = useState<'checkin' | 'active' | 'pending'>('active');
   const [search, setSearch] = useState('');
   const [scannerOpen, setScannerOpen] = useState(false);
   const [scannedBooking, setScannedBooking] = useState<Booking | null>(null);
