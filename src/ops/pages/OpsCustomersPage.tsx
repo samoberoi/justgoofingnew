@@ -90,7 +90,7 @@ const OpsCustomersPage = () => {
       <div className="min-h-screen bg-background pb-20">
         <div className="sticky top-0 z-40 bg-card/95 backdrop-blur-xl border-b border-border px-4 py-3">
           <div className="flex items-center gap-3">
-            <button onClick={() => { setSelectedCustomer(null); setCustomerTxns([]); setCustomerAddresses([]); }}>
+            <button onClick={() => { setSelectedCustomer(null); setCustomerTxns([]); setCustomerAddresses([]); setCustomerSessions([]); }}>
               <ArrowLeft size={20} className="text-foreground" />
             </button>
             <h1 className="font-heading text-lg text-foreground">{selectedCustomer.name}</h1>
