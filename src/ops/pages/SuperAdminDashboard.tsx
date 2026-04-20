@@ -5,11 +5,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '../hooks/useAuth';
 import OpsBottomNav from '../components/OpsBottomNav';
 import StatusBadge from '../components/StatusBadge';
+import { fetchUnifiedTransactions, aggregateCustomers, type UnifiedTxn } from '../lib/unifiedTransactions';
 import {
   IndianRupee, ShoppingBag, TrendingUp, Clock,
   Store, Users, ChefHat, Truck, Shield, UtensilsCrossed,
   Layers, Tag, Crown, AlertTriangle, Calendar, ChevronDown,
-  ChevronRight, Percent
+  ChevronRight, Percent, Ticket, CalendarCheck
 } from 'lucide-react';
 
 type DateRange = 'today' | 'yesterday' | 'this_week' | 'last_week' | 'this_month' | 'custom';
@@ -69,54 +70,64 @@ const SuperAdminDashboard = () => {
   const [customTo, setCustomTo] = useState('');
   const [showDatePicker, setShowDatePicker] = useState(false);
 
-  const [orderStats, setOrderStats] = useState({ revenue: 0, total: 0, active: 0, delivered: 0, cancelled: 0, avgOrder: 0, totalDiscount: 0 });
-  const [recentOrders, setRecentOrders] = useState<any[]>([]);
+  const [revStats, setRevStats] = useState({
+    revenue: 0, total: 0, packs: 0, bookings: 0, orders: 0,
+    activeOrders: 0, avgTicket: 0, totalDiscount: 0,
+  });
+  const [recentTxns, setRecentTxns] = useState<UnifiedTxn[]>([]);
   const [menuStats, setMenuStats] = useState({ categories: 0, items: 0, activeItems: 0, variants: 0 });
   const [teamStats, setTeamStats] = useState({ superAdmins: 0, storeManagers: 0, kitchenManagers: 0, deliveryPartners: 0 });
   const [storeCount, setStoreCount] = useState(0);
   const [topSellers, setTopSellers] = useState<any[]>([]);
   const [topCustomers, setTopCustomers] = useState<{ name: string; phone: string; orders: number; spent: number; userId: string | null }[]>([]);
-  
+
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchAll();
     const channel = supabase
       .channel('admin-dashboard')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => fetchOrderStats())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => fetchRevStats())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, () => fetchRevStats())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_packs' }, () => fetchRevStats())
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [dateRange, customFrom, customTo]);
 
   const fetchAll = async () => {
     setLoading(true);
-    await Promise.all([fetchOrderStats(), fetchMenuStats(), fetchTeamStats(), fetchStoreStats(), fetchTopSellers(), fetchTopCustomers()]);
+    await Promise.all([fetchRevStats(), fetchMenuStats(), fetchTeamStats(), fetchStoreStats(), fetchTopSellers()]);
     setLoading(false);
   };
 
-  const fetchOrderStats = async () => {
+  const fetchRevStats = async () => {
     const { from, to } = getDateRange(dateRange, customFrom, customTo);
+    const txns = await fetchUnifiedTransactions(from, to);
+    // also fetch ALL-TIME txns for top customers (so they don't disappear when filter is "today")
+    const allTxns = await fetchUnifiedTransactions();
 
-    const [ordersRes, recentRes] = await Promise.all([
-      supabase.from('orders').select('total, status, created_at, discount').gte('created_at', from).lte('created_at', to),
-      supabase.from('orders').select('*').order('created_at', { ascending: false }).limit(5),
-    ]);
+    const activeOrderStatuses = ['new', 'accepted', 'preparing', 'ready', 'assigned', 'picked_up', 'out_for_delivery'];
+    const revenue = txns.reduce((sum, t) => sum + t.amount, 0);
+    const totalDiscount = txns.reduce((sum, t) => sum + (t.discount || 0), 0);
+    const packs = txns.filter(t => t.source === 'pack').length;
+    const bookings = txns.filter(t => t.source === 'booking').length;
+    const orders = txns.filter(t => t.source === 'order').length;
+    const activeOrders = txns.filter(t => t.source === 'order' && activeOrderStatuses.includes(t.status)).length;
 
-    const orders = ordersRes.data || [];
-    const activeStatuses = ['new', 'accepted', 'preparing', 'ready', 'assigned', 'picked_up', 'out_for_delivery'];
-    const revenue = orders.reduce((sum, o) => sum + Number(o.total), 0);
-    const totalDiscount = orders.reduce((sum, o) => sum + Number(o.discount || 0), 0);
-
-    setOrderStats({
+    setRevStats({
       revenue,
-      total: orders.length,
-      active: orders.filter(o => activeStatuses.includes(o.status)).length,
-      delivered: orders.filter(o => o.status === 'delivered').length,
-      cancelled: orders.filter(o => o.status === 'cancelled').length,
-      avgOrder: orders.length > 0 ? Math.round(revenue / orders.length) : 0,
+      total: txns.length,
+      packs, bookings, orders,
+      activeOrders,
+      avgTicket: txns.length > 0 ? Math.round(revenue / txns.length) : 0,
       totalDiscount,
     });
-    setRecentOrders(recentRes.data || []);
+    setRecentTxns(txns.slice(0, 5));
+
+    const customers = aggregateCustomers(allTxns).slice(0, 10).map(c => ({
+      name: c.name, phone: c.phone, orders: c.totalTransactions, spent: c.totalSpent, userId: c.userId,
+    }));
+    setTopCustomers(customers);
   };
 
   const fetchMenuStats = async () => {
@@ -170,19 +181,6 @@ const SuperAdminDashboard = () => {
     });
 
     setTopSellers(Array.from(map.values()).sort((a, b) => b.qty - a.qty).slice(0, 5));
-  };
-
-  const fetchTopCustomers = async () => {
-    const { data: orders } = await supabase.from('orders').select('customer_name, customer_phone, total, user_id');
-    if (!orders) return;
-    const map = new Map<string, { name: string; phone: string; orders: number; spent: number; userId: string | null }>();
-    orders.forEach(o => {
-      const key = o.customer_phone || o.customer_name || 'unknown';
-      const existing = map.get(key);
-      if (existing) { existing.orders += 1; existing.spent += Number(o.total); }
-      else { map.set(key, { name: o.customer_name || 'Guest', phone: o.customer_phone || '-', orders: 1, spent: Number(o.total), userId: o.user_id }); }
-    });
-    setTopCustomers(Array.from(map.values()).sort((a, b) => b.spent - a.spent).slice(0, 10));
   };
 
   const selectedLabel = DATE_OPTIONS.find(d => d.key === dateRange)?.label || 'Today';
