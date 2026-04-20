@@ -9,7 +9,7 @@ import {
   IndianRupee, ShoppingBag, TrendingUp, Clock,
   Store, Users, ChefHat, Truck, Shield, UtensilsCrossed,
   Layers, Tag, Crown, AlertTriangle, Calendar, ChevronDown,
-  ChevronRight, Percent, Package
+  ChevronRight, Percent
 } from 'lucide-react';
 
 type DateRange = 'today' | 'yesterday' | 'this_week' | 'last_week' | 'this_month' | 'custom';
@@ -76,7 +76,7 @@ const SuperAdminDashboard = () => {
   const [storeCount, setStoreCount] = useState(0);
   const [topSellers, setTopSellers] = useState<any[]>([]);
   const [topCustomers, setTopCustomers] = useState<{ name: string; phone: string; orders: number; spent: number; userId: string | null }[]>([]);
-  const [lowStockItems, setLowStockItems] = useState<{ name: string; current_stock: number; min_stock_level: number; unit: string }[]>([]);
+  
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -90,7 +90,7 @@ const SuperAdminDashboard = () => {
 
   const fetchAll = async () => {
     setLoading(true);
-    await Promise.all([fetchOrderStats(), fetchMenuStats(), fetchTeamStats(), fetchStoreStats(), fetchTopSellers(), fetchTopCustomers(), fetchLowStock()]);
+    await Promise.all([fetchOrderStats(), fetchMenuStats(), fetchTeamStats(), fetchStoreStats(), fetchTopSellers(), fetchTopCustomers()]);
     setLoading(false);
   };
 
