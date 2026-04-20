@@ -550,6 +550,27 @@ const StaffCheckInPage = () => {
           </>
         )}
 
+        {tab === 'pending' && (
+          <div className="space-y-3">
+            {pendingPacks.length === 0 ? (
+              <div className="bg-card border-2 border-ink/8 rounded-3xl p-8 text-center shadow-soft">
+                <div className="w-16 h-16 rounded-3xl bg-butter/30 flex items-center justify-center mx-auto mb-3 text-3xl">💰</div>
+                <p className="font-display text-lg text-ink">All paid up!</p>
+                <p className="text-xs text-ink/55 mt-1">No packs waiting for payment</p>
+              </div>
+            ) : (
+              pendingPacks.map(p => (
+                <SettleCard
+                  key={p.id}
+                  pack={p}
+                  onSettle={(method) => handleSettlePayment(p.id, method)}
+                  busy={settlingId === p.id}
+                />
+              ))
+            )}
+          </div>
+        )}
+
         {tab === 'active' && (
           <div className="space-y-3">
             {activeSessions.length === 0 ? (
