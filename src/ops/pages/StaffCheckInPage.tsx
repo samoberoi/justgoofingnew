@@ -672,42 +672,36 @@ const StaffCheckInPage = () => {
                     )}
                   </div>
 
-                  {/* +1 toggle */}
+                  {/* Accompanying kids dropdown */}
                   {selectedKidId && (
-                    <motion.button
+                    <motion.div
                       initial={{ opacity: 0, y: 6 }}
                       animate={{ opacity: 1, y: 0 }}
-                      whileTap={{ scale: 0.97 }}
-                      onClick={() => setPlusOne(!plusOne)}
-                      className={`w-full p-4 rounded-3xl border-2 transition-all flex items-center justify-between ${
-                        plusOne
-                          ? 'bg-gradient-mint border-mint shadow-pop-mint'
-                          : 'bg-card border-ink/8'
-                      }`}
+                      className="w-full p-4 rounded-3xl border-2 border-ink/8 bg-card"
                     >
-                      <div className="flex items-center gap-3 text-left">
-                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl ${
-                          plusOne ? 'bg-white/30' : 'bg-mint/15'
-                        }`}>
-                          🤝
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-12 h-12 rounded-2xl bg-mint/15 flex items-center justify-center text-2xl shrink-0">🤝</div>
+                          <div className="min-w-0">
+                            <p className="font-heading text-sm text-ink">Accompanying kids</p>
+                            <p className="text-[11px] text-ink/55">
+                              {accompanying === 0
+                                ? 'Just this kid (1× hours)'
+                                : `+${accompanying} friend${accompanying > 1 ? 's' : ''} → ${1 + accompanying}× hours deducted`}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className={`font-heading text-sm ${plusOne ? 'text-ink' : 'text-ink'}`}>
-                            +1 Friend Tagged Along
-                          </p>
-                          <p className={`text-[11px] ${plusOne ? 'text-ink/70' : 'text-ink/50'}`}>
-                            {plusOne ? '2× hours will be deducted' : 'Tap if a friend is joining'}
-                          </p>
-                        </div>
+                        <select
+                          value={accompanying}
+                          onChange={e => setAccompanying(Number(e.target.value))}
+                          className="px-3 py-2 bg-background border-2 border-ink/10 rounded-2xl text-sm font-heading text-ink focus:outline-none focus:border-coral shrink-0"
+                        >
+                          {[0, 1, 2, 3, 4].map(n => (
+                            <option key={n} value={n}>+{n}</option>
+                          ))}
+                        </select>
                       </div>
-                      <div className={`w-11 h-6 rounded-full transition-all flex items-center px-0.5 ${
-                        plusOne ? 'bg-ink/80' : 'bg-ink/15'
-                      }`}>
-                        <div className={`w-5 h-5 rounded-full bg-white shadow-soft transition-transform ${
-                          plusOne ? 'translate-x-5' : 'translate-x-0'
-                        }`} />
-                      </div>
-                    </motion.button>
+                    </motion.div>
                   )}
 
                   {/* Confirm */}
@@ -721,7 +715,7 @@ const StaffCheckInPage = () => {
                       className="w-full py-4 bg-gradient-coral rounded-2xl font-heading text-base text-white shadow-pop-coral flex items-center justify-center gap-2 disabled:opacity-50"
                     >
                       <CheckCircle2 size={18} />
-                      {submitting ? 'Checking in…' : `Check In ${plusOne ? '(+1)' : ''}`}
+                      {submitting ? 'Checking in…' : `Check In ${accompanying > 0 ? `(+${accompanying})` : ''}`}
                     </motion.button>
                   )}
                 </motion.div>
