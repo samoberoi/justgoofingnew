@@ -187,6 +187,25 @@ const StaffCheckInPage = () => {
 
   // Helper: load a customer by user_id and prepare a synthetic "checkin context"
   const loadCustomerByUserId = async (userId: string) => {
+    // Block if customer already has an active session
+    const { data: existingSession } = await supabase
+      .from('play_sessions' as any)
+      .select('id, kid_name, checked_in_at')
+      .eq('user_id', userId)
+      .eq('status', 'active')
+      .order('checked_in_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (existingSession) {
+      const who = (existingSession as any).kid_name || 'this customer';
+      toast.error('Already checked in 🚫', {
+        description: `${who} has an active session. Check them out before starting a new one.`,
+      });
+      setTab('active');
+      setScannedBooking(null);
+      return;
+    }
+
     const { data: profile } = await supabase
       .from('profiles')
       .select('full_name, phone')
@@ -273,9 +292,9 @@ const StaffCheckInPage = () => {
   };
 
   // Search booking by QR code, booking number, customer QR token, or phone number
-  const handleSearch = async () => {
-    if (!search.trim()) return;
-    const term = search.trim();
+  const handleSearch = async (rawTerm?: string) => {
+    const term = (rawTerm ?? search).trim();
+    if (!term) return;
 
     // Customer QR token format: "JG:<userId>:<ts>:<rand>"
     if (term.startsWith('JG:')) {
@@ -323,6 +342,24 @@ const StaffCheckInPage = () => {
 
     if ((data as any).status === 'completed' || (data as any).status === 'cancelled') {
       toast.error(`This booking is ${(data as any).status}`);
+      return;
+    }
+
+    // Block if customer already has an active session
+    const { data: existingSession } = await supabase
+      .from('play_sessions' as any)
+      .select('id, kid_name')
+      .eq('user_id', (data as any).user_id)
+      .eq('status', 'active')
+      .limit(1)
+      .maybeSingle();
+    if (existingSession) {
+      const who = (existingSession as any).kid_name || 'this customer';
+      toast.error('Already checked in 🚫', {
+        description: `${who} has an active session. Check them out before starting a new one.`,
+      });
+      setTab('active');
+      setScannedBooking(null);
       return;
     }
 
@@ -553,7 +590,8 @@ const StaffCheckInPage = () => {
             onResult={(text) => {
               setScannerOpen(false);
               setSearch(text);
-              setTimeout(() => handleSearch(), 50);
+              // Auto-fire search with scanned text directly (avoids stale state)
+              handleSearch(text);
             }}
           />
         )}
@@ -587,7 +625,7 @@ const StaffCheckInPage = () => {
                 </div>
                 <motion.button
                   whileTap={{ scale: 0.95 }}
-                  onClick={handleSearch}
+                  onClick={() => handleSearch()}
                   className="px-4 py-3 bg-gradient-coral rounded-2xl text-sm font-heading text-white shadow-pop-coral"
                 >
                   Find
