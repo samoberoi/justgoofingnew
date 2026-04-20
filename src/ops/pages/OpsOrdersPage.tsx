@@ -1,784 +1,414 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import OpsBottomNav from '../components/OpsBottomNav';
-import StatusBadge from '../components/StatusBadge';
 import DateRangeFilter, { DateRange, getDateRange } from '../components/DateRangeFilter';
 import { useAuth } from '../hooks/useAuth';
 import {
-  Search, Package, Phone, Printer, Clock, ChevronRight,
-  MapPin, CreditCard, X, ArrowUp, ArrowDown,
-  CheckCircle2, Flame, Truck, Timer, AlertTriangle
+  Search, Phone, Ticket, CalendarCheck, ShoppingBag,
+  AlertTriangle, Clock, Package, Hourglass, ChevronRight,
 } from 'lucide-react';
 
-/* ── Status Config ── */
-const ORDER_STATUSES = ['all', 'new', 'accepted', 'preparing', 'ready', 'assigned', 'picked_up', 'out_for_delivery', 'delivered', 'cancelled'];
+/* ── Types ── */
+type SaleKind = 'pack' | 'booking' | 'order';
 
-const STATUS_CONFIG: Record<string, { icon: any; label: string; color: string; bg: string }> = {
-  new: { icon: Package, label: 'New', color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/20' },
-  accepted: { icon: CheckCircle2, label: 'Accepted', color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
-  preparing: { icon: Flame, label: 'Preparing', color: 'text-orange-400', bg: 'bg-orange-500/10 border-orange-500/20' },
-  ready: { icon: Timer, label: 'Ready', color: 'text-cyan-400', bg: 'bg-cyan-500/10 border-cyan-500/20' },
-  assigned: { icon: Truck, label: 'Assigned', color: 'text-purple-400', bg: 'bg-purple-500/10 border-purple-500/20' },
-  picked_up: { icon: Truck, label: 'Picked Up', color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20' },
-  out_for_delivery: { icon: Truck, label: 'Out for Delivery', color: 'text-indigo-400', bg: 'bg-indigo-500/10 border-indigo-500/20' },
-  delivered: { icon: CheckCircle2, label: 'Delivered', color: 'text-green-400', bg: 'bg-green-500/10 border-green-500/20' },
-  cancelled: { icon: X, label: 'Cancelled', color: 'text-red-400', bg: 'bg-red-500/10 border-red-500/20' },
+interface Sale {
+  kind: SaleKind;
+  id: string;
+  number: string;
+  customer_name: string;
+  customer_phone: string;
+  user_id: string | null;
+  amount: number;
+  status: string;
+  created_at: string;
+  // pack
+  pack_name?: string;
+  pack_type?: string;
+  total_hours?: number;
+  hours_used?: number;
+  expires_at?: string | null;
+  // booking
+  package_name?: string;
+  booking_date?: string;
+  slot_time?: string;
+  num_kids?: number;
+}
+
+const PACK_EXPIRY_DAYS = 60; // default expiry after purchase if pack hasn't been used up
+
+/* ── Helpers ── */
+const fmtDate = (iso: string) =>
+  new Date(iso).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+
+const fmtTime = (iso: string) =>
+  new Date(iso).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+const daysUntil = (iso: string) => {
+  const ms = new Date(iso).getTime() - Date.now();
+  return Math.ceil(ms / 86400000);
 };
 
-const STATUS_FLOW: Record<string, { next: string; label: string; color: string }[]> = {
-  new: [
-    { next: 'accepted', label: 'Accept', color: 'bg-emerald-500 text-white' },
-    { next: 'cancelled', label: 'Cancel', color: 'bg-red-500/20 text-red-400 border border-red-500/30' },
-  ],
-  accepted: [
-    { next: 'preparing', label: 'Start Cooking', color: 'bg-orange-500 text-white' },
-    { next: 'cancelled', label: 'Cancel', color: 'bg-red-500/20 text-red-400 border border-red-500/30' },
-  ],
-  preparing: [{ next: 'ready', label: 'Mark Ready', color: 'bg-cyan-500 text-white' }],
-  ready: [{ next: 'assigned', label: 'Assign Rider', color: 'bg-purple-500 text-white' }],
-  assigned: [{ next: 'picked_up', label: 'Picked Up', color: 'bg-amber-500 text-white' }],
-  picked_up: [{ next: 'out_for_delivery', label: 'Out for Delivery', color: 'bg-indigo-500 text-white' }],
-  out_for_delivery: [{ next: 'delivered', label: 'Delivered ✓', color: 'bg-green-500 text-white' }],
+const computePackExpiry = (purchasedAt: string) => {
+  const d = new Date(purchasedAt);
+  d.setDate(d.getDate() + PACK_EXPIRY_DAYS);
+  return d.toISOString();
 };
 
-const TIMESTAMP_MAP: Record<string, string> = {
-  accepted: 'accepted_at', preparing: 'preparing_at', ready: 'ready_at',
-  assigned: 'assigned_at', picked_up: 'picked_up_at', out_for_delivery: 'out_for_delivery_at',
-  delivered: 'delivered_at', cancelled: 'cancelled_at',
+/* ── Tag styles per kind ── */
+const KIND_META: Record<SaleKind, { label: string; icon: any; color: string; bg: string; border: string }> = {
+  pack: { label: 'Pack', icon: Ticket, color: 'text-purple-500', bg: 'bg-purple-500/10', border: 'border-l-purple-500' },
+  booking: { label: 'Booking', icon: CalendarCheck, color: 'text-blue-500', bg: 'bg-blue-500/10', border: 'border-l-blue-500' },
+  order: { label: 'Food Order', icon: ShoppingBag, color: 'text-amber-500', bg: 'bg-amber-500/10', border: 'border-l-amber-500' },
 };
 
-/* ── Timer thresholds (minutes) per status ── */
-const URGENCY_THRESHOLDS: Record<string, { amber: number; red: number }> = {
-  new: { amber: 2, red: 5 },
-  accepted: { amber: 3, red: 7 },
-  preparing: { amber: 25, red: 40 }, // fallback if no item prep time
-  ready: { amber: 5, red: 10 },
-  assigned: { amber: 5, red: 10 },
-  picked_up: { amber: 10, red: 20 },
-  out_for_delivery: { amber: 25, red: 45 },
-};
-
-type Urgency = 'green' | 'amber' | 'red';
-
-/** Smart urgency: for 'preparing' status, uses actual item-level prep time */
-const getUrgency = (status: string, elapsedMins: number, orderPrepTime?: number): Urgency => {
-  const thresholds = URGENCY_THRESHOLDS[status];
-  if (!thresholds) return 'green';
-  // For preparing: amber at 80% of expected, red at 100% (delayed!)
-  const amber = status === 'preparing' && orderPrepTime ? orderPrepTime * 0.8 : thresholds.amber;
-  const red = status === 'preparing' && orderPrepTime ? orderPrepTime : thresholds.red;
-  if (elapsedMins >= red) return 'red';
-  if (elapsedMins >= amber) return 'amber';
-  return 'green';
-};
-
-/** Check if order is delayed: total time exceeds expected prep time */
-const isOrderDelayed = (order: any, totalElapsedMins: number, orderPrepTime: number): boolean => {
-  if (order.status === 'delivered' || order.status === 'cancelled') return false;
-  // If order is still in kitchen (new/accepted/preparing) and total time > expected prep
-  const kitchenStatuses = ['new', 'accepted', 'preparing'];
-  if (kitchenStatuses.includes(order.status) && totalElapsedMins > orderPrepTime) return true;
-  // If order is in preparing and phase time > expected prep
-  if (order.status === 'preparing' && order.preparing_at) {
-    const prepElapsed = (Date.now() - new Date(order.preparing_at).getTime()) / 60000;
-    if (prepElapsed > orderPrepTime) return true;
-  }
-  return false;
-};
-
-const URGENCY_STYLES: Record<Urgency, { border: string; timer: string; pulse: boolean; glow: string }> = {
-  green: { border: 'border-l-emerald-500', timer: 'text-emerald-400', pulse: false, glow: '' },
-  amber: { border: 'border-l-amber-500', timer: 'text-amber-400', pulse: false, glow: 'shadow-amber-500/5' },
-  red: { border: 'border-l-red-500', timer: 'text-red-400', pulse: true, glow: 'shadow-red-500/10 shadow-lg' },
-};
-
-const formatElapsed = (mins: number): string => {
-  if (mins < 1) return 'Just now';
-  if (mins < 60) return `${Math.floor(mins)}m`;
-  const h = Math.floor(mins / 60);
-  const m = Math.floor(mins % 60);
-  return `${h}h ${m}m`;
-};
-
-const formatElapsedDetailed = (mins: number): string => {
-  if (mins < 1) return '0:00';
-  const h = Math.floor(mins / 60);
-  const m = Math.floor(mins % 60);
-  const s = Math.floor((mins % 1) * 60);
-  if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-  return `${m}:${String(s).padStart(2, '0')}`;
-};
-
-const getStatusTimestamp = (order: any): string => {
-  const map: Record<string, string> = {
-    new: order.created_at,
-    accepted: order.accepted_at || order.created_at,
-    preparing: order.preparing_at || order.created_at,
-    ready: order.ready_at || order.created_at,
-    assigned: order.assigned_at || order.created_at,
-    picked_up: order.picked_up_at || order.created_at,
-    out_for_delivery: order.out_for_delivery_at || order.created_at,
-    delivered: order.delivered_at || order.created_at,
-    cancelled: order.cancelled_at || order.created_at,
-  };
-  return map[order.status] || order.created_at;
-};
-
-const formatDateTime = (iso: string) => {
-  const d = new Date(iso);
-  return d.toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
-};
-
-/* ── Print functions ── */
-const printKOT = (order: any, items: any[]) => {
-  const win = window.open('', '_blank', 'width=300,height=600');
-  if (!win) return;
-  win.document.write(`<!DOCTYPE html><html><head><title>KOT - ${order.order_number}</title>
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: 'Courier New', monospace; width: 280px; padding: 8px; font-size: 12px; }
-  .center { text-align: center; } .bold { font-weight: bold; }
-  .line { border-top: 1px dashed #000; margin: 6px 0; }
-  .item { display: flex; justify-content: space-between; padding: 3px 0; }
-  .qty { width: 40px; text-align: center; font-weight: bold; font-size: 14px; }
-  h2 { font-size: 16px; margin: 4px 0; } .big { font-size: 18px; font-weight: bold; }
-</style></head><body>
-  <div class="center"><h2>*** KOT ***</h2><p class="bold">KITCHEN ORDER TICKET</p></div>
-  <div class="line"></div>
-  <div class="item"><span>Order #:</span><span class="bold">${order.order_number}</span></div>
-  <div class="item"><span>Date:</span><span>${formatDateTime(order.created_at)}</span></div>
-  <div class="item"><span>Type:</span><span class="bold">DELIVERY</span></div>
-  <div class="line"></div>
-  <div class="center big" style="margin:6px 0">ITEMS</div>
-  <div class="line"></div>
-  ${items.map((it, i) => `
-    <div class="item"><span>${i + 1}. ${it.name}</span><span class="qty">x${it.quantity}</span></div>
-    ${it.special_instructions ? `<div style="font-size:10px;color:#666;padding-left:16px;">Note: ${it.special_instructions}</div>` : ''}
-  `).join('')}
-  <div class="line"></div>
-  ${order.special_instructions ? `<div style="background:#f0f0f0;padding:4px;font-style:italic;">Instructions: ${order.special_instructions}</div><div class="line"></div>` : ''}
-  <div class="center" style="margin-top:8px;font-size:10px;">Printed: ${new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</div>
-</body></html>`);
-  win.document.close(); win.print();
-};
-
-const printDeliveryOrder = (order: any, items: any[]) => {
-  const win = window.open('', '_blank', 'width=300,height=800');
-  if (!win) return;
-  win.document.write(`<!DOCTYPE html><html><head><title>Delivery - ${order.order_number}</title>
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: 'Courier New', monospace; width: 280px; padding: 8px; font-size: 11px; }
-  .center { text-align: center; } .bold { font-weight: bold; }
-  .line { border-top: 1px dashed #000; margin: 6px 0; }
-  .row { display: flex; justify-content: space-between; padding: 2px 0; }
-  h2 { font-size: 14px; } .total-row { font-size: 14px; font-weight: bold; }
-</style></head><body>
-  <div class="center"><h2>JUST GOOFING</h2><p style="font-size:10px;">Where Fun Meets Innovation</p></div>
-  <div class="line"></div>
-  <div class="center bold" style="font-size:13px;">DELIVERY ORDER</div>
-  <div class="line"></div>
-  <div class="row"><span>Order #:</span><span class="bold">${order.order_number}</span></div>
-  <div class="row"><span>Date:</span><span>${formatDateTime(order.created_at)}</span></div>
-  <div class="row"><span>Payment:</span><span>${(order.payment_method || 'COD').toUpperCase()} (${order.payment_status || 'pending'})</span></div>
-  <div class="line"></div>
-  <div class="bold">CUSTOMER</div>
-  <div class="row"><span>Name:</span><span>${order.customer_name || 'Guest'}</span></div>
-  <div class="row"><span>Phone:</span><span class="bold">${order.customer_phone || '-'}</span></div>
-  ${order.house_number ? `<div class="row"><span>House #:</span><span>${order.house_number}</span></div>` : ''}
-  ${order.customer_address ? `<div style="padding:2px 0;"><span>Addr: </span><span>${order.customer_address}</span></div>` : ''}
-  <div class="line"></div>
-  <div class="bold" style="margin-bottom:4px;">ITEMS</div>
-  ${items.map((it, i) => `
-    <div class="row"><span>${i + 1}. ${it.name} x${it.quantity}</span><span>₹${(Number(it.price) * it.quantity).toFixed(0)}</span></div>
-  `).join('')}
-  <div class="line"></div>
-  <div class="row"><span>Subtotal</span><span>₹${Number(order.subtotal).toFixed(0)}</span></div>
-  ${Number(order.discount) > 0 ? `<div class="row"><span>Discount</span><span>-₹${Number(order.discount).toFixed(0)}</span></div>` : ''}
-  ${Number(order.tax) > 0 ? `<div class="row"><span>Tax</span><span>₹${Number(order.tax).toFixed(0)}</span></div>` : ''}
-  <div class="line"></div>
-  <div class="row total-row"><span>TOTAL</span><span>₹${Number(order.total).toFixed(0)}</span></div>
-  <div class="line"></div>
-  ${order.special_instructions ? `<div style="padding:4px 0;font-style:italic;font-size:10px;">Note: ${order.special_instructions}</div><div class="line"></div>` : ''}
-  <div class="center" style="margin-top:8px;font-size:9px;">Thank you for ordering with Just Goofing!<br/>Printed: ${new Date().toLocaleString('en-IN')}</div>
-</body></html>`);
-  win.document.close(); win.print();
-};
-
-/* ══════════════════════════════════════════════ */
-/*                 MAIN COMPONENT                 */
 /* ══════════════════════════════════════════════ */
 
 const OpsOrdersPage = () => {
+  const navigate = useNavigate();
   const { role, storeId } = useAuth();
-  const [orders, setOrders] = useState<any[]>([]);
-  const [orderItems, setOrderItems] = useState<Record<string, any[]>>({});
-  const [filter, setFilter] = useState('all');
-  const [search, setSearch] = useState('');
+  const [sales, setSales] = useState<Sale[]>([]);
   const [loading, setLoading] = useState(true);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [kindFilter, setKindFilter] = useState<'all' | SaleKind | 'expiring'>('all');
   const [dateRange, setDateRange] = useState<DateRange>('today');
   const [customFrom, setCustomFrom] = useState('');
   const [customTo, setCustomTo] = useState('');
-  const [now, setNow] = useState(Date.now());
-  const [orderPrepTimes, setOrderPrepTimes] = useState<Record<string, number>>({});
-  const defaultPrepTime = 30;
-
-  // Rider assignment state
-  const [riderPickerOrderId, setRiderPickerOrderId] = useState<string | null>(null);
-  const [availableRiders, setAvailableRiders] = useState<{ user_id: string; full_name: string; phone: string }[]>([]);
-  const [ridersLoading, setRidersLoading] = useState(false);
-
-  // Live timer tick every 10s for responsive urgency updates
-  useEffect(() => {
-    const interval = setInterval(() => setNow(Date.now()), 10000);
-    return () => clearInterval(interval);
-  }, []);
 
   useEffect(() => {
-    fetchOrders();
+    fetchAll();
     const channel = supabase
-      .channel('ops-orders-live')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => fetchOrders())
+      .channel('ops-sales-live')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_packs' }, () => fetchAll())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, () => fetchAll())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => fetchAll())
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [filter, dateRange, customFrom, customTo]);
+  }, [dateRange, customFrom, customTo, storeId, role]);
 
-  const fetchOrders = async () => {
+  const fetchAll = async () => {
     const { from, to } = getDateRange(dateRange, customFrom, customTo);
-    let query = supabase.from('orders').select('*')
-      .gte('created_at', from).lte('created_at', to)
-      .order('created_at', { ascending: true });
-    if (filter !== 'all') query = query.eq('status', filter as any);
-    if (role === 'store_manager' && storeId) query = query.eq('store_id', storeId);
 
-    // Fetch packs and bookings in parallel — they show as "sales" in the orders view
-    const [ordersRes, packsRes, bookingsRes, profilesRes] = await Promise.all([
-      query,
-      supabase.from('user_packs').select('*').gte('purchased_at', from).lte('purchased_at', to).order('purchased_at', { ascending: false }),
-      supabase.from('bookings').select('*').gte('created_at', from).lte('created_at', to).order('created_at', { ascending: false }),
+    const ordersQuery = supabase.from('orders').select('*').gte('created_at', from).lte('created_at', to);
+    if (role === 'store_manager' && storeId) ordersQuery.eq('store_id', storeId);
+
+    const [packsRes, bookingsRes, ordersRes, profilesRes] = await Promise.all([
+      supabase.from('user_packs').select('*').gte('purchased_at', from).lte('purchased_at', to),
+      supabase.from('bookings').select('*').gte('created_at', from).lte('created_at', to),
+      ordersQuery,
       supabase.from('profiles').select('user_id, phone, full_name'),
     ]);
 
     const profileMap = new Map<string, { phone: string | null; name: string | null }>();
     (profilesRes.data || []).forEach(p => profileMap.set(p.user_id, { phone: p.phone, name: p.full_name }));
 
-    // Annotate packs and bookings so they can render alongside orders in the activity feed
-    const fetchedOrders = (ordersRes.data || []).map((o: any) => ({ ...o, _kind: 'order' }));
-    const packs = (filter === 'all') ? (packsRes.data || []).map((p: any) => {
+    const merged: Sale[] = [];
+
+    (packsRes.data || []).forEach((p: any) => {
       const prof = profileMap.get(p.user_id);
-      return {
-        _kind: 'pack', id: p.id, order_number: `PACK-${p.id.slice(0, 6).toUpperCase()}`,
-        customer_name: prof?.name || 'Goofer', customer_phone: prof?.phone || '',
-        total: p.amount_paid, subtotal: p.amount_paid, discount: 0, tax: 0,
-        status: p.status, created_at: p.purchased_at, payment_method: 'paid', payment_status: 'paid',
-        user_id: p.user_id, pack_name: p.pack_name, total_hours: p.total_hours, hours_used: p.hours_used,
-      };
-    }) : [];
-    const bookings = (filter === 'all') ? (bookingsRes.data || []).map((b: any) => {
+      merged.push({
+        kind: 'pack',
+        id: p.id,
+        number: `PACK-${p.id.slice(0, 6).toUpperCase()}`,
+        customer_name: prof?.name || 'Goofer',
+        customer_phone: prof?.phone || '',
+        user_id: p.user_id,
+        amount: Number(p.amount_paid) || 0,
+        status: p.status,
+        created_at: p.purchased_at,
+        pack_name: p.pack_name,
+        pack_type: 'Hour Pack',
+        total_hours: Number(p.total_hours) || 0,
+        hours_used: Number(p.hours_used) || 0,
+        expires_at: computePackExpiry(p.purchased_at),
+      });
+    });
+
+    (bookingsRes.data || []).forEach((b: any) => {
       const prof = b.user_id ? profileMap.get(b.user_id) : null;
-      return {
-        _kind: 'booking', id: b.id, order_number: b.booking_number || `GOOF-${b.id.slice(0,6).toUpperCase()}`,
+      merged.push({
+        kind: 'booking',
+        id: b.id,
+        number: b.booking_number || `GOOF-${b.id.slice(0, 6).toUpperCase()}`,
         customer_name: b.customer_name || prof?.name || 'Goofer',
         customer_phone: b.customer_phone || prof?.phone || '',
-        total: b.total_amount, subtotal: b.total_amount, discount: b.discount || 0, tax: 0,
-        status: b.status, created_at: b.created_at,
-        payment_method: b.payment_method, payment_status: b.payment_status,
-        user_id: b.user_id, package_name: b.package_name, booking_date: b.booking_date, slot_time: b.slot_time, num_kids: b.num_kids,
-      };
-    }) : [];
-
-    const merged = [...fetchedOrders, ...packs, ...bookings].sort(
-      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    );
-    setOrders(merged);
-
-    // Eagerly fetch order items for real food orders only
-    if (fetchedOrders.length > 0) {
-      const orderIds = fetchedOrders.map(o => o.id);
-      const { data: allItems } = await supabase
-        .from('order_items')
-        .select('*, menu_items!order_items_menu_item_id_fkey(prep_time)')
-        .in('order_id', orderIds);
-
-      const grouped: Record<string, any[]> = {};
-      const prepTimes: Record<string, number> = {};
-      (allItems || []).forEach((item: any) => {
-        if (!grouped[item.order_id]) grouped[item.order_id] = [];
-        grouped[item.order_id].push(item);
-        const itemPrep = item.menu_items?.prep_time || defaultPrepTime;
-        prepTimes[item.order_id] = Math.max(prepTimes[item.order_id] || 0, itemPrep);
+        user_id: b.user_id,
+        amount: Number(b.total_amount) || 0,
+        status: b.status,
+        created_at: b.created_at,
+        package_name: b.package_name,
+        booking_date: b.booking_date,
+        slot_time: b.slot_time,
+        num_kids: b.num_kids,
       });
-      setOrderItems(grouped);
-      setOrderPrepTimes(prepTimes);
-    }
+    });
 
+    (ordersRes.data || []).forEach((o: any) => {
+      const prof = o.user_id ? profileMap.get(o.user_id) : null;
+      merged.push({
+        kind: 'order',
+        id: o.id,
+        number: o.order_number,
+        customer_name: o.customer_name || prof?.name || 'Goofer',
+        customer_phone: o.customer_phone || prof?.phone || '',
+        user_id: o.user_id,
+        amount: Number(o.total) || 0,
+        status: o.status,
+        created_at: o.created_at,
+      });
+    });
+
+    merged.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    setSales(merged);
     setLoading(false);
   };
 
-  const loadOrderItems = async (orderId: string) => {
-    if (orderItems[orderId]) return;
-    const { data } = await supabase.from('order_items').select('*').eq('order_id', orderId);
-    setOrderItems(prev => ({ ...prev, [orderId]: data || [] }));
+  /* ── Computed counts ── */
+  const expiringPacks = sales.filter(s => {
+    if (s.kind !== 'pack' || s.status !== 'active') return false;
+    if (!s.expires_at) return false;
+    const days = daysUntil(s.expires_at);
+    const hoursLeft = (s.total_hours || 0) - (s.hours_used || 0);
+    return days <= 14 && hoursLeft > 0;
+  });
+
+  const counts = {
+    all: sales.length,
+    pack: sales.filter(s => s.kind === 'pack').length,
+    booking: sales.filter(s => s.kind === 'booking').length,
+    order: sales.filter(s => s.kind === 'order').length,
+    expiring: expiringPacks.length,
   };
 
-  const toggleExpand = (orderId: string) => {
-    if (expandedId === orderId) { setExpandedId(null); }
-    else { setExpandedId(orderId); loadOrderItems(orderId); }
-  };
+  const totalRevenue = sales.reduce((sum, s) => sum + s.amount, 0);
 
-  const updateStatus = async (orderId: string, newStatus: string) => {
-    const updates: any = { status: newStatus };
-    if (TIMESTAMP_MAP[newStatus]) updates[TIMESTAMP_MAP[newStatus]] = new Date().toISOString();
-    await supabase.from('orders').update(updates).eq('id', orderId);
-  };
-
-  const fetchAvailableRiders = async () => {
-    setRidersLoading(true);
-    // Get delivery partners who are available and active
-    const { data: roles } = await supabase
-      .from('user_roles')
-      .select('user_id')
-      .eq('role', 'delivery_partner' as any)
-      .eq('is_active', true)
-      .eq('is_available', true);
-
-    if (roles && roles.length > 0) {
-      const userIds = roles.map(r => r.user_id);
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('user_id, full_name, phone')
-        .in('user_id', userIds);
-      setAvailableRiders((profiles || []).map(p => ({
-        user_id: p.user_id,
-        full_name: p.full_name || 'Unnamed',
-        phone: p.phone || '',
-      })));
-    } else {
-      setAvailableRiders([]);
+  const filtered = sales.filter(s => {
+    if (kindFilter === 'expiring') {
+      if (!expiringPacks.find(e => e.id === s.id)) return false;
+    } else if (kindFilter !== 'all' && s.kind !== kindFilter) {
+      return false;
     }
-    setRidersLoading(false);
-  };
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return (
+      s.number.toLowerCase().includes(q) ||
+      s.customer_name.toLowerCase().includes(q) ||
+      s.customer_phone.includes(search)
+    );
+  });
 
-  const openRiderPicker = async (orderId: string) => {
-    setRiderPickerOrderId(orderId);
-    await fetchAvailableRiders();
-  };
-
-  const assignRider = async (orderId: string, riderId: string) => {
-    const ts = new Date().toISOString();
-    // Update order status
-    await supabase.from('orders').update({
-      status: 'assigned' as any,
-      assigned_at: ts,
-    }).eq('id', orderId);
-    // Create delivery assignment
-    await supabase.from('delivery_assignments').insert({
-      order_id: orderId,
-      delivery_partner_id: riderId,
-      status: 'assigned',
+  const goToCustomer = (s: Sale) => {
+    navigate('/ops/customers', {
+      state: { openCustomer: { phone: s.customer_phone, name: s.customer_name, userId: s.user_id } },
     });
-    setRiderPickerOrderId(null);
   };
 
-  const filtered = orders.filter(o =>
-    !search || o.order_number?.toLowerCase().includes(search.toLowerCase()) ||
-    o.customer_name?.toLowerCase().includes(search.toLowerCase()) ||
-    o.customer_phone?.includes(search)
-  );
-
-  // Status counts for summary
-  const statusCounts = orders.reduce((acc: Record<string, number>, o) => {
-    acc[o.status] = (acc[o.status] || 0) + 1;
-    return acc;
-  }, {});
-
-  const activeStatuses = ['new', 'accepted', 'preparing', 'ready', 'assigned', 'picked_up', 'out_for_delivery'];
-  const activeCount = activeStatuses.reduce((sum, s) => sum + (statusCounts[s] || 0), 0);
-
-  const canAct = role === 'super_admin' || role === 'store_manager';
+  const FILTER_TABS: { key: typeof kindFilter; label: string; count: number; tone: string }[] = [
+    { key: 'all', label: 'All Sales', count: counts.all, tone: 'text-foreground' },
+    { key: 'pack', label: 'Packs', count: counts.pack, tone: 'text-purple-500' },
+    { key: 'booking', label: 'Bookings', count: counts.booking, tone: 'text-blue-500' },
+    { key: 'order', label: 'Food', count: counts.order, tone: 'text-amber-500' },
+    { key: 'expiring', label: '⚠ Expiring', count: counts.expiring, tone: 'text-red-500' },
+  ];
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      {/* ── Header ── */}
+      {/* Header */}
       <div className="sticky top-0 z-40 bg-card/95 backdrop-blur-xl border-b border-border px-4 py-3 space-y-3">
-        <div className="flex items-center justify-between">
+        <div className="flex items-end justify-between">
           <div>
-            <h1 className="font-heading text-lg text-gradient-gold">Orders</h1>
+            <h1 className="font-heading text-lg text-gradient-gold">Sales</h1>
             <p className="text-[11px] text-muted-foreground mt-0.5">
-              {activeCount} active · {orders.length} total
+              {counts.all} total · ₹{totalRevenue.toLocaleString()} revenue
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            {(statusCounts['new'] || 0) > 0 && (
-              <span className="px-2.5 py-1 bg-blue-500/15 border border-blue-500/25 rounded-full text-xs font-bold text-blue-400 animate-pulse">
-                {statusCounts['new']} NEW
-              </span>
-            )}
-          </div>
+          {counts.expiring > 0 && (
+            <button
+              onClick={() => setKindFilter('expiring')}
+              className="px-2.5 py-1 bg-red-500/15 border border-red-500/25 rounded-full text-xs font-bold text-red-500 flex items-center gap-1 animate-pulse"
+            >
+              <AlertTriangle size={10} /> {counts.expiring} expiring
+            </button>
+          )}
         </div>
 
-        {/* Search */}
         <div className="relative">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <input value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Search order #, name, phone..."
-            className="w-full pl-9 pr-4 py-2 bg-muted border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-secondary" />
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search number, name, phone..."
+            className="w-full pl-9 pr-4 py-2 bg-muted border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-secondary"
+          />
         </div>
 
-        <DateRangeFilter dateRange={dateRange} onDateRangeChange={setDateRange}
-          customFrom={customFrom} customTo={customTo}
-          onCustomFromChange={setCustomFrom} onCustomToChange={setCustomTo} />
+        <DateRangeFilter
+          dateRange={dateRange}
+          onDateRangeChange={setDateRange}
+          customFrom={customFrom}
+          customTo={customTo}
+          onCustomFromChange={setCustomFrom}
+          onCustomToChange={setCustomTo}
+        />
       </div>
 
-      {/* ── Status Summary Strip ── */}
+      {/* Filter tabs */}
       <div className="px-4 py-3 flex gap-2 overflow-x-auto no-scrollbar">
-        {ORDER_STATUSES.map(s => {
-          const count = s === 'all' ? orders.length : (statusCounts[s] || 0);
-          const isActive = filter === s;
-          const config = s !== 'all' ? STATUS_CONFIG[s] : null;
+        {FILTER_TABS.map(t => {
+          const isActive = kindFilter === t.key;
           return (
-            <button key={s} onClick={() => setFilter(s)}
+            <button
+              key={t.key}
+              onClick={() => setKindFilter(t.key)}
               className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap border transition-all flex items-center gap-1.5 ${
                 isActive
                   ? 'bg-secondary/20 text-secondary border-secondary/30 scale-105'
-                  : 'bg-card text-muted-foreground border-border hover:border-muted-foreground/30'
-              }`}>
-              {s === 'all' ? 'All' : s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
-              {count > 0 && (
-                <span className={`min-w-[18px] h-[18px] rounded-full flex items-center justify-center text-[10px] font-bold ${
-                  isActive ? 'bg-secondary/30 text-secondary' : 'bg-muted text-muted-foreground'
-                }`}>{count}</span>
+                  : `bg-card ${t.tone} border-border hover:border-muted-foreground/30`
+              }`}
+            >
+              {t.label}
+              {t.count > 0 && (
+                <span
+                  className={`min-w-[18px] h-[18px] rounded-full flex items-center justify-center text-[10px] font-bold ${
+                    isActive ? 'bg-secondary/30 text-secondary' : 'bg-muted text-muted-foreground'
+                  }`}
+                >
+                  {t.count}
+                </span>
               )}
             </button>
           );
         })}
       </div>
 
-      {/* ── Order Tiles ── */}
+      {/* Sales list */}
       <div className="px-4 space-y-3">
         {loading ? (
           <div className="space-y-3">
             {[1, 2, 3].map(i => (
-              <div key={i} className="h-32 bg-card border border-border rounded-2xl animate-pulse" />
+              <div key={i} className="h-24 bg-card border border-border rounded-2xl animate-pulse" />
             ))}
           </div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-20 text-muted-foreground">
             <Package size={48} className="mx-auto mb-4 opacity-20" />
-            <p className="text-sm font-medium">No orders found</p>
-            <p className="text-xs mt-1 opacity-60">Try adjusting your filters</p>
+            <p className="text-sm font-medium">No sales found</p>
+            <p className="text-xs mt-1 opacity-60">
+              {kindFilter === 'expiring' ? 'No packs expiring soon — great!' : 'Try a different date or filter'}
+            </p>
           </div>
         ) : (
           <AnimatePresence>
-            {filtered.map((order, index) => {
-              // Per-order expected prep time from actual menu items
-              const expectedPrep = orderPrepTimes[order.id] || defaultPrepTime;
-              // Total time since order was placed
-              const totalElapsedMs = now - new Date(order.created_at).getTime();
-              const totalElapsedMins = totalElapsedMs / 60000;
-              // Time in current status phase
-              const statusTs = getStatusTimestamp(order);
-              const statusElapsedMs = now - new Date(statusTs).getTime();
-              const statusElapsedMins = statusElapsedMs / 60000;
-              // Urgency based on status phase time + actual prep time
-              const urgency = (order.status === 'delivered' || order.status === 'cancelled')
-                ? 'green' as Urgency
-                : getUrgency(order.status, statusElapsedMins, expectedPrep);
-              const delayed = isOrderDelayed(order, totalElapsedMins, expectedPrep);
-              // Force red if delayed
-              const finalUrgency = delayed ? 'red' as Urgency : urgency;
-              const urgStyle = URGENCY_STYLES[finalUrgency];
-              const config = STATUS_CONFIG[order.status] || STATUS_CONFIG.new;
-              const StatusIcon = config.icon;
-              const actions = STATUS_FLOW[order.status] || [];
-              const isExpanded = expandedId === order.id;
-              const items = orderItems[order.id] || [];
+            {filtered.map((s, idx) => {
+              const meta = KIND_META[s.kind];
+              const Icon = meta.icon;
+
+              // Pack expiry computation
+              const isPack = s.kind === 'pack';
+              const hoursLeft = isPack ? (s.total_hours || 0) - (s.hours_used || 0) : 0;
+              const daysToExpiry = isPack && s.expires_at ? daysUntil(s.expires_at) : 0;
+              const isExpired = isPack && daysToExpiry <= 0 && hoursLeft > 0;
+              const isExpiringSoon = isPack && daysToExpiry > 0 && daysToExpiry <= 14 && hoursLeft > 0;
+              const isUsedUp = isPack && hoursLeft <= 0;
 
               return (
                 <motion.div
-                  key={order.id}
-                  initial={{ opacity: 0, y: 10 }}
+                  key={`${s.kind}-${s.id}`}
+                  initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ delay: index * 0.02 }}
-                  className={`bg-card border border-border rounded-2xl overflow-hidden border-l-4 ${urgStyle.border} ${urgStyle.glow} transition-shadow`}
+                  exit={{ opacity: 0, y: -6 }}
+                  transition={{ delay: idx * 0.02 }}
+                  className={`bg-card border border-border rounded-2xl border-l-4 ${meta.border} overflow-hidden`}
                 >
-                  {/* ── Tile Header ── */}
-                  <button onClick={() => toggleExpand(order.id)} className="w-full text-left p-4">
+                  <div className="p-4 space-y-2.5">
+                    {/* Top row */}
                     <div className="flex items-start justify-between gap-3">
-                      {/* Left: Order info */}
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-heading text-base text-foreground">{order.order_number}</span>
-                          <span className="font-heading text-base text-secondary">₹{Number(order.total).toLocaleString()}</span>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${meta.bg} ${meta.color} flex items-center gap-1`}>
+                            <Icon size={10} /> {meta.label}
+                          </span>
+                          <span className="font-heading text-sm text-foreground truncate">{s.number}</span>
+                          <span className="font-heading text-sm text-secondary">₹{s.amount.toLocaleString()}</span>
                         </div>
-                        <div className="flex items-center gap-2 mt-1.5">
-                          <span className="text-sm text-foreground font-medium truncate">{order.customer_name || 'Guest'}</span>
-                          {order.customer_phone && (
-                            <a href={`tel:${order.customer_phone}`}
-                              onClick={e => e.stopPropagation()}
-                              className="flex items-center gap-1 text-xs text-secondary hover:underline shrink-0">
-                              <Phone size={10} /> {order.customer_phone}
-                            </a>
+
+                        {/* Customer button — links to profile */}
+                        <button
+                          onClick={() => goToCustomer(s)}
+                          className="mt-2 flex items-center gap-2 group"
+                        >
+                          <span className="text-sm font-medium text-foreground group-hover:text-secondary transition-colors">
+                            {s.customer_name}
+                          </span>
+                          {s.customer_phone ? (
+                            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <Phone size={10} /> {s.customer_phone}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-red-400 italic">no phone</span>
                           )}
-                        </div>
+                          <ChevronRight size={12} className="text-muted-foreground group-hover:text-secondary transition-colors" />
+                        </button>
                       </div>
 
-                       {/* Right: Status + Timer */}
-                      <div className="flex flex-col items-end gap-1 shrink-0">
-                        {/* Delayed badge */}
-                        {delayed && (
-                          <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500/20 border border-red-500/40 text-red-400 text-[10px] font-bold animate-pulse">
-                            <AlertTriangle size={10} />
-                            DELAYED
-                          </div>
-                        )}
-                        <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-semibold ${config.bg} ${config.color}`}>
-                          <StatusIcon size={12} />
-                          {config.label}
+                      <div className="text-right shrink-0 text-[11px] text-muted-foreground">
+                        <div className="flex items-center gap-1 justify-end">
+                          <Clock size={10} /> {fmtTime(s.created_at)}
                         </div>
-                        {order.status !== 'delivered' && order.status !== 'cancelled' && (
-                          <>
-                            {/* Total order age — big prominent timer */}
-                            <div className={`flex items-center gap-1 text-sm font-mono font-bold ${urgStyle.timer} ${urgStyle.pulse ? 'animate-pulse' : ''}`}>
-                              <Clock size={12} />
-                              {formatElapsedDetailed(totalElapsedMins)}
-                            </div>
-                            {/* Expected vs elapsed */}
-                            <div className="text-[10px] font-mono text-muted-foreground">
-                              ETA {expectedPrep}m · {config.label}: {formatElapsed(statusElapsedMins)}
-                            </div>
-                          </>
-                        )}
+                        <div className="mt-0.5">{fmtDate(s.created_at)}</div>
                       </div>
                     </div>
 
-                    {/* ── Quick Actions (always visible) ── */}
-                    {actions.length > 0 && canAct && (
-                      <div className="flex gap-2 mt-3" onClick={e => e.stopPropagation()}>
-                        {actions.map(a => (
-                          <button key={a.next}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (a.next === 'assigned') {
-                                openRiderPicker(order.id);
-                              } else {
-                                updateStatus(order.id, a.next);
-                              }
-                            }}
-                            className={`flex-1 py-2 rounded-xl text-xs font-bold tracking-wide transition-all active:scale-95 ${a.color}`}>
-                            {a.label}
-                          </button>
-                        ))}
+                    {/* Pack-specific row: hours + expiry */}
+                    {isPack && (
+                      <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/50">
+                        <div className="flex items-center gap-3 text-[11px] text-muted-foreground flex-wrap">
+                          <span className="flex items-center gap-1">
+                            <Hourglass size={11} className="text-purple-500" />
+                            <span className="text-foreground font-medium">{hoursLeft}h</span> of {s.total_hours}h left
+                          </span>
+                          <span className="text-foreground/70">{s.pack_name}</span>
+                        </div>
+                        {isExpired ? (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/15 text-red-500 border border-red-500/30">
+                            EXPIRED
+                          </span>
+                        ) : isExpiringSoon ? (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-500 border border-amber-500/30 animate-pulse">
+                            ⚠ {daysToExpiry}d to expire
+                          </span>
+                        ) : isUsedUp ? (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                            USED
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-medium text-muted-foreground">
+                            {daysToExpiry}d valid
+                          </span>
+                        )}
                       </div>
                     )}
-                  </button>
 
-                  {/* ── Expanded Details ── */}
-                  <AnimatePresence>
-                    {isExpanded && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.25 }}
-                        className="border-t border-border overflow-hidden"
-                      >
-                        <div className="p-4 space-y-4">
-                          {/* Customer & Address */}
-                          <div className="space-y-2">
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Customer</p>
-                            <div className="bg-muted/30 rounded-xl p-3 space-y-2">
-                              <div className="flex items-center justify-between">
-                                <span className="text-sm text-foreground font-semibold">{order.customer_name || 'Guest'}</span>
-                                {order.customer_phone && (
-                                  <a href={`tel:${order.customer_phone}`}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary/10 text-secondary rounded-lg text-xs font-bold">
-                                    <Phone size={12} /> {order.customer_phone}
-                                  </a>
-                                )}
-                              </div>
-                              {(order.house_number || order.customer_address) && (
-                                <div className="flex items-start gap-2 pt-1 border-t border-border/50">
-                                  <MapPin size={12} className="text-muted-foreground mt-0.5 shrink-0" />
-                                  <p className="text-xs text-muted-foreground">
-                                    {order.house_number ? `${order.house_number}, ` : ''}{order.customer_address || '-'}
-                                  </p>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Items */}
-                          <div className="space-y-2">
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Items</p>
-                            <div className="bg-muted/30 rounded-xl divide-y divide-border/50">
-                              {items.length > 0 ? items.map(it => (
-                                <div key={it.id} className="flex justify-between items-center px-3 py-2.5">
-                                  <div className="flex items-center gap-2">
-                                    <span className="w-6 h-6 rounded-md bg-secondary/10 flex items-center justify-center text-[10px] font-bold text-secondary">
-                                      {it.quantity}×
-                                    </span>
-                                    <span className="text-sm text-foreground">{it.name}</span>
-                                  </div>
-                                  <span className="text-sm font-heading text-muted-foreground">₹{Number(it.price) * it.quantity}</span>
-                                </div>
-                              )) : (
-                                <div className="px-3 py-4 text-center text-xs text-muted-foreground">Loading items...</div>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Totals */}
-                          <div className="bg-muted/30 rounded-xl p-3 space-y-1.5">
-                            <div className="flex justify-between text-xs text-muted-foreground">
-                              <span>Subtotal</span><span>₹{Number(order.subtotal)}</span>
-                            </div>
-                            {Number(order.discount) > 0 && (
-                              <div className="flex justify-between text-xs text-green-400">
-                                <span>Discount</span><span>-₹{Number(order.discount)}</span>
-                              </div>
-                            )}
-                            {Number(order.tax) > 0 && (
-                              <div className="flex justify-between text-xs text-muted-foreground">
-                                <span>Tax</span><span>₹{Number(order.tax)}</span>
-                              </div>
-                            )}
-                            <div className="flex justify-between text-sm font-heading text-foreground pt-1.5 border-t border-border/50">
-                              <span>Total</span><span className="text-secondary">₹{Number(order.total)}</span>
-                            </div>
-                            <div className="flex gap-4 text-[11px] text-muted-foreground pt-1">
-                              <span className="flex items-center gap-1"><CreditCard size={10} /> {(order.payment_method || 'COD').toUpperCase()}</span>
-                              <span className="capitalize">{order.payment_status || 'pending'}</span>
-                            </div>
-                          </div>
-
-                          {/* Special Instructions */}
-                          {order.special_instructions && (
-                            <div className="bg-amber-500/5 border border-amber-500/15 rounded-xl p-3">
-                              <p className="text-[10px] font-bold text-amber-400 uppercase tracking-widest mb-1">Special Instructions</p>
-                              <p className="text-xs text-foreground">{order.special_instructions}</p>
-                            </div>
-                          )}
-
-                          {/* Timeline */}
-                          <div className="space-y-2">
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Timeline</p>
-                            <div className="bg-muted/30 rounded-xl p-3 space-y-1.5 text-xs">
-                              <div className="flex justify-between"><span className="text-muted-foreground">Created</span><span className="text-foreground">{formatDateTime(order.created_at)}</span></div>
-                              {order.accepted_at && <div className="flex justify-between"><span className="text-muted-foreground">Accepted</span><span className="text-foreground">{formatDateTime(order.accepted_at)}</span></div>}
-                              {order.preparing_at && <div className="flex justify-between"><span className="text-muted-foreground">Preparing</span><span className="text-foreground">{formatDateTime(order.preparing_at)}</span></div>}
-                              {order.ready_at && <div className="flex justify-between"><span className="text-muted-foreground">Ready</span><span className="text-foreground">{formatDateTime(order.ready_at)}</span></div>}
-                              {order.assigned_at && <div className="flex justify-between"><span className="text-muted-foreground">Assigned</span><span className="text-foreground">{formatDateTime(order.assigned_at)}</span></div>}
-                              {order.picked_up_at && <div className="flex justify-between"><span className="text-muted-foreground">Picked Up</span><span className="text-foreground">{formatDateTime(order.picked_up_at)}</span></div>}
-                              {order.out_for_delivery_at && <div className="flex justify-between"><span className="text-muted-foreground">Out for Delivery</span><span className="text-foreground">{formatDateTime(order.out_for_delivery_at)}</span></div>}
-                              {order.delivered_at && <div className="flex justify-between"><span className="text-emerald-400">Delivered</span><span className="text-emerald-400 font-medium">{formatDateTime(order.delivered_at)}</span></div>}
-                              {order.cancelled_at && <div className="flex justify-between"><span className="text-red-400">Cancelled</span><span className="text-red-400 font-medium">{formatDateTime(order.cancelled_at)}</span></div>}
-                            </div>
-                          </div>
-
-                          {/* Print Buttons */}
-                          <div className="flex gap-2">
-                            <button onClick={() => printKOT(order, items)}
-                              className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-muted border border-border rounded-xl text-xs font-bold text-foreground hover:bg-muted/80 transition-colors active:scale-95">
-                              <Printer size={14} /> Print KOT
-                            </button>
-                            <button onClick={() => printDeliveryOrder(order, items)}
-                              className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-muted border border-border rounded-xl text-xs font-bold text-foreground hover:bg-muted/80 transition-colors active:scale-95">
-                              <Printer size={14} /> Delivery Order
-                            </button>
-                          </div>
-                        </div>
-                      </motion.div>
+                    {/* Booking-specific row */}
+                    {s.kind === 'booking' && (
+                      <div className="flex items-center gap-3 pt-2 border-t border-border/50 text-[11px] text-muted-foreground flex-wrap">
+                        <span className="flex items-center gap-1">
+                          <CalendarCheck size={11} className="text-blue-500" />
+                          <span className="text-foreground">{s.booking_date}</span>
+                        </span>
+                        <span>{String(s.slot_time || '').slice(0, 5)}</span>
+                        <span>{s.num_kids} kid{(s.num_kids || 0) > 1 ? 's' : ''}</span>
+                        <span className="text-foreground/70 truncate">{s.package_name}</span>
+                      </div>
                     )}
-                  </AnimatePresence>
+                  </div>
                 </motion.div>
               );
             })}
           </AnimatePresence>
         )}
       </div>
-
-      {/* ── Rider Picker Modal ── */}
-      <AnimatePresence>
-        {riderPickerOrderId && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-4"
-            onClick={() => setRiderPickerOrderId(null)}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              transition={{ type: 'spring', damping: 20, stiffness: 300 }}
-              className="w-full max-w-md bg-card border border-border rounded-2xl shadow-2xl overflow-hidden"
-              onClick={e => e.stopPropagation()}
-            >
-              {/* Modal Header */}
-              <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-muted/30">
-                <div>
-                  <h2 className="font-heading text-base text-foreground">Assign Delivery Partner</h2>
-                  <p className="text-xs text-muted-foreground mt-0.5">Select an available rider</p>
-                </div>
-                <button onClick={() => setRiderPickerOrderId(null)} className="p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground">
-                  <X size={18} />
-                </button>
-              </div>
-
-              {/* Modal Body */}
-              <div className="p-4">
-                {ridersLoading ? (
-                  <div className="py-12 text-center">
-                    <div className="w-8 h-8 border-2 border-secondary border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-                    <p className="text-muted-foreground text-sm">Finding available riders...</p>
-                  </div>
-                ) : availableRiders.length === 0 ? (
-                  <div className="py-12 text-center space-y-3">
-                    <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mx-auto">
-                      <Truck size={28} className="text-muted-foreground/40" />
-                    </div>
-                    <div>
-                      <p className="text-foreground text-sm font-heading">No Riders Online</p>
-                      <p className="text-muted-foreground text-xs mt-1">All delivery partners are currently offline.<br/>Ask a rider to toggle their status to Online.</p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-2 max-h-[40vh] overflow-y-auto">
-                    <p className="text-xs text-muted-foreground mb-2">{availableRiders.length} rider{availableRiders.length !== 1 ? 's' : ''} online</p>
-                    {availableRiders.map(rider => (
-                      <motion.button
-                        key={rider.user_id}
-                        whileTap={{ scale: 0.97 }}
-                        onClick={() => assignRider(riderPickerOrderId, rider.user_id)}
-                        className="w-full flex items-center justify-between p-3.5 bg-muted/20 border border-border rounded-xl hover:border-secondary/50 hover:bg-secondary/5 transition-all group"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-secondary/10 border border-secondary/20 flex items-center justify-center group-hover:bg-secondary/20 transition-colors">
-                            <Truck size={18} className="text-secondary" />
-                          </div>
-                          <div className="text-left">
-                            <p className="text-sm font-medium text-foreground">{rider.full_name}</p>
-                            <p className="text-xs text-muted-foreground">{rider.phone}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                          <span className="text-green-400 text-xs font-medium">Online</span>
-                        </div>
-                      </motion.button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       <OpsBottomNav />
     </div>
