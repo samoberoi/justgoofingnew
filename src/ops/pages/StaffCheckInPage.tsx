@@ -82,7 +82,7 @@ const StaffCheckInPage = () => {
   const loadActive = async () => {
     let q = supabase
       .from('play_sessions' as any)
-      .select('id, kid_name, num_kids, plus_one, checked_in_at, hours_consumed, user_id')
+      .select('id, kid_name, num_kids, plus_one, checked_in_at, hours_consumed, extended_hours, user_id')
       .eq('status', 'active')
       .order('checked_in_at', { ascending: false });
     if (storeId) q = q.eq('store_id', storeId);
