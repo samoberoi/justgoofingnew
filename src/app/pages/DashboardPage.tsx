@@ -242,8 +242,40 @@ const DashboardPage = () => {
           </motion.button>
         )}
 
+        {/* PENDING PAYMENT PACKS */}
+        {pendingPacks.length > 0 && (
+          <section>
+            <h2 className="font-display text-base text-ink mb-3 flex items-center gap-2 px-1">
+              ⏳ Awaiting payment
+            </h2>
+            <div className="space-y-2.5">
+              {pendingPacks.map((pack) => (
+                <div
+                  key={pack.id}
+                  className="bg-butter/40 rounded-[24px] p-4 border-2 border-dashed border-ink/20 shadow-soft"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="font-display text-base text-ink truncate">{pack.pack_name}</p>
+                        <span className="text-[9px] px-2 py-0.5 rounded-full bg-coral text-white font-display shrink-0">PENDING</span>
+                      </div>
+                      <p className="text-[11px] text-ink/70 font-medium mt-1">
+                        {pack.total_hours} hrs reserved · ₹{Number(pack.amount_paid || 0)}
+                      </p>
+                      <p className="text-[11px] text-ink mt-1.5 font-medium">
+                        🎟️ Visit the centre & pay to activate. Cash / UPI / Card.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
         {/* MY PACKS */}
-        {packs.length > 0 && (
+        {activePacks.length > 0 && (
           <section>
             <div className="flex items-center justify-between mb-3 px-1">
               <h2 className="font-display text-base text-ink flex items-center gap-2">
