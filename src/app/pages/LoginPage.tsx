@@ -261,58 +261,6 @@ const LoginPage = () => {
           </motion.div>
         )}
 
-        {step === 'diet' && (
-          <motion.div
-            key="diet"
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -30 }}
-            className="w-full max-w-sm space-y-8 text-center"
-          >
-            <div>
-              <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 1.5, repeat: Infinity }} className="text-5xl mb-3">
-                🍽️
-              </motion.div>
-              <span className="font-display text-2xl text-gradient-gold">Your Royal Preference</span>
-              <p className="mt-2 text-muted-foreground text-sm">What does the royal palate prefer?</p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                whileHover={{ scale: 1.02 }}
-                onClick={() => handleDietChoice('veg')}
-                className="flex flex-col items-center gap-3 p-6 bg-card border-2 border-green-500/30 rounded-2xl hover:border-green-500/60 hover:bg-green-500/5 transition-all"
-              >
-                <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center">
-                  <Leaf size={28} className="text-green-500" />
-                </div>
-                <div>
-                  <p className="font-heading text-foreground text-sm">Vegetarian</p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">Pure veg delicacies</p>
-                </div>
-              </motion.button>
-
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                whileHover={{ scale: 1.02 }}
-                onClick={() => handleDietChoice('nonveg')}
-                className="flex flex-col items-center gap-3 p-6 bg-card border-2 border-red-500/30 rounded-2xl hover:border-red-500/60 hover:bg-red-500/5 transition-all"
-              >
-                <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center">
-                  <span className="text-2xl">🍗</span>
-                </div>
-                <div>
-                  <p className="font-heading text-foreground text-sm">Non-Vegetarian</p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">The full menu</p>
-                </div>
-              </motion.button>
-            </div>
-
-            <p className="text-[10px] text-muted-foreground">You can change this anytime from your Profile</p>
-          </motion.div>
-        )}
-
         {step === 'success' && (
           <motion.div
             key="success"
