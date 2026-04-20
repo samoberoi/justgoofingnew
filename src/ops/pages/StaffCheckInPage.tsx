@@ -344,10 +344,12 @@ const StaffCheckInPage = () => {
     const kid = parentKids.find(k => k.id === selectedKidId);
     const kidsCount = plusOne ? 2 : 1;
 
+    const isWalkIn = !scannedBooking.id;
+
     const { error: sessionError } = await supabase
       .from('play_sessions' as any)
       .insert({
-        booking_id: scannedBooking.id,
+        booking_id: isWalkIn ? null : scannedBooking.id,
         user_id: scannedBooking.user_id,
         kid_id: selectedKidId,
         kid_name: kid?.name || null,
@@ -364,10 +366,12 @@ const StaffCheckInPage = () => {
       return;
     }
 
-    await supabase
-      .from('bookings' as any)
-      .update({ status: 'checked_in', checked_in_at: new Date().toISOString() })
-      .eq('id', scannedBooking.id);
+    if (!isWalkIn) {
+      await supabase
+        .from('bookings' as any)
+        .update({ status: 'checked_in', checked_in_at: new Date().toISOString() })
+        .eq('id', scannedBooking.id);
+    }
 
     toast.success(`${kid?.name} checked in! 🎉`, {
       description: plusOne ? 'With a +1 friend — 2× hours will be deducted at check-out' : '1× hours per hour',
