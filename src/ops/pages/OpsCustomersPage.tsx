@@ -54,11 +54,15 @@ const OpsCustomersPage = () => {
     }
   };
 
-  const filtered = customers.filter(c =>
-    !search ||
-    c.name.toLowerCase().includes(search.toLowerCase()) ||
-    c.phone.includes(search)
-  );
+  const filtered = customers.filter(c => {
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return (
+      c.name.toLowerCase().includes(q) ||
+      c.phone.includes(search) ||
+      c.kidNames.some(k => k.toLowerCase().includes(q))
+    );
+  });
 
   const formatDate = (d: string) => new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 
@@ -213,6 +217,11 @@ const OpsCustomersPage = () => {
                 <div>
                   <p className="text-sm font-medium text-foreground">{c.name}</p>
                   <p className="text-xs text-muted-foreground">{c.phone}</p>
+                  {c.kidNames.length > 0 && (
+                    <p className="text-[10px] text-secondary/80 mt-0.5 truncate max-w-[180px]">
+                      Kids: {c.kidNames.join(', ')}
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="text-right">
