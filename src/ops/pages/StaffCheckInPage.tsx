@@ -345,6 +345,24 @@ const StaffCheckInPage = () => {
       return;
     }
 
+    // Block if customer already has an active session
+    const { data: existingSession } = await supabase
+      .from('play_sessions' as any)
+      .select('id, kid_name')
+      .eq('user_id', (data as any).user_id)
+      .eq('status', 'active')
+      .limit(1)
+      .maybeSingle();
+    if (existingSession) {
+      const who = (existingSession as any).kid_name || 'this customer';
+      toast.error('Already checked in 🚫', {
+        description: `${who} has an active session. Check them out before starting a new one.`,
+      });
+      setTab('active');
+      setScannedBooking(null);
+      return;
+    }
+
     setScannedBooking(data as any);
 
     const { data: kids } = await supabase
