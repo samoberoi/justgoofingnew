@@ -311,6 +311,38 @@ const KidsPage = () => {
               </div>
 
               <div className="p-5 space-y-4">
+                {/* Photo */}
+                <div className="flex flex-col items-center gap-2 -mt-1">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={handlePhotoSelect}
+                    className="hidden"
+                  />
+                  <motion.button
+                    whileTap={{ scale: 0.94 }}
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadingPhoto}
+                    className="relative w-24 h-24 rounded-3xl bg-gradient-coral shadow-pop-coral flex items-center justify-center overflow-hidden border-4 border-card"
+                  >
+                    {uploadingPhoto ? (
+                      <Loader2 size={28} className="text-white animate-spin" />
+                    ) : form.photo_url ? (
+                      <img src={form.photo_url} alt="Kid" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-4xl">👶</span>
+                    )}
+                    <div className="absolute bottom-0 right-0 w-8 h-8 rounded-2xl bg-mint shadow-pop-mint flex items-center justify-center border-2 border-background">
+                      <Camera size={14} className="text-white" />
+                    </div>
+                  </motion.button>
+                  <p className="text-[11px] text-ink/55 font-heading">
+                    {form.photo_url ? 'Tap to change photo' : 'Tap to add a cute photo'}
+                  </p>
+                </div>
+
                 {/* Name */}
                 <div>
                   <label className="text-xs font-heading text-ink/70 mb-1.5 block">Kid's Name *</label>
