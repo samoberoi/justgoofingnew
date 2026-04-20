@@ -51,16 +51,20 @@ const BuyPackPage = () => {
     setPurchasing(true);
     const isFree = pack.pack_type === 'welcome_free';
 
+    // Free welcome packs activate immediately. Paid packs are pending until staff settles payment at venue.
     const { data: newPack, error } = await supabase.from('user_packs' as any).insert({
       user_id: userId,
       pack_id: pack.id,
       pack_name: pack.name,
       total_hours: pack.total_hours,
-      amount_paid: pack.price,
-      status: 'active',
+      amount_paid: isFree ? 0 : pack.price,
+      status: isFree ? 'active' : 'pending',
+      payment_status: isFree ? 'paid' : 'pending',
+      payment_method: isFree ? 'free' : null,
+      paid_at: isFree ? new Date().toISOString() : null,
       is_free_welcome: isFree,
       store_id: selectedStore?.id || null,
-    }).select().single();
+    } as any).select().single();
 
     if (error) {
       toast.error('Could not add pack', { description: error.message });
@@ -68,9 +72,9 @@ const BuyPackPage = () => {
       return;
     }
 
-    // Award Goofy Points (only on paid packs)
+    // Goofy Points are awarded only when the admin settles payment (not on reservation).
     let earned = 0;
-    if (!isFree && pack.price > 0) {
+    if (false && !isFree && pack.price > 0) {
       const { data: settings } = await supabase
         .from('points_settings')
         .select('earning_enabled, earning_percent, max_earn_per_order, expiry_days')
@@ -103,13 +107,14 @@ const BuyPackPage = () => {
       }
     }
 
-    toast.success(
-      isFree
-        ? '1 Hour FREE Claimed! 🎉'
-        : earned > 0
-          ? `${pack.total_hours} hours added! +${earned} Goofy Points 🎉`
-          : `${pack.total_hours} hours added!`
-    );
+    if (isFree) {
+      toast.success('1 Hour FREE Claimed! 🎉');
+    } else {
+      toast.success('Pack reserved! 🎟️', {
+        description: 'Visit the centre and pay to activate. Cash / UPI / Card accepted.',
+        duration: 6000,
+      });
+    }
     navigate('/home');
   };
 
