@@ -289,7 +289,7 @@ const DashboardPage = () => {
               </button>
             </div>
             <div className="space-y-3">
-              {packs.map((pack, idx) => {
+              {activePacks.map((pack, idx) => {
                 const c = packColors[idx % packColors.length];
                 return (
                   <motion.div
