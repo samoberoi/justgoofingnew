@@ -1685,7 +1685,11 @@ export type Database = {
           is_free_welcome: boolean
           pack_id: string | null
           pack_name: string
+          paid_at: string | null
+          payment_method: string | null
+          payment_status: string
           purchased_at: string
+          settled_by: string | null
           status: string
           store_id: string | null
           total_hours: number
@@ -1700,7 +1704,11 @@ export type Database = {
           is_free_welcome?: boolean
           pack_id?: string | null
           pack_name: string
+          paid_at?: string | null
+          payment_method?: string | null
+          payment_status?: string
           purchased_at?: string
+          settled_by?: string | null
           status?: string
           store_id?: string | null
           total_hours?: number
@@ -1715,7 +1723,11 @@ export type Database = {
           is_free_welcome?: boolean
           pack_id?: string | null
           pack_name?: string
+          paid_at?: string | null
+          payment_method?: string | null
+          payment_status?: string
           purchased_at?: string
+          settled_by?: string | null
           status?: string
           store_id?: string | null
           total_hours?: number
