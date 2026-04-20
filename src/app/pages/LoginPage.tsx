@@ -3,19 +3,18 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useAppStore } from '../store';
-import { ArrowRight, Shield, Loader2, Leaf, Drumstick } from 'lucide-react';
+import { ArrowRight, Shield, Loader2 } from 'lucide-react';
 
 const OTP_LENGTH = 6;
 
 const LoginPage = () => {
   const navigate = useNavigate();
-  const { setLoggedIn, setPhoneNumber, setVegMode } = useAppStore();
+  const { setLoggedIn, setPhoneNumber } = useAppStore();
 
   // Only sign out if the user explicitly navigated to /login (not on redirect)
   // We no longer auto-signOut on mount — this was causing a loop where
   // OpsRoute redirects here and the signOut clears the valid session.
-  const [step, setStep] = useState<'phone' | 'otp' | 'diet' | 'success'>('phone');
-  const [pendingDestination, setPendingDestination] = useState<string | null>(null);
+  const [step, setStep] = useState<'phone' | 'otp' | 'success'>('phone');
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
   const [error, setError] = useState('');
@@ -144,54 +143,23 @@ const LoginPage = () => {
           return;
         }
 
-        // Check diet preference — if not set, show diet step
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('diet_preference')
-          .eq('user_id', user.id)
-          .maybeSingle() as any;
-
-        // Determine destination
+        // Determine destination based on order history
         const { count } = await supabase
           .from('orders')
           .select('id', { count: 'exact', head: true })
           .eq('user_id', user.id);
         const dest = (count && count > 0) ? '/home' : '/welcome';
 
-        if (profile?.diet_preference) {
-          // Already set — apply and go
-          setVegMode(profile.diet_preference === 'veg');
-          setStep('success');
-          setTimeout(() => { window.location.href = dest; }, 1000);
-        } else {
-          // New user — ask diet preference
-          setPendingDestination(dest);
-          setStep('diet');
-        }
+        setStep('success');
+        setTimeout(() => { window.location.href = dest; }, 1000);
         return;
       }
     } catch (e) {
-      console.warn('[Login] Role/diet check failed', e);
+      console.warn('[Login] Role check failed', e);
     }
 
     setStep('success');
     setTimeout(() => { window.location.href = '/welcome'; }, 1000);
-  };
-
-  const handleDietChoice = async (preference: 'veg' | 'nonveg') => {
-    setVegMode(preference === 'veg');
-
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        await (supabase.from('profiles') as any).update({ diet_preference: preference }).eq('user_id', user.id);
-      }
-    } catch (e) {
-      console.warn('[Login] Diet preference save failed', e);
-    }
-
-    setStep('success');
-    setTimeout(() => { window.location.href = pendingDestination || '/home'; }, 1000);
   };
 
   // Simple OTP input handler — single text input

@@ -1,11 +1,11 @@
-import { Bell, Volume2, VolumeX, Crown, Leaf } from 'lucide-react';
+import { Bell, Volume2, VolumeX } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store';
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useRef, useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
 
 const RoyalHeader = () => {
-  const { walletBalance, musicEnabled, setMusicEnabled, vegMode, setVegMode } = useAppStore();
+  const { walletBalance, musicEnabled, setMusicEnabled } = useAppStore();
   const navigate = useNavigate();
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -41,22 +41,6 @@ const RoyalHeader = () => {
 
         {/* Right — Actions */}
         <div className="flex items-center gap-1.5">
-          {/* Veg Mode Toggle */}
-          <button
-            onClick={() => setVegMode(!vegMode)}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border text-[11px] font-bold transition-all ${
-              vegMode
-                ? 'bg-green-500/15 border-green-500/30 text-green-500'
-                : 'bg-card border-border text-muted-foreground'
-            }`}
-          >
-            <Leaf size={12} />
-            <span>Veg</span>
-            <div className={`w-7 h-4 rounded-full relative transition-colors ${vegMode ? 'bg-green-500' : 'bg-muted-foreground/30'}`}>
-              <div className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all ${vegMode ? 'left-3.5' : 'left-0.5'}`} />
-            </div>
-          </button>
-
           <motion.button
             whileTap={{ scale: 0.9 }}
             onClick={toggleMusic}
