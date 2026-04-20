@@ -122,10 +122,29 @@
     background: linear-gradient(135deg, hsl(352 100% 78%) 0%, hsl(42 100% 70%) 50%, hsl(168 50% 65%) 100%);
   }
 
-  .text-gradient-rainbow {
+  /* Legacy aliases — keep old class names working with the new candy palette */
+  .bg-gradient-saffron { background: linear-gradient(135deg, hsl(352 100% 78%), hsl(352 100% 68%)); }
+  .bg-gradient-gold { background: linear-gradient(135deg, hsl(42 100% 76%), hsl(42 100% 65%)); }
+  .text-saffron { color: hsl(var(--coral)); }
+  .shadow-saffron { box-shadow: 0 8px 0 -2px hsl(352 100% 60% / 0.25), 0 12px 24px -6px hsl(352 100% 60% / 0.3); }
+  .shadow-gold { box-shadow: 0 8px 0 -2px hsl(42 100% 55% / 0.25), 0 12px 24px -6px hsl(42 100% 55% / 0.3); }
+  .mughal-pattern {
+    background-image:
+      radial-gradient(circle at 10% 20%, hsl(352 100% 73% / 0.08) 0%, transparent 12%),
+      radial-gradient(circle at 90% 30%, hsl(168 50% 65% / 0.08) 0%, transparent 12%),
+      radial-gradient(circle at 30% 80%, hsl(42 100% 70% / 0.08) 0%, transparent 12%),
+      radial-gradient(circle at 80% 90%, hsl(256 55% 78% / 0.08) 0%, transparent 12%);
+  }
+
+  .text-gradient-rainbow,
+  .text-gradient-gold {
     @apply bg-clip-text text-transparent;
     background-image: linear-gradient(135deg, hsl(352 100% 65%), hsl(270 60% 60%), hsl(195 70% 60%));
   }
+
+  /* No-scrollbar utility for horizontal scrollers */
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
 
   /* Playful shadows */
   .shadow-pop {

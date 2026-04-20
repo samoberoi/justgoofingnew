@@ -1,37 +1,34 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Calendar, Clock, Users, Sparkles, CheckCircle2, PartyPopper } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, Users, Sparkles, CheckCircle2, PartyPopper, Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAppStore } from '../store';
 import { useStoreSelection } from '../hooks/useStoreSelection';
+import { useKids, calcAge } from '../hooks/useKids';
+import { Star, Sparkle } from '../components/Stickers';
 
-const SLOTS = [
-  '11:00', '12:00', '13:00', '14:00', '15:00',
-  '16:00', '17:00', '18:00', '19:00', '20:00',
-];
+const SLOTS = ['11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00'];
 
 const BookingPage = () => {
   const navigate = useNavigate();
   const { itemId } = useParams<{ itemId: string }>();
   const { userId, phoneNumber, userName, totalOrders, activeCampaigns, refreshUserData } = useAppStore();
   const { selectedStore } = useStoreSelection();
+  const { kids } = useKids(userId);
 
   const [item, setItem] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-  // Form
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [slot, setSlot] = useState<string>('11:00');
-  const [numKids, setNumKids] = useState(1);
-  const [kidName, setKidName] = useState('');
-  const [kidAge, setKidAge] = useState('');
+  const [selectedKidIds, setSelectedKidIds] = useState<string[]>([]);
+  const [extraKids, setExtraKids] = useState(0);
   const [notes, setNotes] = useState('');
   const [contactName, setContactName] = useState(userName || '');
   const [contactPhone, setContactPhone] = useState(phoneNumber || '');
 
-  // Welcome offer
   const welcomeCampaign = activeCampaigns.find(c =>
     c.category === 'welcome' && c.is_active && c.auto_apply && totalOrders === 0
   );
@@ -52,18 +49,24 @@ const BookingPage = () => {
     fetchItem();
   }, [itemId]);
 
+  const numKids = selectedKidIds.length + extraKids;
   const price = item ? Number(item.discounted_price || item.price) : 0;
   const discount = isFreeWelcome ? price : 0;
   const total = Math.max(0, price - discount);
 
   const today = new Date().toISOString().split('T')[0];
   const maxDate = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-
   const canSubmit = item && contactName.trim() && contactPhone.trim() && date && slot && numKids >= 1 && !submitting;
+
+  const toggleKid = (id: string) => {
+    setSelectedKidIds(prev => prev.includes(id) ? prev.filter(k => k !== id) : [...prev, id]);
+  };
 
   const handleConfirm = async () => {
     if (!canSubmit || !userId || !item || !selectedStore) return;
     setSubmitting(true);
+    const firstKid = kids.find(k => k.id === selectedKidIds[0]);
+    const kidNames = selectedKidIds.map(id => kids.find(k => k.id === id)?.name).filter(Boolean).join(', ');
 
     const { data: booking, error } = await supabase
       .from('bookings' as any)
@@ -75,15 +78,15 @@ const BookingPage = () => {
         package_price: price,
         customer_name: contactName.trim(),
         customer_phone: contactPhone.trim(),
-        kid_name: kidName.trim() || null,
-        kid_age: kidAge ? parseInt(kidAge) : null,
+        kid_name: kidNames || null,
+        kid_age: firstKid ? calcAge(firstKid.date_of_birth) : null,
         num_kids: numKids,
         booking_date: date,
         slot_time: slot,
         duration_hours: 1,
         special_instructions: notes.trim() || null,
         total_amount: total,
-        discount: discount,
+        discount,
         is_free_welcome: isFreeWelcome,
         payment_method: 'pay_at_venue',
         payment_status: 'pending',
@@ -97,7 +100,6 @@ const BookingPage = () => {
       setSubmitting(false);
       return;
     }
-
     await refreshUserData();
     navigate(`/booking-confirmed/${(booking as any).id}`);
   };
@@ -105,184 +107,179 @@ const BookingPage = () => {
   if (loading || !item) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="w-10 h-10 border-2 border-secondary border-t-transparent rounded-full animate-spin" />
+        <div className="w-12 h-12 border-4 border-coral border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background pb-32">
-      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-2xl border-b border-secondary/10">
-        <div className="flex items-center gap-3 px-4 h-14">
-          <button onClick={() => navigate(-1)}><ArrowLeft size={20} className="text-foreground" /></button>
-          <h1 className="font-heading text-lg text-foreground">Book a Slot</h1>
+    <div className="min-h-screen bg-background pb-32 relative overflow-hidden">
+      <Star className="absolute top-24 right-8 w-7 h-7 text-butter opacity-50 animate-wobble" />
+      <Sparkle className="absolute top-72 left-6 w-6 h-6 text-coral opacity-50 animate-bounce-soft" />
+
+      <header className="sticky top-0 z-40 bg-background/85 backdrop-blur-xl border-b-2 border-ink/5">
+        <div className="flex items-center gap-3 px-4 h-16">
+          <motion.button whileTap={{ scale: 0.9 }} onClick={() => navigate(-1)}
+            className="w-10 h-10 rounded-2xl bg-card border-2 border-ink/8 shadow-soft flex items-center justify-center">
+            <ArrowLeft size={18} className="text-ink" />
+          </motion.button>
+          <h1 className="font-display text-xl text-ink">Book a Slot 🎟️</h1>
         </div>
       </header>
 
-      <div className="px-4 pt-4 space-y-4">
+      <div className="px-4 pt-4 space-y-4 relative z-10">
         {/* Package summary */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-          className="bg-card border border-border rounded-2xl p-4 flex gap-3">
-          <div className="w-16 h-16 rounded-xl shrink-0 overflow-hidden bg-muted">
-            {item.image_url ? (
-              <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-secondary/15 to-muted">
-                <PartyPopper size={24} className="text-secondary/60" />
-              </div>
-            )}
+          className="bg-card border-2 border-ink/8 rounded-3xl p-4 flex gap-3 shadow-pop">
+          <div className="w-16 h-16 rounded-2xl shrink-0 overflow-hidden bg-gradient-butter flex items-center justify-center">
+            {item.image_url ? <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" /> : <PartyPopper size={26} className="text-ink" />}
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="font-heading text-sm text-foreground">{item.name}</h3>
-            <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">{item.description}</p>
-            <p className="font-heading text-sm text-secondary mt-1">₹{price}</p>
+            <h3 className="font-display text-base text-ink">{item.name}</h3>
+            <p className="text-[11px] text-ink/55 mt-0.5 line-clamp-2">{item.description}</p>
+            <p className="font-display text-base text-coral mt-1">₹{price}</p>
           </div>
         </motion.div>
 
-        {/* Welcome offer banner */}
         {isFreeWelcome && (
           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-            className="bg-gradient-to-r from-secondary/15 to-secondary/5 border border-secondary/25 rounded-2xl p-3 flex items-center gap-3">
-            <Sparkles size={18} className="text-secondary shrink-0" />
+            className="bg-gradient-mint rounded-3xl p-4 flex items-center gap-3 shadow-pop-mint text-ink">
+            <Sparkles size={20} className="shrink-0" />
             <div>
-              <p className="font-heading text-xs text-secondary">{welcomeCampaign!.name}</p>
-              <p className="text-[10px] text-muted-foreground">This booking is FREE on us 🎉</p>
+              <p className="font-display text-sm">{welcomeCampaign!.name}</p>
+              <p className="text-[11px] text-ink/70">This one's on us 🎉</p>
             </div>
           </motion.div>
         )}
 
+        {/* Pick kids */}
+        <div className="bg-card border-2 border-ink/8 rounded-3xl p-4 space-y-3 shadow-soft">
+          <div className="flex items-center justify-between">
+            <label className="font-display text-base text-ink flex items-center gap-2">
+              <Users size={16} className="text-coral" /> Who's coming?
+            </label>
+            <button onClick={() => navigate('/kids')} className="text-[11px] font-heading text-coral flex items-center gap-1">
+              <Plus size={12} /> Manage Kids
+            </button>
+          </div>
+
+          {kids.length === 0 ? (
+            <button
+              onClick={() => navigate('/kids')}
+              className="w-full bg-coral/5 border-2 border-dashed border-coral/30 rounded-2xl p-4 text-center"
+            >
+              <p className="text-sm font-heading text-coral">Add your kids first</p>
+              <p className="text-[11px] text-ink/55 mt-0.5">So we know who's playing 👶</p>
+            </button>
+          ) : (
+            <div className="grid grid-cols-2 gap-2">
+              {kids.map(kid => {
+                const sel = selectedKidIds.includes(kid.id);
+                const age = calcAge(kid.date_of_birth);
+                return (
+                  <motion.button
+                    key={kid.id}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => toggleKid(kid.id)}
+                    className={`p-3 rounded-2xl border-2 text-left transition-all ${
+                      sel ? 'border-coral bg-coral/10 shadow-pop-coral' : 'border-ink/8 bg-card'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-display text-base text-white ${
+                        sel ? 'bg-gradient-coral' : 'bg-gradient-mint'
+                      }`}>
+                        {kid.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-heading text-sm text-ink truncate">{kid.name}</p>
+                        {age !== null && <p className="text-[10px] text-ink/55">{age} yrs</p>}
+                      </div>
+                    </div>
+                  </motion.button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Extra (friends) */}
+          <div className="flex items-center justify-between bg-butter/15 rounded-2xl p-3 border border-butter/30">
+            <div>
+              <p className="text-sm font-heading text-ink">+ Extra friends</p>
+              <p className="text-[11px] text-ink/55">Bringing other kids along?</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button onClick={() => setExtraKids(Math.max(0, extraKids - 1))}
+                className="w-8 h-8 rounded-xl bg-card border-2 border-ink/8 font-display text-ink active:scale-90">−</button>
+              <span className="font-display text-lg text-ink w-6 text-center tabular-nums">{extraKids}</span>
+              <button onClick={() => setExtraKids(extraKids + 1)}
+                className="w-8 h-8 rounded-xl bg-coral text-white font-display active:scale-90">+</button>
+            </div>
+          </div>
+
+          <p className="text-[11px] text-ink/55 text-center">
+            Total kids: <span className="font-display text-coral">{numKids}</span>
+          </p>
+        </div>
+
         {/* Date */}
-        <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
-          <label className="flex items-center gap-2 text-xs font-heading text-muted-foreground uppercase tracking-wider">
-            <Calendar size={13} /> Pick a Date
+        <div className="bg-card border-2 border-ink/8 rounded-3xl p-4 space-y-3 shadow-soft">
+          <label className="font-display text-base text-ink flex items-center gap-2">
+            <Calendar size={16} className="text-mint" /> Pick a Date
           </label>
           <input
-            type="date"
-            value={date}
-            min={today}
-            max={maxDate}
+            type="date" value={date} min={today} max={maxDate}
             onChange={e => setDate(e.target.value)}
-            className="w-full px-3 py-2.5 bg-muted border border-border rounded-xl text-sm text-foreground focus:outline-none focus:border-secondary/50 transition-colors"
+            className="w-full px-3 py-3 bg-background border-2 border-ink/8 rounded-2xl text-sm text-ink focus:outline-none focus:border-coral"
           />
         </div>
 
         {/* Slot */}
-        <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
-          <label className="flex items-center gap-2 text-xs font-heading text-muted-foreground uppercase tracking-wider">
-            <Clock size={13} /> Pick a Time
+        <div className="bg-card border-2 border-ink/8 rounded-3xl p-4 space-y-3 shadow-soft">
+          <label className="font-display text-base text-ink flex items-center gap-2">
+            <Clock size={16} className="text-butter" /> Pick a Time
           </label>
           <div className="grid grid-cols-4 gap-2">
             {SLOTS.map(s => (
-              <button
-                key={s}
-                onClick={() => setSlot(s)}
-                className={`py-2 rounded-lg text-xs font-semibold transition-all ${
-                  slot === s
-                    ? 'bg-gradient-saffron text-primary-foreground shadow-sm'
-                    : 'bg-muted text-foreground hover:bg-secondary/10'
-                }`}
-              >
+              <button key={s} onClick={() => setSlot(s)}
+                className={`py-2.5 rounded-xl text-xs font-heading transition-all ${
+                  slot === s ? 'bg-gradient-coral text-white shadow-pop-coral' : 'bg-background border-2 border-ink/8 text-ink/70'
+                }`}>
                 {s}
               </button>
             ))}
           </div>
         </div>
 
-        {/* Number of kids */}
-        <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
-          <label className="flex items-center gap-2 text-xs font-heading text-muted-foreground uppercase tracking-wider">
-            <Users size={13} /> Number of Kids
-          </label>
-          <div className="flex items-center justify-between">
-            <button
-              onClick={() => setNumKids(Math.max(1, numKids - 1))}
-              className="w-10 h-10 rounded-full bg-muted text-foreground font-bold text-lg active:scale-95"
-            >−</button>
-            <span className="font-heading text-2xl text-secondary tabular-nums">{numKids}</span>
-            <button
-              onClick={() => setNumKids(numKids + 1)}
-              className="w-10 h-10 rounded-full bg-muted text-foreground font-bold text-lg active:scale-95"
-            >+</button>
-          </div>
-        </div>
-
-        {/* Kid info */}
-        <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
-          <p className="text-xs font-heading text-muted-foreground uppercase tracking-wider">Kid Info (optional)</p>
-          <div className="grid grid-cols-2 gap-2">
-            <input
-              type="text"
-              value={kidName}
-              onChange={e => setKidName(e.target.value)}
-              placeholder="Kid's name"
-              className="px-3 py-2.5 bg-muted border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-secondary/50"
-            />
-            <input
-              type="number"
-              value={kidAge}
-              onChange={e => setKidAge(e.target.value)}
-              placeholder="Age"
-              min={1}
-              max={18}
-              className="px-3 py-2.5 bg-muted border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-secondary/50"
-            />
-          </div>
-        </div>
-
         {/* Contact */}
-        <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
-          <p className="text-xs font-heading text-muted-foreground uppercase tracking-wider">Contact</p>
-          <input
-            type="text"
-            value={contactName}
-            onChange={e => setContactName(e.target.value)}
-            placeholder="Your name *"
-            className="w-full px-3 py-2.5 bg-muted border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-secondary/50"
-          />
-          <input
-            type="tel"
-            value={contactPhone}
-            onChange={e => setContactPhone(e.target.value)}
-            placeholder="Phone number *"
-            className="w-full px-3 py-2.5 bg-muted border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-secondary/50"
-          />
-          <textarea
-            value={notes}
-            onChange={e => setNotes(e.target.value)}
-            placeholder="Special instructions (allergies, accessibility, etc.)"
-            rows={2}
-            className="w-full px-3 py-2.5 bg-muted border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-secondary/50 resize-none"
-          />
+        <div className="bg-card border-2 border-ink/8 rounded-3xl p-4 space-y-3 shadow-soft">
+          <p className="font-display text-base text-ink">Contact</p>
+          <input value={contactName} onChange={e => setContactName(e.target.value)} placeholder="Your name *"
+            className="w-full px-3 py-3 bg-background border-2 border-ink/8 rounded-2xl text-sm text-ink focus:outline-none focus:border-coral" />
+          <input type="tel" value={contactPhone} onChange={e => setContactPhone(e.target.value)} placeholder="Phone number *"
+            className="w-full px-3 py-3 bg-background border-2 border-ink/8 rounded-2xl text-sm text-ink focus:outline-none focus:border-coral" />
+          <textarea value={notes} onChange={e => setNotes(e.target.value)}
+            placeholder="Allergies, special requests…" rows={2}
+            className="w-full px-3 py-3 bg-background border-2 border-ink/8 rounded-2xl text-sm text-ink focus:outline-none focus:border-coral resize-none" />
         </div>
 
-        {/* Price summary */}
-        <div className="bg-card border border-border rounded-2xl p-4 space-y-2">
-          <div className="flex justify-between text-sm text-foreground">
-            <span>Package</span><span className="tabular-nums">₹{price}</span>
+        {/* Price */}
+        <div className="bg-card border-2 border-ink/8 rounded-3xl p-4 space-y-2 shadow-soft">
+          <div className="flex justify-between text-sm text-ink"><span>Package</span><span className="tabular-nums">₹{price}</span></div>
+          {discount > 0 && <div className="flex justify-between text-sm text-mint"><span>Welcome (FREE)</span><span>−₹{discount}</span></div>}
+          <div className="border-t-2 border-ink/5 pt-2 flex justify-between font-display text-lg text-ink">
+            <span>Pay at Venue</span><span className="text-coral tabular-nums">₹{total}</span>
           </div>
-          {discount > 0 && (
-            <div className="flex justify-between text-sm text-green-500">
-              <span>Welcome Offer (FREE)</span><span className="tabular-nums">−₹{discount}</span>
-            </div>
-          )}
-          <div className="border-t border-border pt-2 flex justify-between font-heading text-base text-foreground">
-            <span>Pay at Venue</span><span className="text-secondary tabular-nums">₹{total}</span>
-          </div>
-          <p className="text-[10px] text-muted-foreground pt-1">
-            <CheckCircle2 size={10} className="inline mr-1" />
-            Reserve now, pay when you arrive at Just Goofing
+          <p className="text-[10px] text-ink/55 pt-1 flex items-center gap-1">
+            <CheckCircle2 size={10} /> Reserve now, pay when you arrive
           </p>
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-background/90 backdrop-blur-2xl border-t border-secondary/10 p-4">
-        <motion.button
-          whileTap={{ scale: 0.97 }}
-          onClick={handleConfirm}
-          disabled={!canSubmit}
-          className="w-full py-4 bg-gradient-saffron rounded-2xl font-heading text-sm uppercase tracking-widest text-primary-foreground shadow-saffron disabled:opacity-40"
-        >
-          {submitting ? 'Booking…' : `Confirm Booking · ${date.split('-').reverse().join('/')} at ${slot}`}
+      <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-xl border-t-2 border-ink/5 p-4">
+        <motion.button whileTap={{ scale: 0.97 }} onClick={handleConfirm} disabled={!canSubmit}
+          className="w-full py-4 bg-gradient-coral rounded-2xl font-display text-base text-white shadow-pop-coral disabled:opacity-40 disabled:shadow-none">
+          {submitting ? 'Booking…' : `Confirm Booking 🎉`}
         </motion.button>
       </div>
     </div>

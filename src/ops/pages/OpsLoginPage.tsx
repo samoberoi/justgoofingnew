@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
-import { ArrowRight, Shield, ChefHat } from 'lucide-react';
+import { ArrowRight, Shield } from 'lucide-react';
+import { Star, Sparkle } from '../../app/components/Stickers';
 
 const OpsLoginPage = () => {
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
@@ -10,14 +11,12 @@ const OpsLoginPage = () => {
   const [error, setError] = useState('');
   const [sending, setSending] = useState(false);
 
-  // Mock email from phone for dev login
   const mockEmail = (p: string) => `${p}@ops.justgoofing.app`;
 
   const handlePhoneSubmit = async () => {
     if (phone.length < 10) return;
     setSending(true);
     setError('');
-    // No real SMS — just move to OTP step
     setTimeout(() => {
       setSending(false);
       setStep('otp');
@@ -39,14 +38,11 @@ const OpsLoginPage = () => {
       const password = `${phone}-justgoofing-2024`;
       const email = mockEmail(phone);
 
-      // Try sign in first
       const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
       if (signInErr) {
-        // Try sign up
         const { error: signUpErr } = await supabase.auth.signUp({ email, password });
         if (signUpErr) {
           if (signUpErr.message.includes('already registered')) {
-            // Reset password via edge function
             try {
               const res = await fetch(
                 `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/reset-dev-password`,
@@ -71,10 +67,9 @@ const OpsLoginPage = () => {
           document.getElementById('ops-otp-0')?.focus();
           return;
         }
-        // Sign in after signup
         const { error: retryErr } = await supabase.auth.signInWithPassword({ email, password });
         if (retryErr) {
-          setError('Account created but login failed. Try again.');
+          setError('Account created but login failed.');
           setOtp(['', '', '', '', '', '']);
           document.getElementById('ops-otp-0')?.focus();
         }
@@ -83,56 +78,56 @@ const OpsLoginPage = () => {
   };
 
   return (
-    <div className="fixed inset-0 bg-background mughal-pattern flex flex-col items-center justify-center px-6">
+    <div className="fixed inset-0 bg-background bg-confetti flex flex-col items-center justify-center px-6 overflow-hidden">
+      <Star className="absolute top-16 right-12 w-10 h-10 text-butter opacity-50 animate-wobble" />
+      <Sparkle className="absolute bottom-32 left-12 w-8 h-8 text-coral opacity-50 animate-bounce-soft" />
+
       <AnimatePresence mode="wait">
         {step === 'phone' && (
           <motion.div
             key="phone"
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -30 }}
-            className="w-full max-w-sm space-y-8 text-center"
+            exit={{ opacity: 0, y: -20 }}
+            className="w-full max-w-sm space-y-6 text-center relative z-10"
           >
             <div className="space-y-2">
-              <div className="flex items-center justify-center gap-2">
-                <img src="/logo.png" alt="Just Goofing" className="h-12" />
-                <span className="font-display text-2xl text-gradient-gold">OPS</span>
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-coral/15 border-2 border-coral/20">
+                <Shield size={14} className="text-coral" />
+                <span className="text-[11px] font-heading text-coral uppercase tracking-wider">Staff Only</span>
               </div>
-              <p className="text-muted-foreground text-sm">Operations Command Center</p>
+              <h1 className="font-display text-3xl text-ink mt-3">Ops Command 🎛️</h1>
+              <p className="text-sm text-ink/60">Sign in to manage Just Goofing</p>
             </div>
 
-            <div className="space-y-4">
+            <div className="bg-card border-2 border-ink/8 rounded-3xl p-5 shadow-pop space-y-4">
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">+91</span>
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-ink/50 text-sm font-heading">+91</span>
                 <input
                   type="tel"
                   maxLength={10}
                   value={phone}
                   onChange={e => setPhone(e.target.value.replace(/\D/g, ''))}
-                  placeholder="Enter Mobile Number"
-                  className="w-full pl-14 pr-4 py-4 bg-card border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-secondary transition-colors text-lg tracking-wider"
+                  placeholder="Mobile Number"
+                  className="w-full pl-14 pr-4 py-3.5 bg-background border-2 border-ink/8 rounded-2xl text-ink text-lg tracking-wider focus:outline-none focus:border-coral transition-colors"
                 />
               </div>
 
-              {error && <p className="text-destructive text-sm">{error}</p>}
+              {error && <p className="text-coral text-xs font-heading">{error}</p>}
 
               <motion.button
                 whileTap={{ scale: 0.97 }}
                 onClick={handlePhoneSubmit}
                 disabled={phone.length < 10 || sending}
-                className="w-full py-4 bg-gradient-saffron rounded-lg font-heading text-sm uppercase tracking-widest text-primary-foreground disabled:opacity-40 flex items-center justify-center gap-2"
+                className="w-full py-3.5 bg-gradient-coral rounded-2xl font-heading text-sm text-white shadow-pop-coral disabled:opacity-40 disabled:shadow-none flex items-center justify-center gap-2"
               >
-                {sending ? 'Sending...' : 'Send OTP'} <ArrowRight size={16} />
+                {sending ? 'Sending OTP…' : 'Send OTP'} <ArrowRight size={16} />
               </motion.button>
             </div>
 
-            <div className="flex items-center justify-center gap-2 text-muted-foreground text-xs">
-              <Shield size={12} /> Staff access only
-            </div>
-
-            <div className="bg-card/50 border border-border rounded-lg p-3 text-xs text-muted-foreground">
-              <p className="font-semibold text-foreground mb-1">🔑 Dev Login</p>
-              <p>Phone: <span className="text-secondary font-bold">8373914073</span> | OTP: <span className="text-secondary font-bold">111111</span></p>
+            <div className="bg-butter/30 border-2 border-butter rounded-2xl p-3 text-xs">
+              <p className="font-heading text-ink mb-1">🔑 Dev Login</p>
+              <p className="text-ink/70">Phone: <span className="font-heading text-coral">8373914073</span> · OTP: <span className="font-heading text-coral">111111</span></p>
             </div>
           </motion.div>
         )}
@@ -140,35 +135,40 @@ const OpsLoginPage = () => {
         {step === 'otp' && (
           <motion.div
             key="otp"
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -30 }}
-            className="w-full max-w-sm space-y-8 text-center"
+            exit={{ opacity: 0, y: -20 }}
+            className="w-full max-w-sm space-y-6 text-center relative z-10"
           >
             <div>
-              <span className="font-display text-2xl text-gradient-gold">Verify OTP</span>
-              <p className="mt-2 text-muted-foreground text-sm">Sent to +91 {phone}</p>
+              <h1 className="font-display text-3xl text-ink">Verify OTP ✨</h1>
+              <p className="mt-2 text-sm text-ink/60">Sent to +91 {phone}</p>
             </div>
 
-            <div className="flex justify-center gap-3">
-              {otp.map((digit, i) => (
-                <input
-                  key={i}
-                  id={`ops-otp-${i}`}
-                  type="tel"
-                  maxLength={1}
-                  value={digit}
-                  onChange={e => handleOtpChange(i, e.target.value)}
-                  className="w-12 h-14 text-center text-xl font-bold bg-card border border-border rounded-lg text-foreground focus:outline-none focus:border-secondary transition-colors"
-                />
-              ))}
+            <div className="bg-card border-2 border-ink/8 rounded-3xl p-5 shadow-pop space-y-4">
+              <div className="flex justify-center gap-2">
+                {otp.map((digit, i) => (
+                  <input
+                    key={i}
+                    id={`ops-otp-${i}`}
+                    type="tel"
+                    maxLength={1}
+                    value={digit}
+                    onChange={e => handleOtpChange(i, e.target.value)}
+                    className="w-11 h-14 text-center text-xl font-display bg-background border-2 border-ink/8 rounded-2xl text-ink focus:outline-none focus:border-coral transition-colors"
+                  />
+                ))}
+              </div>
+
+              {error && <p className="text-coral text-xs font-heading">{error}</p>}
+
+              <button
+                onClick={() => { setStep('phone'); setOtp(['','','','','','']); setError(''); }}
+                className="text-xs text-ink/60 underline font-heading"
+              >
+                Wrong number? Go back
+              </button>
             </div>
-
-            {error && <p className="text-destructive text-sm">{error}</p>}
-
-            <p className="text-muted-foreground text-xs">
-              Wrong number? <button onClick={() => { setStep('phone'); setOtp(['','','','','','']); setError(''); }} className="text-secondary underline">Go back</button>
-            </p>
           </motion.div>
         )}
       </AnimatePresence>
