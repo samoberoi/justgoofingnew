@@ -80,15 +80,19 @@ const WelcomePage = () => {
         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         className="relative z-10 text-center space-y-6 max-w-sm w-full"
       >
-        <motion.div animate={{ y: [0, -8, 0] }} transition={{ duration: 2, repeat: Infinity }} className="text-6xl">
-          👑
-        </motion.div>
+        <motion.img
+          src="/logo.png"
+          alt="Just Goofing"
+          animate={{ y: [0, -8, 0] }}
+          transition={{ duration: 2, repeat: Infinity }}
+          className="w-40 mx-auto"
+        />
 
         <div className="space-y-2">
           <h1 className="font-heading text-2xl text-gradient-gold leading-tight">
-            Welcome to the<br />Sultanat of Biryani
+            Welcome to<br />Just Goofing
           </h1>
-          <p className="text-muted-foreground text-sm">Your royal feast awaits. Every bite, a coronation.</p>
+          <p className="text-muted-foreground text-sm">Where fun meets innovation. Let the goofing begin!</p>
         </div>
 
         {/* First Order Offer */}
@@ -100,10 +104,10 @@ const WelcomePage = () => {
         >
           <div className="flex items-center justify-center gap-2">
             <Sparkles size={16} className="text-secondary" />
-            <h2 className="font-heading text-base text-secondary">1+1 Biryani FREE</h2>
+            <h2 className="font-heading text-base text-secondary">1+1 FREE on First Order</h2>
             <Sparkles size={16} className="text-secondary" />
           </div>
-          <p className="text-muted-foreground text-xs">On your first order. Auto-applied at checkout.</p>
+          <p className="text-muted-foreground text-xs">Auto-applied at checkout. Just for you.</p>
           <span className="inline-block px-3 py-1 bg-secondary/10 rounded-full text-[10px] text-secondary font-semibold uppercase tracking-wider">
             First Order Exclusive
           </span>
@@ -125,7 +129,7 @@ const WelcomePage = () => {
               type="text"
               value={referralInput}
               onChange={e => setReferralInput(e.target.value.toUpperCase())}
-              placeholder="e.g. BIRYAAN-A1B2C3"
+              placeholder="e.g. GOOFY-A1B2C3"
               className="flex-1 px-3 py-2.5 bg-muted border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-secondary/50 transition-colors font-mono tracking-wide"
             />
             <motion.button
@@ -142,7 +146,7 @@ const WelcomePage = () => {
               {referralMsg}
             </p>
           )}
-          <p className="text-[10px] text-muted-foreground">Both you and your friend earn Biryan Points!</p>
+          <p className="text-[10px] text-muted-foreground">Both you and your friend earn Goofy Points!</p>
         </motion.div>
 
         <motion.button
@@ -150,7 +154,7 @@ const WelcomePage = () => {
           onClick={handleContinue}
           className="w-full py-4 bg-gradient-saffron rounded-xl font-heading text-sm uppercase tracking-widest text-primary-foreground shadow-saffron flex items-center justify-center gap-2"
         >
-          Begin My Dawat <ArrowRight size={16} />
+          Let's Goof Around <ArrowRight size={16} />
         </motion.button>
       </motion.div>
     </div>
