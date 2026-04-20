@@ -84,7 +84,7 @@ const StaffCheckInPage = () => {
       .from('play_sessions' as any)
       .select('id, kid_name, num_kids, plus_one, checked_in_at, hours_consumed, extended_hours, user_id')
       .eq('status', 'active')
-      .order('checked_in_at', { ascending: false });
+      .order('checked_in_at', { ascending: true });
     if (storeId) q = q.eq('store_id', storeId);
     const { data } = await q;
     setActiveSessions((data as any) || []);
