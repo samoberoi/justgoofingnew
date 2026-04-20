@@ -186,7 +186,7 @@ const OpsCustomersPage = () => {
         <div className="relative">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <input value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Search by name or phone..."
+            placeholder="Search by parent, kid, or phone..."
             className="w-full pl-9 pr-4 py-2 bg-muted border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-secondary" />
         </div>
       </div>
