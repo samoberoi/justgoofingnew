@@ -9,6 +9,10 @@ export interface Kid {
   date_of_birth: string | null;
   school: string | null;
   notes: string | null;
+  parent1_name: string | null;
+  parent1_phone: string | null;
+  parent2_name: string | null;
+  parent2_phone: string | null;
   is_active: boolean;
   created_at: string;
 }
