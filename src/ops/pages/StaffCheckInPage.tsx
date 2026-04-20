@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Search, UserPlus, CheckCircle2, Clock, Users, X, LogOut, ScanLine, Wallet, IndianRupee } from 'lucide-react';
@@ -71,12 +71,33 @@ const StaffCheckInPage = () => {
   const [settlingId, setSettlingId] = useState<string | null>(null);
   const [now, setNow] = useState(Date.now());
   const [extendingId, setExtendingId] = useState<string | null>(null);
+  // Track sessions we've already auto-checked-out so we don't fire twice
+  const autoCheckoutFiredRef = useRef<Set<string>>(new Set());
 
   // Live clock for active session timers (tick every second for countdown precision)
   useEffect(() => {
     const i = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(i);
   }, []);
+
+  // Auto-checkout: when a session's allowed window (1h base + extensions) is
+  // exceeded by 60s without parent/admin action, force check-out.
+  useEffect(() => {
+    const SLOT_HOURS = 1;
+    const GRACE_MS = 60_000; // 60s grace after expiry
+    activeSessions.forEach(session => {
+      if (autoCheckoutFiredRef.current.has(session.id)) return;
+      const allowedMs = (SLOT_HOURS + Number(session.extended_hours || 0)) * 3600_000;
+      const elapsedMs = now - new Date(session.checked_in_at).getTime();
+      if (elapsedMs >= allowedMs + GRACE_MS) {
+        autoCheckoutFiredRef.current.add(session.id);
+        toast.warning('Auto check-out ⏰', {
+          description: `${session.kid_name || 'Session'} time expired — checking out automatically.`,
+        });
+        handleCheckOut(session.id, true);
+      }
+    });
+  }, [now, activeSessions]);
 
   // Load active sessions for this store
   const loadActive = async () => {
