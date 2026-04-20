@@ -185,13 +185,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       .eq('user_id', userId);
     setTotalOrders(count || 0);
 
-    // Fetch profile (phone + name)
+    // Fetch profile (phone + name) — fall back to auth phone if profile missing
     const { data: profile } = await supabase
       .from('profiles')
       .select('phone, full_name')
       .eq('user_id', userId)
       .maybeSingle() as any;
-    if (profile?.phone) setPhoneNumber(profile.phone);
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    const resolvedPhone = profile?.phone || authUser?.phone || '';
+    if (resolvedPhone) setPhoneNumber(resolvedPhone);
     if (profile?.full_name) setUserName(profile.full_name);
 
     // Fetch badges
