@@ -42,7 +42,7 @@ const ProfileKids = ({ userId }: ProfileKidsProps) => {
       ) : kids.length === 0 ? (
         <motion.button
           whileTap={{ scale: 0.97 }}
-          onClick={() => navigate('/kids')}
+          onClick={() => navigate('/kids?add=1')}
           className="w-full bg-card border-2 border-dashed border-coral/30 rounded-3xl p-5 flex items-center gap-3 active:scale-[0.98] transition-transform"
         >
           <div className="w-12 h-12 rounded-2xl bg-gradient-coral flex items-center justify-center text-2xl shadow-pop-coral">
@@ -89,7 +89,7 @@ const ProfileKids = ({ userId }: ProfileKidsProps) => {
           })}
           <motion.button
             whileTap={{ scale: 0.95 }}
-            onClick={() => navigate('/kids')}
+            onClick={() => navigate('/kids?add=1')}
             className="bg-card border-2 border-dashed border-coral/40 rounded-3xl p-3 min-w-[120px] shrink-0 flex flex-col items-center justify-center gap-2"
           >
             <div className="w-12 h-12 rounded-2xl bg-coral/10 flex items-center justify-center">

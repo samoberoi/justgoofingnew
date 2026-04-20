@@ -9,8 +9,8 @@ import { supabase } from '@/integrations/supabase/client';
 import ProfileHero from '../components/profile/ProfileHero';
 import ProfileStats from '../components/profile/ProfileStats';
 import ProfileKids from '../components/profile/ProfileKids';
+import ProfileParents from '../components/profile/ProfileParents';
 import ProfileReferral from '../components/profile/ProfileReferral';
-import ProfileDates from '../components/profile/ProfileDates';
 import ProfileRecentOrders from '../components/profile/ProfileRecentOrders';
 import ProfileAddresses from '../components/profile/ProfileAddresses';
 import ProfileBadges from '../components/profile/ProfileBadges';
@@ -27,8 +27,6 @@ const ProfilePage = () => {
   const [addresses, setAddresses] = useState<any[]>([]);
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [birthday, setBirthday] = useState<string | null>(null);
-  const [anniversary, setAnniversary] = useState<string | null>(null);
 
   useEffect(() => {
     if (!userId) return;
@@ -43,15 +41,11 @@ const ProfilePage = () => {
       .then(({ data }: any) => setRecentOrders(data || []));
 
     supabase.from('profiles')
-      .select('avatar_url, birthday, anniversary')
+      .select('avatar_url')
       .eq('user_id', userId)
       .maybeSingle()
       .then(({ data }: any) => {
-        if (data) {
-          setAvatarUrl(data.avatar_url);
-          setBirthday(data.birthday);
-          setAnniversary(data.anniversary);
-        }
+        if (data) setAvatarUrl(data.avatar_url);
       });
   }, [userId]);
 
@@ -97,16 +91,11 @@ const ProfilePage = () => {
 
       <ProfileStats totalOrders={totalOrders} walletBalance={walletBalance} badgeCount={badges.length} />
 
-      {/* Kids — new section */}
-      <ProfileKids userId={userId} />
+      {/* Parents — top-level (one set per account) */}
+      <ProfileParents userId={userId} />
 
-      <ProfileDates
-        userId={userId}
-        birthday={birthday}
-        anniversary={anniversary}
-        setBirthday={setBirthday}
-        setAnniversary={setAnniversary}
-      />
+      {/* Kids */}
+      <ProfileKids userId={userId} />
 
       <ProfileReferral referralCode={referralCode} />
 
