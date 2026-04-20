@@ -223,6 +223,24 @@ const KidsPage = () => {
                           </span>
                         )}
                       </div>
+                      {(kid.parent1_name || kid.parent1_phone || kid.parent2_name || kid.parent2_phone) && (
+                        <div className="mt-2 pt-2 border-t border-ink/5 space-y-1">
+                          {(kid.parent1_name || kid.parent1_phone) && (
+                            <div className="flex items-center gap-1.5 text-[11px] text-ink/65">
+                              <User size={10} className="text-coral shrink-0" />
+                              <span className="font-heading">{kid.parent1_name || 'Parent'}</span>
+                              {kid.parent1_phone && <span className="text-ink/45">· {kid.parent1_phone}</span>}
+                            </div>
+                          )}
+                          {(kid.parent2_name || kid.parent2_phone) && (
+                            <div className="flex items-center gap-1.5 text-[11px] text-ink/65">
+                              <User size={10} className="text-mint shrink-0" />
+                              <span className="font-heading">{kid.parent2_name || 'Parent'}</span>
+                              {kid.parent2_phone && <span className="text-ink/45">· {kid.parent2_phone}</span>}
+                            </div>
+                          )}
+                        </div>
+                      )}
                       {kid.notes && (
                         <p className="text-[11px] text-ink/55 mt-2 italic">"{kid.notes}"</p>
                       )}
