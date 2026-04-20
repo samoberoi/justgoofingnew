@@ -28,9 +28,10 @@ interface FormState {
   date_of_birth: string;
   school: string;
   notes: string;
+  photo_url: string;
 }
 
-const empty: FormState = { name: '', gender: '', date_of_birth: '', school: '', notes: '' };
+const empty: FormState = { name: '', gender: '', date_of_birth: '', school: '', notes: '', photo_url: '' };
 
 const KidsPage = () => {
   const navigate = useNavigate();
