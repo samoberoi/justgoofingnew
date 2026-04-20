@@ -1,101 +1,64 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Volume2, VolumeX } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Volume2 } from 'lucide-react';
+import { Star, Sparkle, Cloud, Heart } from '../components/Stickers';
 
 const SplashScreen = () => {
   const navigate = useNavigate();
-  const [musicMuted, setMusicMuted] = useState(false);
-  const [show, setShow] = useState(true);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setShow(false);
-      setTimeout(() => navigate('/login'), 600);
-    }, 3000);
-    return () => clearTimeout(timer);
+    const t = setTimeout(() => navigate('/login'), 2400);
+    return () => clearTimeout(t);
   }, [navigate]);
 
   return (
-    <AnimatePresence>
-      {show && (
-        <motion.div
-          initial={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.6 }}
-          className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background mughal-pattern overflow-hidden"
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background bg-confetti overflow-hidden">
+      {/* Floating stickers */}
+      <motion.div initial={{ y: -200, x: -100 }} animate={{ y: 0, x: 0 }} transition={{ duration: 1, ease: 'easeOut' }} className="absolute top-20 left-12">
+        <Star className="w-12 h-12 text-butter animate-wobble" />
+      </motion.div>
+      <motion.div initial={{ y: -200, x: 100 }} animate={{ y: 0, x: 0 }} transition={{ duration: 1.2, ease: 'easeOut' }} className="absolute top-32 right-16">
+        <Sparkle className="w-10 h-10 text-coral animate-bounce-soft" />
+      </motion.div>
+      <motion.div initial={{ y: 200, x: -50 }} animate={{ y: 0, x: 0 }} transition={{ duration: 1.4, ease: 'easeOut' }} className="absolute bottom-32 left-10">
+        <Cloud className="w-16 h-16 text-mint animate-bounce-soft" />
+      </motion.div>
+      <motion.div initial={{ y: 200, x: 80 }} animate={{ y: 0, x: 0 }} transition={{ duration: 1.6, ease: 'easeOut' }} className="absolute bottom-24 right-12">
+        <Heart className="w-9 h-9 text-bubblegum animate-wobble" />
+      </motion.div>
+
+      <motion.div
+        initial={{ scale: 0.7, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+        className="relative z-10 text-center"
+      >
+        <motion.img
+          src="/logo.png"
+          alt="Just Goofing"
+          animate={{ y: [0, -10, 0] }}
+          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+          className="w-44 mx-auto mb-4"
+        />
+        <motion.h1
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="font-display text-4xl text-gradient-rainbow"
         >
-          {/* Mute toggle */}
-          <button
-            onClick={() => setMusicMuted(!musicMuted)}
-            className="absolute top-6 right-6 z-10 p-2 rounded-full bg-card/50 backdrop-blur"
-          >
-            {musicMuted ? <VolumeX size={18} className="text-muted-foreground" /> : <Volume2 size={18} className="text-secondary" />}
-          </button>
-
-          {/* Radial glow */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <motion.div
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 0.15 }}
-              transition={{ duration: 2, ease: 'easeOut' }}
-              className="w-[500px] h-[500px] rounded-full bg-gradient-radial from-secondary via-transparent to-transparent"
-              style={{ background: 'radial-gradient(circle, hsl(43 80% 55% / 0.2) 0%, transparent 70%)' }}
-            />
-          </div>
-
-          {/* Decorative lines */}
-          <motion.div
-            initial={{ scaleX: 0 }}
-            animate={{ scaleX: 1 }}
-            transition={{ delay: 0.5, duration: 1.2, ease: 'easeOut' }}
-            className="absolute top-1/2 -translate-y-20 w-48 h-px bg-gradient-to-r from-transparent via-secondary to-transparent"
-          />
-
-          {/* Logo */}
-          <motion.div
-            initial={{ scale: 0.5, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            className="relative z-10 text-center"
-          >
-            <motion.img
-              src="/logo.png"
-              alt="Just Goofing"
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.3, duration: 0.6 }}
-              className="w-56 md:w-72 mx-auto"
-            />
-            <motion.p
-              initial={{ y: 10, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.8, duration: 0.6 }}
-              className="mt-3 text-sm font-heading text-secondary/80 tracking-[0.3em] uppercase"
-            >
-              Where Fun Meets Innovation
-            </motion.p>
-          </motion.div>
-
-          <motion.div
-            initial={{ scaleX: 0 }}
-            animate={{ scaleX: 1 }}
-            transition={{ delay: 0.5, duration: 1.2, ease: 'easeOut' }}
-            className="absolute top-1/2 translate-y-12 w-48 h-px bg-gradient-to-r from-transparent via-secondary to-transparent"
-          />
-
-          {/* Sparkle */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.2, duration: 0.8 }}
-            className="absolute bottom-20 text-4xl"
-          >
-            🎉
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+          Just Goofing
+        </motion.h1>
+        <motion.p
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+          className="font-heading text-sm text-ink/60 mt-2"
+        >
+          Where Fun Meets Innovation ✨
+        </motion.p>
+      </motion.div>
+    </div>
   );
 };
 

@@ -21,6 +21,7 @@ import OrdersPage from "./app/pages/OrdersPage";
 import TiersPage from "./app/pages/TiersPage";
 import StreakPage from "./app/pages/StreakPage";
 import ProfilePage from "./app/pages/ProfilePage";
+import KidsPage from "./app/pages/KidsPage";
 import NotificationsPage from "./app/pages/NotificationsPage";
 
 // Ops pages
@@ -34,16 +35,16 @@ import OpsSettingsPage from "./ops/pages/OpsSettingsPage";
 import OpsCustomersPage from "./ops/pages/OpsCustomersPage";
 import KitchenView from "./ops/pages/KitchenView";
 import DeliveryView from "./ops/pages/DeliveryView";
+import StaffCheckInPage from "./ops/pages/StaffCheckInPage";
 const queryClient = new QueryClient();
 
-// Ops route guard component
 const OpsRoute = ({ children, allowedRoles }: { children: React.ReactNode; allowedRoles: string[] }) => {
   const { user, role, loading } = useAuth();
 
   if (loading) {
     return (
       <div className="fixed inset-0 bg-background flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-secondary border-t-transparent rounded-full animate-spin" />
+        <div className="w-10 h-10 border-4 border-coral border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -64,7 +65,6 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <Routes>
-              {/* Shared entry */}
               <Route path="/" element={<SplashScreen />} />
               <Route path="/login" element={<LoginPage />} />
 
@@ -82,12 +82,18 @@ const App = () => (
               <Route path="/tiers" element={<TiersPage />} />
               <Route path="/streak" element={<StreakPage />} />
               <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/kids" element={<KidsPage />} />
               <Route path="/notifications" element={<NotificationsPage />} />
 
-              {/* Ops routes — role-guarded */}
+              {/* Ops routes */}
               <Route path="/dashboard" element={
                 <OpsRoute allowedRoles={['super_admin', 'store_manager']}>
                   <DashboardSwitch />
+                </OpsRoute>
+              } />
+              <Route path="/check-in" element={
+                <OpsRoute allowedRoles={['super_admin', 'store_manager']}>
+                  <StaffCheckInPage />
                 </OpsRoute>
               } />
               <Route path="/ops-orders" element={
@@ -131,7 +137,6 @@ const App = () => (
                 </OpsRoute>
               } />
 
-              {/* Catch-all */}
               <Route path="*" element={<Navigate to="/home" replace />} />
             </Routes>
           </BrowserRouter>

@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Gift, ArrowRight, Sparkles, PartyPopper } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAppStore } from '../store';
+import { Star, Sparkle, Cloud, Heart } from '../components/Stickers';
 
 const WelcomePage = () => {
   const navigate = useNavigate();
@@ -19,7 +20,6 @@ const WelcomePage = () => {
     setReferralResult(null);
 
     const code = referralInput.trim().toUpperCase();
-
     const { data: referral } = await supabase
       .from('referrals')
       .select('*')
@@ -31,125 +31,106 @@ const WelcomePage = () => {
 
     if (!referral) {
       setReferralResult('error');
-      setReferralMsg('Invalid or already used referral code');
+      setReferralMsg('Hmm, that code doesn\'t work 🤔');
       setApplying(false);
       return;
     }
-
     if (referral.referrer_id === userId) {
       setReferralResult('error');
-      setReferralMsg("You can't use your own referral code");
+      setReferralMsg("Can't use your own code 😉");
       setApplying(false);
       return;
     }
-
-    await supabase
-      .from('referrals')
-      .update({ referee_id: userId, status: 'referred' })
-      .eq('id', referral.id);
-
+    await supabase.from('referrals').update({ referee_id: userId, status: 'referred' }).eq('id', referral.id);
     setReferralResult('success');
-    setReferralMsg('Referral applied! You both earn Goofy Points after first booking.');
+    setReferralMsg('Yay! Both of you earn Goofy Points 🎉');
     setApplying(false);
   };
 
-  const handleContinue = () => navigate('/home');
-
   return (
-    <div className="fixed inset-0 bg-background flex flex-col items-center justify-center px-6 overflow-y-auto py-8">
-      {/* Background confetti */}
-      {[...Array(20)].map((_, i) => (
-        <motion.div
-          key={i}
-          initial={{ y: -20, x: Math.random() * 400 - 200, opacity: 0 }}
-          animate={{ y: window.innerHeight + 20, opacity: [0, 0.7, 0.7, 0], rotate: Math.random() * 720 }}
-          transition={{ duration: 4 + Math.random() * 3, delay: Math.random() * 2, repeat: Infinity }}
-          className="absolute w-2 h-2 rounded-sm"
-          style={{ background: ['#FFD700', '#FF6B9D', '#4ECDC4', '#FFA940', '#7CFC00'][i % 5] }}
-        />
-      ))}
+    <div className="fixed inset-0 bg-background bg-confetti flex flex-col items-center justify-center px-6 overflow-y-auto py-8">
+      {/* Decorative stickers */}
+      <Star className="absolute top-16 left-8 w-10 h-10 text-butter opacity-60 animate-wobble" />
+      <Sparkle className="absolute top-28 right-10 w-8 h-8 text-coral opacity-60 animate-bounce-soft" />
+      <Cloud className="absolute bottom-32 left-6 w-14 h-14 text-mint opacity-40 animate-bounce-soft" />
+      <Heart className="absolute bottom-40 right-8 w-9 h-9 text-bubblegum opacity-50 animate-wobble" />
 
       <motion.div
-        initial={{ scale: 0.8, opacity: 0 }}
+        initial={{ scale: 0.85, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-        className="relative z-10 text-center space-y-6 max-w-sm w-full"
+        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        className="relative z-10 text-center space-y-5 max-w-sm w-full"
       >
         <motion.img
           src="/logo.png"
           alt="Just Goofing"
           animate={{ y: [0, -8, 0] }}
-          transition={{ duration: 2, repeat: Infinity }}
-          className="w-40 mx-auto"
+          transition={{ duration: 2.5, repeat: Infinity }}
+          className="w-32 mx-auto"
         />
 
-        <div className="space-y-2">
-          <h1 className="font-heading text-2xl text-gradient-gold leading-tight">
-            Welcome to<br />Just Goofing
-          </h1>
-          <p className="text-muted-foreground text-sm">Where fun meets innovation. Let the goofing begin!</p>
+        <div className="space-y-1.5">
+          <h1 className="font-display text-3xl text-ink leading-tight">Welcome aboard!</h1>
+          <p className="text-ink/55 text-sm">Let the goofing begin 🎈</p>
         </div>
 
-        {/* Free Hour Offer */}
+        {/* Free hour */}
         <motion.div
-          initial={{ y: 20, opacity: 0 }}
+          initial={{ y: 16, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.3 }}
-          className="bg-gradient-to-br from-secondary/15 to-secondary/5 border border-secondary/25 rounded-2xl p-5 space-y-2"
+          transition={{ delay: 0.25 }}
+          className="bg-gradient-butter rounded-3xl p-5 space-y-2 shadow-pop-butter relative overflow-hidden"
         >
+          <Sparkle className="absolute top-2 right-3 w-5 h-5 text-white/60 animate-wobble" />
           <div className="flex items-center justify-center gap-2">
-            <Sparkles size={16} className="text-secondary" />
-            <h2 className="font-heading text-base text-secondary">1 Hour FREE Playtime</h2>
-            <Sparkles size={16} className="text-secondary" />
+            <Sparkles size={18} className="text-ink" />
+            <h2 className="font-display text-lg text-ink">1 Hour FREE Playtime!</h2>
           </div>
-          <p className="text-muted-foreground text-xs">On your first booking. Auto-applied. No code needed.</p>
-          <span className="inline-flex items-center gap-1 px-3 py-1 bg-secondary/10 rounded-full text-[10px] text-secondary font-semibold uppercase tracking-wider">
-            <PartyPopper size={10} /> Welcome Goofers
+          <p className="text-ink/70 text-xs">Auto-applied on your first booking. No code needed.</p>
+          <span className="inline-flex items-center gap-1 px-3 py-1 bg-white/40 rounded-full text-[11px] text-ink font-heading">
+            <PartyPopper size={11} /> Welcome Goofers
           </span>
         </motion.div>
 
-        {/* Referral Code Input */}
+        {/* Referral */}
         <motion.div
-          initial={{ y: 20, opacity: 0 }}
+          initial={{ y: 16, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          className="bg-card border border-border rounded-2xl p-4 space-y-3"
+          transition={{ delay: 0.4 }}
+          className="bg-card border-2 border-ink/8 rounded-3xl p-4 space-y-3 shadow-pop"
         >
-          <div className="flex items-center gap-2">
-            <Gift size={16} className="text-secondary" />
-            <p className="text-sm text-foreground font-semibold">Have a Referral Code?</p>
+          <div className="flex items-center justify-center gap-2">
+            <Gift size={16} className="text-coral" />
+            <p className="text-sm text-ink font-heading">Got a Friend's Code?</p>
           </div>
           <div className="flex gap-2">
             <input
               type="text"
               value={referralInput}
               onChange={e => setReferralInput(e.target.value.toUpperCase())}
-              placeholder="e.g. GOOFY-A1B2C3"
-              className="flex-1 px-3 py-2.5 bg-muted border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-secondary/50 transition-colors font-mono tracking-wide"
+              placeholder="GOOFY-A1B2C3"
+              className="flex-1 px-3 py-3 bg-background border-2 border-ink/8 rounded-2xl text-sm text-ink focus:outline-none focus:border-coral font-mono tracking-wide"
             />
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={handleApplyReferral}
               disabled={!referralInput.trim() || applying}
-              className="px-4 py-2.5 bg-gradient-saffron rounded-xl text-xs font-heading text-primary-foreground uppercase tracking-wider disabled:opacity-40 shrink-0"
+              className="px-4 py-3 bg-gradient-mint rounded-2xl text-xs font-heading text-ink shadow-pop-mint disabled:opacity-40 shrink-0"
             >
-              {applying ? '...' : 'Apply'}
+              {applying ? '…' : 'Apply'}
             </motion.button>
           </div>
           {referralResult && (
-            <p className={`text-xs ${referralResult === 'success' ? 'text-green-500' : 'text-accent'}`}>
-              {referralMsg}
-            </p>
+            <p className={`text-xs font-heading ${referralResult === 'success' ? 'text-mint' : 'text-coral'}`}>{referralMsg}</p>
           )}
-          <p className="text-[10px] text-muted-foreground">Both you and your friend earn Goofy Points!</p>
         </motion.div>
 
         <motion.button
           whileTap={{ scale: 0.97 }}
-          onClick={handleContinue}
-          className="w-full py-4 bg-gradient-saffron rounded-xl font-heading text-sm uppercase tracking-widest text-primary-foreground shadow-saffron flex items-center justify-center gap-2"
+          onClick={() => navigate('/home')}
+          className="w-full py-4 bg-gradient-coral rounded-2xl font-display text-base text-white shadow-pop-coral flex items-center justify-center gap-2"
         >
-          Let's Goof Around <ArrowRight size={16} />
+          Let's Go Have Fun! <ArrowRight size={18} />
         </motion.button>
       </motion.div>
     </div>
