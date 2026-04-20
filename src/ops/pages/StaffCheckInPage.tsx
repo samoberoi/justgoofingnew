@@ -590,7 +590,8 @@ const StaffCheckInPage = () => {
             onResult={(text) => {
               setScannerOpen(false);
               setSearch(text);
-              setTimeout(() => handleSearch(), 50);
+              // Auto-fire search with scanned text directly (avoids stale state)
+              handleSearch(text);
             }}
           />
         )}
