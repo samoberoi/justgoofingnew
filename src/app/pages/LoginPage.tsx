@@ -110,11 +110,13 @@ const LoginPage = () => {
           return;
         }
 
-        const { count } = await supabase
-          .from('orders')
-          .select('id', { count: 'exact', head: true })
-          .eq('user_id', user.id);
-        const dest = (count && count > 0) ? '/home' : '/welcome';
+        const [ordersRes, packsRes, bookingsRes] = await Promise.all([
+          supabase.from('orders').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
+          supabase.from('user_packs').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
+          supabase.from('bookings').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
+        ]);
+        const totalActivity = (ordersRes.count || 0) + (packsRes.count || 0) + (bookingsRes.count || 0);
+        const dest = totalActivity > 0 ? '/home' : '/welcome';
         setStep('success');
         setTimeout(() => { window.location.href = dest; }, 1000);
         return;
