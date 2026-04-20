@@ -10,17 +10,12 @@ import SplashScreen from "./app/pages/SplashScreen";
 import LoginPage from "./app/pages/LoginPage";
 import WelcomePage from "./app/pages/WelcomePage";
 import HomePage from "./app/pages/HomePage";
-import CartPage from "./app/pages/CartPage";
-import PaymentPage from "./app/pages/PaymentPage";
-import OrderTrackingPage from "./app/pages/OrderTrackingPage";
+import BookingPage from "./app/pages/BookingPage";
+import BookingConfirmedPage from "./app/pages/BookingConfirmedPage";
 import WalletPage from "./app/pages/WalletPage";
 import OrdersPage from "./app/pages/OrdersPage";
 import TiersPage from "./app/pages/TiersPage";
 import StreakPage from "./app/pages/StreakPage";
-import SpinWheelPage from "./app/pages/SpinWheelPage";
-import FlashDawatsPage from "./app/pages/FlashDawatsPage";
-import SubscriptionPage from "./app/pages/SubscriptionPage";
-import PreBookPage from "./app/pages/PreBookPage";
 import ProfilePage from "./app/pages/ProfilePage";
 import NotificationsPage from "./app/pages/NotificationsPage";
 
@@ -72,18 +67,12 @@ const App = () => (
               {/* Customer routes */}
               <Route path="/welcome" element={<WelcomePage />} />
               <Route path="/home" element={<HomePage />} />
-              <Route path="/cart" element={<CartPage />} />
-              <Route path="/payment" element={<PaymentPage />} />
-              <Route path="/tracking" element={<OrderTrackingPage />} />
-              <Route path="/tracking/:orderId" element={<OrderTrackingPage />} />
+              <Route path="/book/:itemId" element={<BookingPage />} />
+              <Route path="/booking-confirmed/:bookingId" element={<BookingConfirmedPage />} />
               <Route path="/wallet" element={<WalletPage />} />
               <Route path="/orders" element={<OrdersPage />} />
               <Route path="/tiers" element={<TiersPage />} />
               <Route path="/streak" element={<StreakPage />} />
-              <Route path="/spin" element={<SpinWheelPage />} />
-              <Route path="/flash-dawats" element={<FlashDawatsPage />} />
-              <Route path="/subscription" element={<SubscriptionPage />} />
-              <Route path="/pre-book" element={<PreBookPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/notifications" element={<NotificationsPage />} />
 
@@ -133,6 +122,9 @@ const App = () => (
                   <DeliveryView />
                 </OpsRoute>
               } />
+
+              {/* Catch-all */}
+              <Route path="*" element={<Navigate to="/home" replace />} />
             </Routes>
           </BrowserRouter>
         </OpsAuthProvider>
@@ -142,7 +134,6 @@ const App = () => (
   </QueryClientProvider>
 );
 
-// Switches dashboard based on role
 const DashboardSwitch = () => {
   const { role } = useAuth();
   if (role === 'super_admin') return <SuperAdminDashboard />;

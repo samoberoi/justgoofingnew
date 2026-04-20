@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Gift, ArrowRight, Sparkles } from 'lucide-react';
+import { Gift, ArrowRight, Sparkles, PartyPopper } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAppStore } from '../store';
 
@@ -20,7 +20,6 @@ const WelcomePage = () => {
 
     const code = referralInput.trim().toUpperCase();
 
-    // Find the referral row with this code that is still pending
     const { data: referral } = await supabase
       .from('referrals')
       .select('*')
@@ -37,7 +36,6 @@ const WelcomePage = () => {
       return;
     }
 
-    // Can't refer yourself
     if (referral.referrer_id === userId) {
       setReferralResult('error');
       setReferralMsg("You can't use your own referral code");
@@ -45,32 +43,29 @@ const WelcomePage = () => {
       return;
     }
 
-    // Link referee
     await supabase
       .from('referrals')
       .update({ referee_id: userId, status: 'referred' })
       .eq('id', referral.id);
 
     setReferralResult('success');
-    setReferralMsg('Referral applied! You will both earn points on your first order.');
+    setReferralMsg('Referral applied! You both earn Goofy Points after first booking.');
     setApplying(false);
   };
 
-  const handleContinue = () => {
-    navigate('/home');
-  };
+  const handleContinue = () => navigate('/home');
 
   return (
-    <div className="fixed inset-0 bg-background mughal-pattern flex flex-col items-center justify-center px-6 overflow-hidden">
-      {/* Background particles */}
-      {[...Array(15)].map((_, i) => (
+    <div className="fixed inset-0 bg-background flex flex-col items-center justify-center px-6 overflow-y-auto py-8">
+      {/* Background confetti */}
+      {[...Array(20)].map((_, i) => (
         <motion.div
           key={i}
           initial={{ y: -20, x: Math.random() * 400 - 200, opacity: 0 }}
-          animate={{ y: window.innerHeight + 20, opacity: [0, 0.6, 0.6, 0], rotate: Math.random() * 720 }}
+          animate={{ y: window.innerHeight + 20, opacity: [0, 0.7, 0.7, 0], rotate: Math.random() * 720 }}
           transition={{ duration: 4 + Math.random() * 3, delay: Math.random() * 2, repeat: Infinity }}
-          className="absolute w-1.5 h-1.5 rounded-full"
-          style={{ background: i % 3 === 0 ? 'hsl(43 80% 55%)' : i % 3 === 1 ? 'hsl(30 90% 50%)' : 'hsl(5 70% 40%)' }}
+          className="absolute w-2 h-2 rounded-sm"
+          style={{ background: ['#FFD700', '#FF6B9D', '#4ECDC4', '#FFA940', '#7CFC00'][i % 5] }}
         />
       ))}
 
@@ -95,7 +90,7 @@ const WelcomePage = () => {
           <p className="text-muted-foreground text-sm">Where fun meets innovation. Let the goofing begin!</p>
         </div>
 
-        {/* First Order Offer */}
+        {/* Free Hour Offer */}
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -104,12 +99,12 @@ const WelcomePage = () => {
         >
           <div className="flex items-center justify-center gap-2">
             <Sparkles size={16} className="text-secondary" />
-            <h2 className="font-heading text-base text-secondary">1+1 FREE on First Order</h2>
+            <h2 className="font-heading text-base text-secondary">1 Hour FREE Playtime</h2>
             <Sparkles size={16} className="text-secondary" />
           </div>
-          <p className="text-muted-foreground text-xs">Auto-applied at checkout. Just for you.</p>
-          <span className="inline-block px-3 py-1 bg-secondary/10 rounded-full text-[10px] text-secondary font-semibold uppercase tracking-wider">
-            First Order Exclusive
+          <p className="text-muted-foreground text-xs">On your first booking. Auto-applied. No code needed.</p>
+          <span className="inline-flex items-center gap-1 px-3 py-1 bg-secondary/10 rounded-full text-[10px] text-secondary font-semibold uppercase tracking-wider">
+            <PartyPopper size={10} /> Welcome Goofers
           </span>
         </motion.div>
 
