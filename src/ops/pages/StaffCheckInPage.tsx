@@ -38,6 +38,7 @@ interface ActiveSession {
   plus_one: boolean;
   checked_in_at: string;
   hours_consumed: number;
+  extended_hours: number;
   user_id: string;
 }
 
@@ -62,17 +63,18 @@ const StaffCheckInPage = () => {
   const [scannedBooking, setScannedBooking] = useState<Booking | null>(null);
   const [parentKids, setParentKids] = useState<KidRow[]>([]);
   const [selectedKidId, setSelectedKidId] = useState<string | null>(null);
-  const [plusOne, setPlusOne] = useState(false);
+  const [accompanying, setAccompanying] = useState(0); // 0..4 extra kids
   const [submitting, setSubmitting] = useState(false);
 
   const [activeSessions, setActiveSessions] = useState<ActiveSession[]>([]);
   const [pendingPacks, setPendingPacks] = useState<PendingPack[]>([]);
   const [settlingId, setSettlingId] = useState<string | null>(null);
   const [now, setNow] = useState(Date.now());
+  const [extendingId, setExtendingId] = useState<string | null>(null);
 
-  // Live clock for active session timers
+  // Live clock for active session timers (tick every second for countdown precision)
   useEffect(() => {
-    const i = setInterval(() => setNow(Date.now()), 30000);
+    const i = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(i);
   }, []);
 
@@ -80,7 +82,7 @@ const StaffCheckInPage = () => {
   const loadActive = async () => {
     let q = supabase
       .from('play_sessions' as any)
-      .select('id, kid_name, num_kids, plus_one, checked_in_at, hours_consumed, user_id')
+      .select('id, kid_name, num_kids, plus_one, checked_in_at, hours_consumed, extended_hours, user_id')
       .eq('status', 'active')
       .order('checked_in_at', { ascending: false });
     if (storeId) q = q.eq('store_id', storeId);
@@ -267,7 +269,7 @@ const StaffCheckInPage = () => {
       .order('created_at', { ascending: true });
     setParentKids((kids as any) || []);
     setSelectedKidId(null);
-    setPlusOne(false);
+    setAccompanying(0);
   };
 
   // Search booking by QR code, booking number, customer QR token, or phone number
@@ -334,7 +336,7 @@ const StaffCheckInPage = () => {
       .order('created_at', { ascending: true });
     setParentKids((kids as any) || []);
     setSelectedKidId(null);
-    setPlusOne(false);
+    setAccompanying(0);
   };
 
   const handleCheckIn = async () => {
@@ -342,7 +344,8 @@ const StaffCheckInPage = () => {
     setSubmitting(true);
 
     const kid = parentKids.find(k => k.id === selectedKidId);
-    const kidsCount = plusOne ? 2 : 1;
+    const kidsCount = 1 + accompanying; // selected kid + accompanying
+    const hasPlusOne = accompanying > 0;
 
     const isWalkIn = !scannedBooking.id;
 
@@ -354,7 +357,7 @@ const StaffCheckInPage = () => {
         kid_id: selectedKidId,
         kid_name: kid?.name || null,
         num_kids: kidsCount,
-        plus_one: plusOne,
+        plus_one: hasPlusOne,
         store_id: storeId,
         staff_user_id: user?.id,
         status: 'active',
@@ -374,29 +377,83 @@ const StaffCheckInPage = () => {
     }
 
     toast.success(`${kid?.name} checked in! 🎉`, {
-      description: plusOne ? 'With a +1 friend — 2× hours will be deducted at check-out' : '1× hours per hour',
+      description: hasPlusOne
+        ? `+${accompanying} accompanying — ${kidsCount}× hours will be deducted at check-out`
+        : '1× hours per hour',
     });
 
     setScannedBooking(null);
     setParentKids([]);
     setSelectedKidId(null);
-    setPlusOne(false);
+    setAccompanying(0);
     setSearch('');
     setSubmitting(false);
     loadActive();
     setTab('active');
   };
 
-  const handleCheckOut = async (sessionId: string) => {
+  // Helper: hours remaining across the customer's active packs
+  const getRemainingHoursFor = async (uid: string): Promise<number> => {
+    const { data } = await supabase
+      .from('user_packs' as any)
+      .select('total_hours, hours_used')
+      .eq('user_id', uid)
+      .eq('status', 'active');
+    return ((data as any[]) || []).reduce(
+      (sum, p) => sum + Math.max(0, Number(p.total_hours) - Number(p.hours_used)),
+      0
+    );
+  };
+
+  // Extend session by 1 hour (records on play_sessions; deducted at checkout)
+  const handleExtend = async (sessionId: string) => {
+    const session = activeSessions.find(s => s.id === sessionId);
+    if (!session) return;
+    setExtendingId(sessionId);
+
+    const remaining = await getRemainingHoursFor(session.user_id);
+    const multiplier = session.num_kids || (session.plus_one ? 2 : 1);
+    const needed = 1 * multiplier;
+
+    if (remaining < needed) {
+      toast.error('No more hours available 👋', {
+        description: `Customer needs ${needed}h to extend (has ${remaining.toFixed(2)}h). Auto-checking out.`,
+      });
+      setExtendingId(null);
+      await handleCheckOut(sessionId, true);
+      return;
+    }
+
+    const { error } = await supabase
+      .from('play_sessions' as any)
+      .update({ extended_hours: Number(session.extended_hours || 0) + 1 })
+      .eq('id', sessionId);
+
+    if (error) {
+      toast.error('Could not extend', { description: error.message });
+    } else {
+      toast.success('Extended by 1 hour ⏱️', {
+        description: `${needed}h will be deducted at checkout.`,
+      });
+    }
+    setExtendingId(null);
+    loadActive();
+  };
+
+  const handleCheckOut = async (sessionId: string, silent = false) => {
     const session = activeSessions.find(s => s.id === sessionId);
     if (!session) return;
 
     const elapsedMs = now - new Date(session.checked_in_at).getTime();
     const hoursElapsed = Math.max(0.25, elapsedMs / 3600000); // round-up min 15min
     const billableHours = Math.ceil(hoursElapsed * 4) / 4; // round to 15min
-    const totalHours = billableHours * (session.plus_one ? 2 : 1);
+    const multiplier = session.num_kids || (session.plus_one ? 2 : 1);
+    const totalHours = billableHours * multiplier;
 
-    if (!confirm(`Check out? Will deduct ${totalHours} hours${session.plus_one ? ' (×2 for +1 friend)' : ''} from parent's pack.`)) return;
+    if (!silent) {
+      const note = multiplier > 1 ? ` (×${multiplier} for ${multiplier} kids)` : '';
+      if (!confirm(`Check out? Will deduct ${totalHours} hours${note} from parent's pack.`)) return;
+    }
 
     // Update session
     await supabase
@@ -615,42 +672,36 @@ const StaffCheckInPage = () => {
                     )}
                   </div>
 
-                  {/* +1 toggle */}
+                  {/* Accompanying kids dropdown */}
                   {selectedKidId && (
-                    <motion.button
+                    <motion.div
                       initial={{ opacity: 0, y: 6 }}
                       animate={{ opacity: 1, y: 0 }}
-                      whileTap={{ scale: 0.97 }}
-                      onClick={() => setPlusOne(!plusOne)}
-                      className={`w-full p-4 rounded-3xl border-2 transition-all flex items-center justify-between ${
-                        plusOne
-                          ? 'bg-gradient-mint border-mint shadow-pop-mint'
-                          : 'bg-card border-ink/8'
-                      }`}
+                      className="w-full p-4 rounded-3xl border-2 border-ink/8 bg-card"
                     >
-                      <div className="flex items-center gap-3 text-left">
-                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl ${
-                          plusOne ? 'bg-white/30' : 'bg-mint/15'
-                        }`}>
-                          🤝
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-12 h-12 rounded-2xl bg-mint/15 flex items-center justify-center text-2xl shrink-0">🤝</div>
+                          <div className="min-w-0">
+                            <p className="font-heading text-sm text-ink">Accompanying kids</p>
+                            <p className="text-[11px] text-ink/55">
+                              {accompanying === 0
+                                ? 'Just this kid (1× hours)'
+                                : `+${accompanying} friend${accompanying > 1 ? 's' : ''} → ${1 + accompanying}× hours deducted`}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className={`font-heading text-sm ${plusOne ? 'text-ink' : 'text-ink'}`}>
-                            +1 Friend Tagged Along
-                          </p>
-                          <p className={`text-[11px] ${plusOne ? 'text-ink/70' : 'text-ink/50'}`}>
-                            {plusOne ? '2× hours will be deducted' : 'Tap if a friend is joining'}
-                          </p>
-                        </div>
+                        <select
+                          value={accompanying}
+                          onChange={e => setAccompanying(Number(e.target.value))}
+                          className="px-3 py-2 bg-background border-2 border-ink/10 rounded-2xl text-sm font-heading text-ink focus:outline-none focus:border-coral shrink-0"
+                        >
+                          {[0, 1, 2, 3, 4].map(n => (
+                            <option key={n} value={n}>+{n}</option>
+                          ))}
+                        </select>
                       </div>
-                      <div className={`w-11 h-6 rounded-full transition-all flex items-center px-0.5 ${
-                        plusOne ? 'bg-ink/80' : 'bg-ink/15'
-                      }`}>
-                        <div className={`w-5 h-5 rounded-full bg-white shadow-soft transition-transform ${
-                          plusOne ? 'translate-x-5' : 'translate-x-0'
-                        }`} />
-                      </div>
-                    </motion.button>
+                    </motion.div>
                   )}
 
                   {/* Confirm */}
@@ -664,7 +715,7 @@ const StaffCheckInPage = () => {
                       className="w-full py-4 bg-gradient-coral rounded-2xl font-heading text-base text-white shadow-pop-coral flex items-center justify-center gap-2 disabled:opacity-50"
                     >
                       <CheckCircle2 size={18} />
-                      {submitting ? 'Checking in…' : `Check In ${plusOne ? '(+1)' : ''}`}
+                      {submitting ? 'Checking in…' : `Check In ${accompanying > 0 ? `(+${accompanying})` : ''}`}
                     </motion.button>
                   )}
                 </motion.div>
@@ -706,38 +757,14 @@ const StaffCheckInPage = () => {
               </div>
             ) : (
               activeSessions.map(s => (
-                <motion.div
+                <ActiveSessionCard
                   key={s.id}
-                  layout
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="bg-card border-2 border-ink/8 rounded-3xl p-4 shadow-pop"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-12 h-12 rounded-2xl bg-gradient-mint flex items-center justify-center font-display text-lg text-ink shrink-0">
-                        {s.kid_name?.charAt(0).toUpperCase() || '?'}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-display text-base text-ink truncate">{s.kid_name || 'Guest'}</p>
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          <Clock size={11} className="text-mint" />
-                          <span className="text-xs font-heading text-mint tabular-nums">{formatDuration(s.checked_in_at)}</span>
-                          {s.plus_one && (
-                            <span className="px-1.5 py-0.5 bg-coral/15 text-coral text-[9px] font-heading rounded-full">+1 ×2</span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    <motion.button
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => handleCheckOut(s.id)}
-                      className="px-3.5 py-2 bg-gradient-coral rounded-xl text-xs font-heading text-white shadow-pop-coral shrink-0"
-                    >
-                      Check Out
-                    </motion.button>
-                  </div>
-                </motion.div>
+                  session={s}
+                  now={now}
+                  busy={extendingId === s.id}
+                  onExtend={() => handleExtend(s.id)}
+                  onCheckOut={() => handleCheckOut(s.id)}
+                />
               ))
             )}
           </div>
@@ -746,6 +773,116 @@ const StaffCheckInPage = () => {
 
       <OpsBottomNav />
     </div>
+  );
+};
+
+// ===== Active Session Card with countdown timer + Extend/Checkout =====
+const SLOT_HOURS = 1; // base slot length
+const ActiveSessionCard = ({
+  session,
+  now,
+  busy,
+  onExtend,
+  onCheckOut,
+}: {
+  session: ActiveSession;
+  now: number;
+  busy: boolean;
+  onExtend: () => void;
+  onCheckOut: () => void;
+}) => {
+  const checkedInMs = new Date(session.checked_in_at).getTime();
+  const allowedMs = (SLOT_HOURS + Number(session.extended_hours || 0)) * 3600_000;
+  const elapsedMs = Math.max(0, now - checkedInMs);
+  const remainingMs = allowedMs - elapsedMs; // can go negative (overrun)
+  const minsLeft = remainingMs / 60000;
+
+  // Color phases
+  let phase: 'green' | 'amber' | 'red' | 'over' = 'green';
+  if (remainingMs <= 0) phase = 'over';
+  else if (minsLeft <= 3) phase = 'red';
+  else if (minsLeft <= 10) phase = 'amber';
+
+  const phaseStyle = {
+    green: { bar: 'bg-mint', text: 'text-mint', ring: 'border-mint/30', chip: 'bg-mint/15 text-mint' },
+    amber: { bar: 'bg-butter', text: 'text-ink', ring: 'border-butter', chip: 'bg-butter text-ink' },
+    red: { bar: 'bg-coral', text: 'text-coral', ring: 'border-coral', chip: 'bg-coral text-white' },
+    over: { bar: 'bg-coral', text: 'text-coral', ring: 'border-coral', chip: 'bg-coral text-white' },
+  }[phase];
+
+  const fmtCountdown = (ms: number) => {
+    const sign = ms < 0 ? '-' : '';
+    const abs = Math.abs(ms);
+    const m = Math.floor(abs / 60000);
+    const s = Math.floor((abs % 60000) / 1000);
+    return `${sign}${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  };
+
+  const pct = Math.min(100, Math.max(0, (elapsedMs / allowedMs) * 100));
+  const showActions = phase === 'amber' || phase === 'red' || phase === 'over';
+
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={`bg-card border-2 ${phaseStyle.ring} rounded-3xl p-4 shadow-pop`}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-mint flex items-center justify-center font-display text-lg text-ink shrink-0">
+            {session.kid_name?.charAt(0).toUpperCase() || '?'}
+          </div>
+          <div className="min-w-0">
+            <p className="font-display text-base text-ink truncate">{session.kid_name || 'Guest'}</p>
+            <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+              <span className={`px-1.5 py-0.5 ${phaseStyle.chip} text-[9px] font-heading rounded-full`}>
+                {session.num_kids > 1 ? `×${session.num_kids} kids` : '1 kid'}
+              </span>
+              {Number(session.extended_hours) > 0 && (
+                <span className="px-1.5 py-0.5 bg-lavender/30 text-ink text-[9px] font-heading rounded-full">
+                  +{session.extended_hours}h ext
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+        <div className="text-right shrink-0">
+          <p className={`font-display text-2xl ${phaseStyle.text} tabular-nums leading-none`}>
+            {fmtCountdown(remainingMs)}
+          </p>
+          <p className="text-[10px] text-ink/50 font-heading uppercase tracking-wider mt-0.5">
+            {phase === 'over' ? 'Over time' : 'Time left'}
+          </p>
+        </div>
+      </div>
+
+      {/* Progress bar */}
+      <div className="mt-3 h-2 rounded-full bg-ink/8 overflow-hidden">
+        <div className={`h-full ${phaseStyle.bar} transition-all`} style={{ width: `${pct}%` }} />
+      </div>
+
+      {/* Actions: always show checkout; show extend in amber/red/over */}
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <motion.button
+          whileTap={{ scale: 0.96 }}
+          onClick={onExtend}
+          disabled={busy}
+          className={`py-2.5 rounded-2xl text-xs font-heading border-2 transition-all flex items-center justify-center gap-1.5 disabled:opacity-50 ${
+            showActions ? 'bg-mint border-mint text-ink shadow-pop-mint' : 'bg-card border-ink/10 text-ink/70'
+          }`}
+        >
+          ⏱️ Extend +1h
+        </motion.button>
+        <motion.button
+          whileTap={{ scale: 0.96 }}
+          onClick={onCheckOut}
+          className="py-2.5 bg-gradient-coral rounded-2xl text-xs font-heading text-white shadow-pop-coral flex items-center justify-center gap-1.5"
+        >
+          <LogOut size={13} /> Check Out
+        </motion.button>
+      </div>
+    </motion.div>
   );
 };
 
