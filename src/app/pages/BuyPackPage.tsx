@@ -5,6 +5,7 @@ import { ArrowLeft, Package, Check, Sparkles, Infinity as InfinityIcon } from 'l
 import { supabase } from '@/integrations/supabase/client';
 import { useAppStore } from '../store';
 import { useStoreSelection } from '../hooks/useStoreSelection';
+import { Star, Heart, Sparkle } from '../components/Stickers';
 import { toast } from 'sonner';
 
 interface PlayPack {
@@ -29,14 +30,8 @@ const BuyPackPage = () => {
   useEffect(() => {
     const load = async () => {
       if (!packId) return;
-      const { data } = await supabase
-        .from('play_packs' as any)
-        .select('*')
-        .eq('id', packId)
-        .single();
+      const { data } = await supabase.from('play_packs' as any).select('*').eq('id', packId).single();
       setPack(data as any);
-
-      // For free welcome pack, check if user already claimed one
       if ((data as any)?.pack_type === 'welcome_free' && userId) {
         const { data: existing } = await supabase
           .from('user_packs' as any)
@@ -54,38 +49,32 @@ const BuyPackPage = () => {
   const handlePurchase = async () => {
     if (!pack || !userId) return;
     setPurchasing(true);
-
     const isFree = pack.pack_type === 'welcome_free';
 
-    const { data, error } = await supabase
-      .from('user_packs' as any)
-      .insert({
-        user_id: userId,
-        pack_id: pack.id,
-        pack_name: pack.name,
-        total_hours: pack.total_hours,
-        amount_paid: pack.price,
-        status: 'active',
-        is_free_welcome: isFree,
-        store_id: selectedStore?.id || null,
-      })
-      .select()
-      .single();
+    const { error } = await supabase.from('user_packs' as any).insert({
+      user_id: userId,
+      pack_id: pack.id,
+      pack_name: pack.name,
+      total_hours: pack.total_hours,
+      amount_paid: pack.price,
+      status: 'active',
+      is_free_welcome: isFree,
+      store_id: selectedStore?.id || null,
+    }).select().single();
 
     if (error) {
       toast.error('Could not add pack', { description: error.message });
       setPurchasing(false);
       return;
     }
-
-    toast.success(isFree ? '1 Hour FREE Claimed! 🎉' : `${pack.total_hours} hours added to your account!`);
+    toast.success(isFree ? '1 Hour FREE Claimed! 🎉' : `${pack.total_hours} hours added!`);
     navigate('/home');
   };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-secondary border-t-transparent rounded-full animate-spin" />
+        <div className="w-10 h-10 border-4 border-coral border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -93,7 +82,7 @@ const BuyPackPage = () => {
   if (!pack) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-sm text-muted-foreground">Pack not found</p>
+        <p className="text-sm text-muted-foreground font-medium">Pack not found</p>
       </div>
     );
   }
@@ -102,64 +91,77 @@ const BuyPackPage = () => {
   const perHour = pack.total_hours > 1 ? Math.round(pack.price / pack.total_hours) : null;
 
   return (
-    <div className="min-h-screen bg-background pb-32">
-      <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-2xl border-b border-secondary/10">
-        <div className="flex items-center gap-3 px-4 h-14 max-w-lg mx-auto">
-          <button onClick={() => navigate(-1)} className="w-9 h-9 flex items-center justify-center rounded-full bg-secondary/8 border border-secondary/15">
-            <ArrowLeft size={16} className="text-secondary" />
+    <div className="min-h-screen bg-background bg-confetti pb-32">
+      <header className="sticky top-0 z-40 bg-background/85 backdrop-blur-xl">
+        <div className="flex items-center gap-3 px-4 h-16 max-w-lg mx-auto">
+          <button onClick={() => navigate(-1)} className="w-10 h-10 flex items-center justify-center rounded-full bg-card border-2 border-ink/10 shadow-soft">
+            <ArrowLeft size={18} className="text-ink" strokeWidth={2.5} />
           </button>
-          <h1 className="font-heading text-base text-foreground">{isFree ? 'Claim Free Hour' : 'Buy Pack'}</h1>
+          <h1 className="font-display text-xl text-ink">{isFree ? 'Free Hour 🎁' : 'Get Pack'}</h1>
         </div>
       </header>
 
-      <div className="px-4 pt-6 max-w-lg mx-auto">
+      <div className="px-4 pt-4 max-w-lg mx-auto">
         <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-br from-secondary/15 via-secondary/5 to-transparent border border-secondary/25 rounded-3xl p-6 text-center"
+          initial={{ opacity: 0, y: 16, scale: 0.96 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          className="relative bg-gradient-coral rounded-[32px] p-7 text-center shadow-pop-coral border-2 border-ink/8 overflow-hidden"
         >
-          <div className="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-secondary/30 to-secondary/10 border border-secondary/30 flex flex-col items-center justify-center">
-            <span className="font-heading text-2xl text-secondary leading-none">{pack.total_hours}</span>
-            <span className="text-[10px] text-secondary/80 uppercase tracking-wider mt-1">hours</span>
+          <div className="absolute top-4 left-4 animate-wobble">
+            <Star size={28} color="hsl(var(--butter))" />
           </div>
-          <h2 className="font-heading text-xl text-foreground mt-4">{pack.name}</h2>
+          <div className="absolute top-6 right-6 animate-bounce-soft">
+            <Heart size={22} color="hsl(var(--card))" />
+          </div>
+          <div className="absolute bottom-4 left-8">
+            <Sparkle size={16} color="hsl(var(--card))" />
+          </div>
+
+          <motion.div
+            animate={{ y: [0, -6, 0] }}
+            transition={{ duration: 2.5, repeat: Infinity }}
+            className="w-28 h-28 mx-auto rounded-3xl bg-card border-4 border-ink/10 flex flex-col items-center justify-center shadow-pop relative z-10"
+          >
+            <span className="font-display text-4xl text-ink leading-none">{pack.total_hours}</span>
+            <span className="text-[10px] font-display text-ink/70 uppercase mt-1">hours</span>
+          </motion.div>
+          <h2 className="font-display text-2xl text-ink mt-5 relative z-10">{pack.name}</h2>
           {pack.description && (
-            <p className="text-sm text-muted-foreground mt-2 leading-relaxed">{pack.description}</p>
+            <p className="text-sm text-ink/80 mt-2 leading-relaxed font-medium relative z-10">{pack.description}</p>
           )}
-          <div className="mt-5">
-            <span className="font-heading text-3xl text-secondary">{isFree ? 'FREE' : `₹${pack.price}`}</span>
-            {perHour && <p className="text-xs text-muted-foreground mt-1">≈ ₹{perHour} per hour</p>}
+          <div className="mt-5 relative z-10">
+            <span className="font-display text-4xl text-ink">{isFree ? 'FREE' : `₹${pack.price}`}</span>
+            {perHour && <p className="text-xs text-ink/70 mt-1 font-medium">≈ ₹{perHour} per hour</p>}
           </div>
         </motion.div>
 
-        <div className="mt-5 bg-card border border-border rounded-2xl p-4 space-y-3">
-          <h3 className="font-heading text-xs uppercase tracking-wider text-muted-foreground">What's Included</h3>
-          <Row icon={<Package size={14} className="text-secondary" />} label={`${pack.total_hours} hour${pack.total_hours > 1 ? 's' : ''} of play time`} />
-          <Row icon={<InfinityIcon size={14} className="text-secondary" />} label="No expiry — use whenever you want" />
-          <Row icon={<Check size={14} className="text-secondary" />} label="Walk in anytime, no pre-booking needed" />
-          <Row icon={<Sparkles size={14} className="text-secondary" />} label="Earn Goofy Points on every visit" />
+        <div className="mt-5 bg-card rounded-[24px] p-5 space-y-3 shadow-soft border-2 border-ink/8">
+          <h3 className="font-display text-sm text-ink">What you get</h3>
+          <Row icon={<Package size={14} className="text-ink" strokeWidth={2.5} />} color="butter" label={`${pack.total_hours} hour${pack.total_hours > 1 ? 's' : ''} of play time`} />
+          <Row icon={<InfinityIcon size={14} className="text-ink" strokeWidth={2.5} />} color="mint" label="No expiry — use whenever" />
+          <Row icon={<Check size={14} className="text-ink" strokeWidth={3} />} color="lavender" label="Walk in anytime, no booking needed" />
+          <Row icon={<Sparkles size={14} className="text-ink" strokeWidth={2.5} />} color="coral" label="Earn Goofy Points every visit" />
         </div>
 
         {alreadyClaimed && (
-          <div className="mt-4 bg-accent/10 border border-accent/20 rounded-xl p-3">
-            <p className="text-xs text-accent font-heading">You've already claimed your FREE hour. Check your dashboard!</p>
+          <div className="mt-4 bg-butter/30 border-2 border-ink/8 rounded-2xl p-4">
+            <p className="text-sm text-ink font-display">You've already claimed your FREE hour. Check your dashboard!</p>
           </div>
         )}
       </div>
 
-      {/* Sticky CTA */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-xl border-t border-secondary/10 p-4">
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-xl border-t-2 border-ink/8 p-4">
         <div className="max-w-lg mx-auto">
           <motion.button
-            whileTap={{ scale: 0.98 }}
+            whileTap={{ scale: 0.97 }}
             onClick={handlePurchase}
             disabled={purchasing || alreadyClaimed}
-            className="w-full py-4 bg-gradient-saffron rounded-xl font-heading text-sm uppercase tracking-widest text-primary-foreground shadow-saffron disabled:opacity-50"
+            className="w-full py-4 bg-gradient-coral rounded-2xl font-display text-base text-ink shadow-pop-coral border-2 border-ink/10 disabled:opacity-40"
           >
-            {purchasing ? 'Adding…' : alreadyClaimed ? 'Already Claimed' : isFree ? 'Claim My Free Hour' : `Buy for ₹${pack.price} · Pay at Venue`}
+            {purchasing ? 'Adding…' : alreadyClaimed ? 'Already Claimed' : isFree ? 'Claim My Free Hour 🎁' : `Get for ₹${pack.price} · Pay at Venue`}
           </motion.button>
-          <p className="text-[10px] text-muted-foreground text-center mt-2">
-            {isFree ? '🎁 No payment needed' : 'Online payment coming soon. Pay cash/UPI at venue for now.'}
+          <p className="text-[11px] text-muted-foreground text-center mt-2 font-medium">
+            {isFree ? 'No payment needed ✨' : 'Online payment coming soon. Cash/UPI at venue for now.'}
           </p>
         </div>
       </div>
@@ -167,10 +169,17 @@ const BuyPackPage = () => {
   );
 };
 
-const Row = ({ icon, label }: { icon: React.ReactNode; label: string }) => (
-  <div className="flex items-center gap-2.5">
-    <div className="w-7 h-7 rounded-full bg-secondary/10 flex items-center justify-center shrink-0">{icon}</div>
-    <span className="text-sm text-foreground">{label}</span>
+const colorMap: Record<string, string> = {
+  coral: 'bg-coral/20',
+  mint: 'bg-mint/30',
+  butter: 'bg-butter/30',
+  lavender: 'bg-lavender/30',
+};
+
+const Row = ({ icon, label, color }: { icon: React.ReactNode; label: string; color: string }) => (
+  <div className="flex items-center gap-3">
+    <div className={`w-9 h-9 rounded-xl ${colorMap[color]} border-2 border-ink/8 flex items-center justify-center shrink-0`}>{icon}</div>
+    <span className="text-sm text-ink font-medium">{label}</span>
   </div>
 );
 

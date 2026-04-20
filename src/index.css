@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800;900&family=Cinzel+Decorative:wght@400;700;900&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,50 +6,61 @@
 
 @layer base {
   :root {
-    --background: 30 5% 6%;
-    --foreground: 40 25% 90%;
+    /* Bright Kids Playground — cream base, candy accents */
+    --background: 36 100% 97%;
+    --foreground: 260 25% 18%;
 
-    --card: 30 5% 9%;
-    --card-foreground: 40 25% 90%;
+    --card: 0 0% 100%;
+    --card-foreground: 260 25% 18%;
 
-    --popover: 30 5% 9%;
-    --popover-foreground: 40 25% 90%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 260 25% 18%;
 
-    --primary: 30 90% 50%;
-    --primary-foreground: 30 5% 6%;
+    /* Primary: Coral pink */
+    --primary: 352 100% 73%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 43 75% 52%;
-    --secondary-foreground: 30 5% 6%;
+    /* Secondary: Mint */
+    --secondary: 168 50% 65%;
+    --secondary-foreground: 260 25% 18%;
 
-    --muted: 30 5% 14%;
-    --muted-foreground: 40 10% 55%;
+    --muted: 36 35% 92%;
+    --muted-foreground: 260 12% 45%;
 
-    --accent: 5 70% 40%;
-    --accent-foreground: 40 25% 90%;
+    /* Accent: Butter yellow */
+    --accent: 42 100% 70%;
+    --accent-foreground: 260 25% 18%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 84% 65%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 40 15% 18%;
-    --input: 40 15% 18%;
-    --ring: 30 90% 50%;
+    --border: 260 30% 92%;
+    --input: 260 30% 94%;
+    --ring: 352 100% 73%;
 
-    --radius: 0.25rem;
+    --radius: 1.5rem;
 
-    --gold: 43 80% 55%;
-    --gold-foreground: 30 5% 6%;
-    --saffron: 30 90% 50%;
-    --burnt-red: 5 70% 40%;
-    --cream: 40 30% 92%;
+    /* Bright kids palette */
+    --coral: 352 100% 73%;        /* #FF7A8A */
+    --mint: 168 50% 65%;           /* #7DD3C0 */
+    --butter: 42 100% 70%;         /* #FFD56B */
+    --lavender: 256 55% 78%;       /* #B8A5E3 */
+    --sky: 195 70% 70%;            /* #7EC8E3 */
+    --peach: 18 100% 78%;          /* #FFB48E */
+    --bubblegum: 330 100% 78%;     /* #FFA3D1 */
+    --grape: 270 60% 60%;          /* #8E5BD9 */
 
-    --sidebar-background: 30 5% 6%;
-    --sidebar-foreground: 40 25% 90%;
-    --sidebar-primary: 30 90% 50%;
-    --sidebar-primary-foreground: 30 5% 6%;
-    --sidebar-accent: 30 5% 14%;
-    --sidebar-accent-foreground: 40 25% 90%;
-    --sidebar-border: 40 15% 18%;
-    --sidebar-ring: 30 90% 50%;
+    --cream: 36 100% 97%;
+    --ink: 260 25% 18%;            /* #2D2438 */
+
+    --sidebar-background: 36 100% 97%;
+    --sidebar-foreground: 260 25% 18%;
+    --sidebar-primary: 352 100% 73%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 36 35% 92%;
+    --sidebar-accent-foreground: 260 25% 18%;
+    --sidebar-border: 260 30% 92%;
+    --sidebar-ring: 352 100% 73%;
   }
 }
 
@@ -63,75 +74,103 @@
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Cinzel', serif;
+    font-family: 'Fredoka', system-ui, sans-serif;
+    font-weight: 600;
+    letter-spacing: -0.01em;
   }
 }
 
 @layer components {
   .font-display {
-    font-family: 'Cinzel Decorative', serif;
+    font-family: 'Fredoka', system-ui, sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.02em;
   }
 
   .font-heading {
-    font-family: 'Cinzel', serif;
+    font-family: 'Fredoka', system-ui, sans-serif;
+    font-weight: 600;
   }
 
   .font-body {
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'DM Sans', system-ui, sans-serif;
   }
 
-  .text-gradient-gold {
+  /* Playful gradients */
+  .bg-gradient-coral {
+    background: linear-gradient(135deg, hsl(352 100% 78%), hsl(352 100% 68%));
+  }
+  .bg-gradient-mint {
+    background: linear-gradient(135deg, hsl(168 60% 72%), hsl(168 50% 60%));
+  }
+  .bg-gradient-butter {
+    background: linear-gradient(135deg, hsl(42 100% 76%), hsl(42 100% 65%));
+  }
+  .bg-gradient-lavender {
+    background: linear-gradient(135deg, hsl(256 70% 84%), hsl(256 55% 73%));
+  }
+  .bg-gradient-sky {
+    background: linear-gradient(135deg, hsl(195 75% 78%), hsl(195 70% 65%));
+  }
+  .bg-gradient-peach {
+    background: linear-gradient(135deg, hsl(18 100% 84%), hsl(18 100% 72%));
+  }
+  .bg-gradient-bubblegum {
+    background: linear-gradient(135deg, hsl(330 100% 84%), hsl(330 100% 72%));
+  }
+  .bg-gradient-rainbow {
+    background: linear-gradient(135deg, hsl(352 100% 78%) 0%, hsl(42 100% 70%) 50%, hsl(168 50% 65%) 100%);
+  }
+
+  .text-gradient-rainbow {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, hsl(43 80% 55%), hsl(30 90% 50%), hsl(43 80% 65%));
+    background-image: linear-gradient(135deg, hsl(352 100% 65%), hsl(270 60% 60%), hsl(195 70% 60%));
   }
 
-  .text-gradient-saffron {
-    @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, hsl(30 90% 50%), hsl(5 70% 40%));
+  /* Playful shadows */
+  .shadow-pop {
+    box-shadow: 0 8px 0 -2px hsl(260 25% 18% / 0.08), 0 12px 24px -8px hsl(260 25% 18% / 0.12);
+  }
+  .shadow-pop-coral {
+    box-shadow: 0 8px 0 -2px hsl(352 100% 60% / 0.25), 0 12px 24px -6px hsl(352 100% 60% / 0.3);
+  }
+  .shadow-pop-mint {
+    box-shadow: 0 8px 0 -2px hsl(168 50% 50% / 0.25), 0 12px 24px -6px hsl(168 50% 50% / 0.3);
+  }
+  .shadow-pop-butter {
+    box-shadow: 0 8px 0 -2px hsl(42 100% 55% / 0.25), 0 12px 24px -6px hsl(42 100% 55% / 0.3);
+  }
+  .shadow-pop-lavender {
+    box-shadow: 0 8px 0 -2px hsl(256 55% 60% / 0.25), 0 12px 24px -6px hsl(256 55% 60% / 0.3);
+  }
+  .shadow-soft {
+    box-shadow: 0 4px 16px -4px hsl(260 25% 18% / 0.1);
   }
 
-  .bg-gradient-royal {
-    background: linear-gradient(180deg, hsl(30 5% 6%) 0%, hsl(30 8% 10%) 50%, hsl(30 5% 6%) 100%);
+  /* Sticker decorations background */
+  .bg-confetti {
+    background-image:
+      radial-gradient(circle at 10% 20%, hsl(352 100% 73% / 0.08) 0%, transparent 12%),
+      radial-gradient(circle at 90% 30%, hsl(168 50% 65% / 0.08) 0%, transparent 12%),
+      radial-gradient(circle at 30% 80%, hsl(42 100% 70% / 0.08) 0%, transparent 12%),
+      radial-gradient(circle at 80% 90%, hsl(256 55% 78% / 0.08) 0%, transparent 12%);
   }
 
-  .bg-gradient-saffron {
-    background: linear-gradient(135deg, hsl(43 70% 42%), hsl(40 65% 50%), hsl(43 80% 55%));
-  }
-
-  .bg-gradient-dark {
-    background: linear-gradient(180deg, hsl(30 5% 3%) 0%, hsl(30 5% 8%) 100%);
-  }
-
-  .border-gold {
-    border-color: hsl(43 80% 55%);
-  }
-
-  .shadow-gold {
-    box-shadow: 0 0 30px -5px hsl(43 80% 55% / 0.3);
-  }
-
-  .shadow-saffron {
-    box-shadow: 0 0 40px -5px hsl(30 90% 50% / 0.25);
-  }
-
-  .mughal-pattern {
-    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23c8962e' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  .bg-dots {
+    background-image: radial-gradient(circle, hsl(260 25% 18% / 0.06) 1px, transparent 1px);
+    background-size: 20px 20px;
   }
 
   .section-padding {
-    @apply py-20 md:py-32 px-6 md:px-12 lg:px-20;
+    @apply py-16 md:py-24 px-6 md:px-12 lg:px-20;
   }
 
   .heading-xl {
-    @apply text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight leading-none;
+    @apply text-5xl md:text-7xl font-display tracking-tight leading-none;
   }
 
   .heading-lg {
-    @apply text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-tight;
-  }
-
-  .heading-md {
-    @apply text-2xl md:text-3xl lg:text-4xl font-semibold tracking-tight;
+    @apply text-4xl md:text-5xl font-display tracking-tight leading-tight;
   }
 }
 
@@ -140,14 +179,30 @@
   width: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: hsl(30 5% 6%);
+  background: hsl(36 100% 97%);
 }
 ::-webkit-scrollbar-thumb {
-  background: hsl(43 80% 55% / 0.3);
+  background: hsl(352 100% 73% / 0.3);
   border-radius: 3px;
 }
 
-/* Smooth scroll */
 html {
   scroll-behavior: smooth;
+}
+
+/* Wobble animation for fun */
+@keyframes wobble {
+  0%, 100% { transform: rotate(-2deg); }
+  50% { transform: rotate(2deg); }
+}
+.animate-wobble {
+  animation: wobble 3s ease-in-out infinite;
+}
+
+@keyframes bounce-soft {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+.animate-bounce-soft {
+  animation: bounce-soft 2.5s ease-in-out infinite;
 }

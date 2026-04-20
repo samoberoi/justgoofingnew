@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useAppStore } from '../store';
 import { ArrowRight, Shield, Loader2 } from 'lucide-react';
+import { Star, Heart, Sparkle, Cloud } from '../components/Stickers';
 
 const OTP_LENGTH = 6;
 
@@ -11,9 +12,6 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const { setLoggedIn, setPhoneNumber } = useAppStore();
 
-  // Only sign out if the user explicitly navigated to /login (not on redirect)
-  // We no longer auto-signOut on mount — this was causing a loop where
-  // OpsRoute redirects here and the signOut clears the valid session.
   const [step, setStep] = useState<'phone' | 'otp' | 'success'>('phone');
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
@@ -43,20 +41,9 @@ const LoginPage = () => {
     const password = `${phone}-justgoofing-2024`;
 
     try {
-      // Step 1: Try sign in
-      console.log('[Login] Attempting signIn for', email);
       const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
-      
-      if (!signInErr) {
-        console.log('[Login] signIn success');
-        onAuthSuccess();
-        return;
-      }
-      
-      console.log('[Login] signIn failed:', signInErr.message);
+      if (!signInErr) { onAuthSuccess(); return; }
 
-      // Step 2: Try signUp with a 5s timeout (signUp can hang due to Supabase JS client race condition)
-      console.log('[Login] Attempting signUp with timeout');
       const signUpResult = await Promise.race([
         supabase.auth.signUp({ email, password }),
         new Promise<{ data: null; error: Error }>((resolve) =>
@@ -64,21 +51,13 @@ const LoginPage = () => {
         ),
       ]);
 
-      if (!signUpResult.error && signUpResult.data?.session) {
-        console.log('[Login] signUp success with session');
-        onAuthSuccess();
-        return;
-      }
+      if (!signUpResult.error && signUpResult.data?.session) { onAuthSuccess(); return; }
 
       if (!signUpResult.error && signUpResult.data?.user && !signUpResult.data?.session) {
-        // User created but no session — try signing in
-        console.log('[Login] signUp created user, no session — retrying signIn');
         const { error: retryErr } = await supabase.auth.signInWithPassword({ email, password });
         if (!retryErr) { onAuthSuccess(); return; }
       }
 
-      // Step 3: If signUp timed out or user already exists, use edge function to reset password then sign in
-      console.log('[Login] Falling back to edge function reset');
       const res = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/reset-dev-password`,
         {
@@ -87,19 +66,13 @@ const LoginPage = () => {
           body: JSON.stringify({ email, password }),
         }
       );
-      
+
       if (res.ok) {
         const { error: finalErr } = await supabase.auth.signInWithPassword({ email, password });
         if (!finalErr) { onAuthSuccess(); return; }
-        console.error('[Login] signIn after reset failed:', finalErr.message);
-      } else {
-        console.error('[Login] Edge function reset failed:', await res.text());
       }
-
-      // If we reach here, nothing worked
       setError('Login failed. Please try again.');
     } catch (err: any) {
-      console.error('[Login] Error:', err);
       setError(err?.message || 'Something went wrong.');
     } finally {
       setVerifying(false);
@@ -107,20 +80,14 @@ const LoginPage = () => {
   };
 
   const onAuthSuccess = async () => {
-    console.log('[Login] Auth successful, checking role...');
     setLoggedIn(true);
-
-    // Save phone number to profile so it persists across reloads
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user && phone) {
         await supabase.from('profiles').update({ phone }).eq('user_id', user.id);
       }
-    } catch (e) {
-      console.warn('[Login] Profile phone update failed', e);
-    }
+    } catch {}
 
-    // Check if user has an ops role — route accordingly
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
@@ -134,7 +101,6 @@ const LoginPage = () => {
 
         if (roleData?.role) {
           const role = roleData.role as string;
-          console.log('[Login] User has ops role:', role);
           const dest = role === 'kitchen_manager' ? '/kitchen'
             : role === 'delivery_partner' ? '/deliveries'
             : '/dashboard';
@@ -143,32 +109,56 @@ const LoginPage = () => {
           return;
         }
 
-        // Determine destination based on order history
         const { count } = await supabase
           .from('orders')
           .select('id', { count: 'exact', head: true })
           .eq('user_id', user.id);
         const dest = (count && count > 0) ? '/home' : '/welcome';
-
         setStep('success');
         setTimeout(() => { window.location.href = dest; }, 1000);
         return;
       }
-    } catch (e) {
-      console.warn('[Login] Role check failed', e);
-    }
-
+    } catch {}
     setStep('success');
     setTimeout(() => { window.location.href = '/welcome'; }, 1000);
   };
 
-  // Simple OTP input handler — single text input
   const handleOtpInput = (value: string) => {
     setOtp(value.replace(/\D/g, '').slice(0, OTP_LENGTH));
   };
 
   return (
-    <div className="fixed inset-0 bg-background mughal-pattern flex flex-col items-center justify-center px-6">
+    <div className="fixed inset-0 bg-background bg-confetti flex flex-col items-center justify-center px-6 overflow-hidden">
+      {/* Floating decorations */}
+      <motion.div
+        animate={{ y: [0, -10, 0], rotate: [0, 5, 0] }}
+        transition={{ duration: 4, repeat: Infinity }}
+        className="absolute top-[8%] left-[10%]"
+      >
+        <Cloud size={70} color="hsl(var(--sky))" />
+      </motion.div>
+      <motion.div
+        animate={{ y: [0, -8, 0], rotate: [0, -5, 0] }}
+        transition={{ duration: 5, repeat: Infinity, delay: 1 }}
+        className="absolute top-[12%] right-[8%]"
+      >
+        <Star size={36} color="hsl(var(--butter))" />
+      </motion.div>
+      <motion.div
+        animate={{ y: [0, -6, 0] }}
+        transition={{ duration: 3, repeat: Infinity, delay: 0.5 }}
+        className="absolute bottom-[20%] left-[12%]"
+      >
+        <Heart size={28} color="hsl(var(--coral))" />
+      </motion.div>
+      <motion.div
+        animate={{ rotate: [0, 360] }}
+        transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
+        className="absolute bottom-[15%] right-[10%]"
+      >
+        <Sparkle size={28} color="hsl(var(--lavender))" />
+      </motion.div>
+
       <AnimatePresence mode="wait">
         {step === 'phone' && (
           <motion.div
@@ -176,46 +166,52 @@ const LoginPage = () => {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -30 }}
-            className="w-full max-w-sm space-y-8 text-center"
+            className="w-full max-w-sm space-y-7 text-center relative z-10"
           >
             <div>
-              <img src="/logo.png" alt="Just Goofing" className="h-20 mx-auto" />
-              <p className="mt-3 text-muted-foreground text-sm">Where Fun Meets Innovation</p>
+              <motion.img
+                src="/logo.png"
+                alt="Just Goofing"
+                animate={{ rotate: [0, 4, -4, 0] }}
+                transition={{ duration: 2, repeat: Infinity, repeatDelay: 4 }}
+                className="h-24 mx-auto"
+              />
+              <p className="mt-3 text-muted-foreground text-sm font-medium">Where the fun never stops 🎉</p>
             </div>
 
             <div className="space-y-4">
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">+91</span>
+                <span className="absolute left-5 top-1/2 -translate-y-1/2 text-ink font-display text-base">+91</span>
                 <input
                   type="tel"
                   maxLength={10}
                   value={phone}
                   onChange={e => setPhone(e.target.value.replace(/\D/g, ''))}
-                  placeholder="Enter Mobile Number"
-                  className="w-full pl-14 pr-4 py-4 bg-card border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-secondary transition-colors text-lg tracking-wider"
+                  placeholder="Mobile number"
+                  className="w-full pl-16 pr-4 py-4 bg-card border-2 border-ink/10 rounded-2xl text-ink placeholder:text-muted-foreground/60 focus:outline-none focus:border-coral text-lg font-display tracking-wide shadow-soft"
                 />
               </div>
 
-              {error && <p className="text-destructive text-sm">{error}</p>}
+              {error && <p className="text-destructive text-sm font-medium">{error}</p>}
 
               <motion.button
-                whileTap={{ scale: 0.97 }}
+                whileTap={{ scale: 0.96 }}
                 onClick={handlePhoneSubmit}
                 disabled={phone.length < 10 || sending}
-                className="w-full py-4 bg-gradient-saffron rounded-lg font-heading text-sm uppercase tracking-widest text-primary-foreground disabled:opacity-40 flex items-center justify-center gap-2"
+                className="w-full py-4 bg-gradient-coral rounded-2xl font-display text-base text-ink disabled:opacity-40 flex items-center justify-center gap-2 shadow-pop-coral border-2 border-ink/10"
               >
-                {sending ? 'Sending...' : 'Send OTP'} <ArrowRight size={16} />
+                {sending ? 'Sending...' : 'Send OTP'} <ArrowRight size={18} strokeWidth={2.5} />
               </motion.button>
             </div>
 
-            <div className="flex items-center justify-center gap-2 text-muted-foreground text-xs">
-              <Shield size={12} /> Your number is safe with us
+            <div className="flex items-center justify-center gap-2 text-muted-foreground text-xs font-medium">
+              <Shield size={12} strokeWidth={2.5} /> Your number is safe with us
             </div>
 
-            <div className="bg-card/50 border border-border rounded-lg p-3 text-xs text-muted-foreground">
-              <p className="font-semibold text-foreground mb-1">🔑 Dev Login</p>
-              <p>Admin: <span className="text-secondary font-bold">8373914073</span> | OTP: <span className="text-secondary font-bold">111111</span></p>
-              <p className="mt-0.5">Delivery: <span className="text-secondary font-bold">7777777777</span> | OTP: <span className="text-secondary font-bold">111111</span></p>
+            <div className="bg-gradient-butter rounded-2xl p-3.5 text-xs text-ink border-2 border-ink/10 shadow-soft">
+              <p className="font-display mb-1">🔑 Dev Login</p>
+              <p className="font-medium">Admin: <span className="font-display">8373914073</span> · OTP: <span className="font-display">111111</span></p>
+              <p className="mt-0.5 font-medium">Delivery: <span className="font-display">7777777777</span> · OTP: <span className="font-display">111111</span></p>
             </div>
           </motion.div>
         )}
@@ -226,11 +222,11 @@ const LoginPage = () => {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -30 }}
-            className="w-full max-w-sm space-y-8 text-center"
+            className="w-full max-w-sm space-y-7 text-center relative z-10"
           >
             <div>
-              <span className="font-display text-2xl text-gradient-gold">Verify OTP</span>
-              <p className="mt-2 text-muted-foreground text-sm">Sent to +91 {phone}</p>
+              <span className="font-display text-3xl text-gradient-rainbow">Verify OTP</span>
+              <p className="mt-2 text-muted-foreground text-sm font-medium">Sent to +91 {phone}</p>
             </div>
 
             <input
@@ -241,22 +237,22 @@ const LoginPage = () => {
               onChange={e => handleOtpInput(e.target.value)}
               placeholder="Enter 6-digit OTP"
               autoFocus
-              className="w-full py-4 text-center text-2xl font-bold tracking-[0.5em] bg-card border border-border rounded-lg text-foreground placeholder:text-muted-foreground placeholder:text-base placeholder:tracking-normal focus:outline-none focus:border-secondary transition-colors"
+              className="w-full py-4 text-center text-2xl font-display tracking-[0.5em] bg-card border-2 border-ink/10 rounded-2xl text-ink placeholder:text-muted-foreground placeholder:text-base placeholder:tracking-normal focus:outline-none focus:border-coral shadow-soft"
             />
 
-            {error && <p className="text-destructive text-sm">{error}</p>}
+            {error && <p className="text-destructive text-sm font-medium">{error}</p>}
 
             <motion.button
-              whileTap={{ scale: 0.97 }}
+              whileTap={{ scale: 0.96 }}
               onClick={handleVerify}
               disabled={otp.length !== OTP_LENGTH || verifying}
-              className="w-full py-4 bg-gradient-saffron rounded-lg font-heading text-sm uppercase tracking-widest text-primary-foreground disabled:opacity-40 flex items-center justify-center gap-2"
+              className="w-full py-4 bg-gradient-coral rounded-2xl font-display text-base text-ink disabled:opacity-40 flex items-center justify-center gap-2 shadow-pop-coral border-2 border-ink/10"
             >
-              {verifying ? <><Loader2 size={16} className="animate-spin" /> Verifying...</> : <>Verify <ArrowRight size={16} /></>}
+              {verifying ? <><Loader2 size={18} className="animate-spin" /> Verifying...</> : <>Let's go <ArrowRight size={18} strokeWidth={2.5} /></>}
             </motion.button>
 
-            <p className="text-muted-foreground text-xs">
-              Wrong number? <button onClick={() => { setStep('phone'); setOtp(''); setError(''); }} className="text-secondary underline">Go back</button>
+            <p className="text-muted-foreground text-xs font-medium">
+              Wrong number? <button onClick={() => { setStep('phone'); setOtp(''); setError(''); }} className="text-coral underline font-display">Go back</button>
             </p>
           </motion.div>
         )}
@@ -266,18 +262,18 @@ const LoginPage = () => {
             key="success"
             initial={{ scale: 0.5, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: 'spring', damping: 15 }}
-            className="text-center space-y-4"
+            transition={{ type: 'spring', damping: 14 }}
+            className="text-center space-y-4 relative z-10"
           >
             <motion.div
-              animate={{ rotate: [0, -10, 10, -5, 5, 0], scale: [1, 1.2, 1] }}
+              animate={{ rotate: [0, -10, 10, -5, 5, 0], scale: [1, 1.3, 1] }}
               transition={{ duration: 0.8 }}
-              className="text-7xl"
+              className="text-8xl"
             >
               🎉
             </motion.div>
-            <p className="font-heading text-xl text-gradient-gold">You're In!</p>
-            <p className="text-muted-foreground text-sm">Let the goofing begin...</p>
+            <p className="font-display text-3xl text-gradient-rainbow">You're In!</p>
+            <p className="text-muted-foreground text-sm font-medium">Let the goofing begin...</p>
           </motion.div>
         )}
       </AnimatePresence>
