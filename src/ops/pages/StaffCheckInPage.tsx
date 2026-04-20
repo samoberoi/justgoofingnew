@@ -183,10 +183,128 @@ const StaffCheckInPage = () => {
     loadPending();
   };
 
-  // Search booking by QR code or booking number
+  // Helper: load a customer by user_id and prepare a synthetic "checkin context"
+  const loadCustomerByUserId = async (userId: string) => {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('full_name, phone')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    // Look for an upcoming/active booking
+    const today = new Date().toISOString().split('T')[0];
+    const { data: booking } = await supabase
+      .from('bookings' as any)
+      .select('id, booking_number, qr_code, package_name, customer_name, customer_phone, user_id, num_kids, status, booking_date, slot_time')
+      .eq('user_id', userId)
+      .in('status', ['booked', 'pending', 'confirmed'])
+      .gte('booking_date', today)
+      .order('booking_date', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    let bookingForCheckin: Booking;
+    if (booking) {
+      bookingForCheckin = booking as any;
+    } else {
+      // Look for an active pack — synthesize a "walk-in" booking shell
+      const { data: activePack } = await supabase
+        .from('user_packs' as any)
+        .select('id, pack_name, total_hours, hours_used, status')
+        .eq('user_id', userId)
+        .eq('status', 'active')
+        .order('purchased_at', { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
+      if (!activePack) {
+        // Maybe they have a pending (unpaid) pack
+        const { data: pendingPack } = await supabase
+          .from('user_packs' as any)
+          .select('id, pack_name, status')
+          .eq('user_id', userId)
+          .eq('status', 'pending')
+          .limit(1)
+          .maybeSingle();
+        if (pendingPack) {
+          toast.error('Pack not paid yet', {
+            description: `Settle ₹ in the Pay tab first, then scan again.`,
+          });
+          setTab('pending');
+          return;
+        }
+        toast.error('No active pack or booking', {
+          description: `${profile?.full_name || 'Customer'} has nothing to check in to.`,
+        });
+        return;
+      }
+
+      const remaining = Number(activePack.total_hours) - Number(activePack.hours_used);
+      bookingForCheckin = {
+        id: '',
+        booking_number: 'WALK-IN',
+        qr_code: '',
+        package_name: `${activePack.pack_name} · ${remaining}h left`,
+        customer_name: profile?.full_name || null,
+        customer_phone: profile?.phone || null,
+        user_id: userId,
+        num_kids: 1,
+        status: 'walkin',
+        booking_date: today,
+        slot_time: '00:00:00',
+      };
+    }
+
+    setScannedBooking(bookingForCheckin);
+
+    const { data: kids } = await supabase
+      .from('kids' as any)
+      .select('id, name, date_of_birth, gender, school')
+      .eq('parent_user_id', userId)
+      .eq('is_active', true)
+      .order('created_at', { ascending: true });
+    setParentKids((kids as any) || []);
+    setSelectedKidId(null);
+    setPlusOne(false);
+  };
+
+  // Search booking by QR code, booking number, customer QR token, or phone number
   const handleSearch = async () => {
     if (!search.trim()) return;
     const term = search.trim();
+
+    // Customer QR token format: "JG:<userId>:<ts>:<rand>"
+    if (term.startsWith('JG:')) {
+      const parts = term.split(':');
+      const userId = parts[1];
+      const ts = Number(parts[2]);
+      if (!userId) {
+        toast.error('Invalid QR code');
+        return;
+      }
+      // Token is valid for 5 minutes (refreshes every minute, give buffer)
+      if (ts && Date.now() / 1000 - ts > 300) {
+        toast.error('QR code expired', { description: 'Ask customer to refresh their code' });
+        return;
+      }
+      await loadCustomerByUserId(userId);
+      return;
+    }
+
+    // Phone search (10 digits)
+    if (/^\d{10}$/.test(term)) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('user_id')
+        .eq('phone', term)
+        .maybeSingle();
+      if (profile?.user_id) {
+        await loadCustomerByUserId(profile.user_id);
+        return;
+      }
+    }
+
+    // Booking lookup
     const { data } = await supabase
       .from('bookings' as any)
       .select('id, booking_number, qr_code, package_name, customer_name, customer_phone, user_id, num_kids, status, booking_date, slot_time')
@@ -194,7 +312,7 @@ const StaffCheckInPage = () => {
       .maybeSingle();
 
     if (!data) {
-      toast.error('Booking not found', { description: 'Check the QR code or booking number' });
+      toast.error('Not found', { description: 'Try QR scan, booking #, or 10-digit phone' });
       setScannedBooking(null);
       return;
     }
@@ -206,7 +324,6 @@ const StaffCheckInPage = () => {
 
     setScannedBooking(data as any);
 
-    // Load kids for this parent
     const { data: kids } = await supabase
       .from('kids' as any)
       .select('id, name, date_of_birth, gender, school')
