@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, RefreshCw, Shield } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useAppStore } from '../store';
+import { Star, Sparkle, Heart } from '../components/Stickers';
 import { supabase } from '@/integrations/supabase/client';
 
 const MyQRPage = () => {
@@ -13,7 +14,6 @@ const MyQRPage = () => {
   const [secondsLeft, setSecondsLeft] = useState(60);
   const [totalRemaining, setTotalRemaining] = useState(0);
 
-  // Generate a rotating token (refreshes every 60s for security)
   useEffect(() => {
     const generate = () => {
       const rand = Math.random().toString(36).slice(2, 8);
@@ -45,62 +45,77 @@ const MyQRPage = () => {
   }, [userId]);
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-2xl border-b border-secondary/10">
-        <div className="flex items-center gap-3 px-4 h-14 max-w-lg mx-auto">
-          <button onClick={() => navigate(-1)} className="w-9 h-9 flex items-center justify-center rounded-full bg-secondary/8 border border-secondary/15">
-            <ArrowLeft size={16} className="text-secondary" />
+    <div className="min-h-screen bg-background bg-confetti flex flex-col">
+      <header className="sticky top-0 z-40 bg-background/85 backdrop-blur-xl">
+        <div className="flex items-center gap-3 px-4 h-16 max-w-lg mx-auto">
+          <button onClick={() => navigate(-1)} className="w-10 h-10 flex items-center justify-center rounded-full bg-card border-2 border-ink/10 shadow-soft">
+            <ArrowLeft size={18} className="text-ink" strokeWidth={2.5} />
           </button>
-          <h1 className="font-heading text-base text-foreground">My Check-in QR</h1>
+          <h1 className="font-display text-xl text-ink">My Check-in</h1>
         </div>
       </header>
 
       <div className="flex-1 flex flex-col items-center justify-center px-6 py-8 max-w-lg mx-auto w-full">
         <motion.div
-          initial={{ scale: 0.92, opacity: 0 }}
+          initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="w-full bg-card border-2 border-secondary/20 rounded-3xl p-6 shadow-lg"
+          transition={{ type: 'spring', damping: 18 }}
+          className="relative w-full bg-card rounded-[36px] p-6 shadow-pop border-4 border-ink/8 overflow-hidden"
         >
-          <div className="text-center mb-4">
-            <p className="font-heading text-xs uppercase tracking-[0.2em] text-secondary">Just Goofing</p>
-            <h2 className="font-heading text-lg text-foreground mt-1">{userName || 'Goofer'}</h2>
-            {phoneNumber && <p className="text-[11px] text-muted-foreground mt-0.5">+91 {phoneNumber}</p>}
+          <div className="absolute top-4 left-4 animate-wobble">
+            <Star size={26} color="hsl(var(--butter))" />
+          </div>
+          <div className="absolute top-6 right-5 animate-bounce-soft">
+            <Heart size={22} color="hsl(var(--coral))" />
+          </div>
+          <div className="absolute bottom-6 left-6">
+            <Sparkle size={18} color="hsl(var(--mint))" />
+          </div>
+          <div className="absolute bottom-4 right-8 animate-wobble">
+            <Star size={18} color="hsl(var(--lavender))" />
           </div>
 
-          <div className="bg-card p-5 rounded-2xl border border-border flex items-center justify-center">
-            {token ? (
-              <QRCodeSVG
-                value={token}
-                size={220}
-                bgColor="hsl(var(--card))"
-                fgColor="hsl(var(--foreground))"
-                level="H"
-                includeMargin={false}
-              />
-            ) : (
-              <div className="w-[220px] h-[220px] bg-muted animate-pulse rounded-xl" />
-            )}
+          <div className="text-center mb-4 relative z-10">
+            <p className="font-display text-xs uppercase tracking-[0.2em] text-coral">Just Goofing</p>
+            <h2 className="font-display text-2xl text-ink mt-1">{userName || 'Goofer'} ✨</h2>
+            {phoneNumber && <p className="text-xs text-muted-foreground mt-0.5 font-medium">+91 {phoneNumber}</p>}
           </div>
 
-          <div className="mt-5 grid grid-cols-2 gap-3 text-center">
-            <div className="bg-muted/50 rounded-xl p-3">
-              <p className="font-heading text-lg text-secondary">{totalRemaining}</p>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Hours Left</p>
+          <div className="bg-gradient-butter p-5 rounded-[24px] border-4 border-ink/10 flex items-center justify-center shadow-pop-butter">
+            <div className="bg-card p-4 rounded-2xl">
+              {token ? (
+                <QRCodeSVG
+                  value={token}
+                  size={210}
+                  bgColor="hsl(var(--card))"
+                  fgColor="hsl(var(--ink))"
+                  level="H"
+                  includeMargin={false}
+                />
+              ) : (
+                <div className="w-[210px] h-[210px] bg-muted animate-pulse rounded-xl" />
+              )}
             </div>
-            <div className="bg-muted/50 rounded-xl p-3">
-              <p className="font-heading text-lg text-secondary tabular-nums">{secondsLeft}s</p>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider flex items-center justify-center gap-1">
-                <RefreshCw size={9} /> Refreshes
+          </div>
+
+          <div className="mt-5 grid grid-cols-2 gap-3 text-center relative z-10">
+            <div className="bg-gradient-mint rounded-2xl p-3 border-2 border-ink/8 shadow-soft">
+              <p className="font-display text-2xl text-ink leading-none">{totalRemaining}</p>
+              <p className="text-[10px] font-display text-ink/70 mt-1">hrs left</p>
+            </div>
+            <div className="bg-gradient-lavender rounded-2xl p-3 border-2 border-ink/8 shadow-soft">
+              <p className="font-display text-2xl text-ink tabular-nums leading-none">{secondsLeft}s</p>
+              <p className="text-[10px] font-display text-ink/70 mt-1 flex items-center justify-center gap-1">
+                <RefreshCw size={9} strokeWidth={2.5} /> refreshes
               </p>
             </div>
           </div>
         </motion.div>
 
-        <div className="mt-6 flex items-start gap-2 px-2 text-center">
-          <Shield size={14} className="text-secondary/60 shrink-0 mt-0.5" />
-          <p className="text-[11px] text-muted-foreground leading-relaxed">
-            Show this code to the staff. They'll scan it to check you in and deduct hours when you leave. Code refreshes every minute for security.
+        <div className="mt-6 flex items-start gap-2 px-4 text-center bg-card/60 rounded-2xl p-3 border-2 border-ink/8">
+          <Shield size={14} className="text-ink/60 shrink-0 mt-0.5" strokeWidth={2.5} />
+          <p className="text-xs text-muted-foreground leading-relaxed font-medium">
+            Show this to staff. They scan to check you in & deduct hours when you leave. Refreshes every minute.
           </p>
         </div>
       </div>
