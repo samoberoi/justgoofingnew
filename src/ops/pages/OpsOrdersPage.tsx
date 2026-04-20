@@ -249,14 +249,52 @@ const OpsOrdersPage = () => {
     const { from, to } = getDateRange(dateRange, customFrom, customTo);
     let query = supabase.from('orders').select('*')
       .gte('created_at', from).lte('created_at', to)
-      .order('created_at', { ascending: true }); // oldest first
+      .order('created_at', { ascending: true });
     if (filter !== 'all') query = query.eq('status', filter as any);
     if (role === 'store_manager' && storeId) query = query.eq('store_id', storeId);
-    const { data } = await query;
-    const fetchedOrders = data || [];
-    setOrders(fetchedOrders);
 
-    // Eagerly fetch ALL order items with their menu_item prep_time
+    // Fetch packs and bookings in parallel — they show as "sales" in the orders view
+    const [ordersRes, packsRes, bookingsRes, profilesRes] = await Promise.all([
+      query,
+      supabase.from('user_packs').select('*').gte('purchased_at', from).lte('purchased_at', to).order('purchased_at', { ascending: false }),
+      supabase.from('bookings').select('*').gte('created_at', from).lte('created_at', to).order('created_at', { ascending: false }),
+      supabase.from('profiles').select('user_id, phone, full_name'),
+    ]);
+
+    const profileMap = new Map<string, { phone: string | null; name: string | null }>();
+    (profilesRes.data || []).forEach(p => profileMap.set(p.user_id, { phone: p.phone, name: p.full_name }));
+
+    // Annotate packs and bookings so they can render alongside orders in the activity feed
+    const fetchedOrders = (ordersRes.data || []).map((o: any) => ({ ...o, _kind: 'order' }));
+    const packs = (filter === 'all') ? (packsRes.data || []).map((p: any) => {
+      const prof = profileMap.get(p.user_id);
+      return {
+        _kind: 'pack', id: p.id, order_number: `PACK-${p.id.slice(0, 6).toUpperCase()}`,
+        customer_name: prof?.name || 'Goofer', customer_phone: prof?.phone || '',
+        total: p.amount_paid, subtotal: p.amount_paid, discount: 0, tax: 0,
+        status: p.status, created_at: p.purchased_at, payment_method: 'paid', payment_status: 'paid',
+        user_id: p.user_id, pack_name: p.pack_name, total_hours: p.total_hours, hours_used: p.hours_used,
+      };
+    }) : [];
+    const bookings = (filter === 'all') ? (bookingsRes.data || []).map((b: any) => {
+      const prof = b.user_id ? profileMap.get(b.user_id) : null;
+      return {
+        _kind: 'booking', id: b.id, order_number: b.booking_number || `GOOF-${b.id.slice(0,6).toUpperCase()}`,
+        customer_name: b.customer_name || prof?.name || 'Goofer',
+        customer_phone: b.customer_phone || prof?.phone || '',
+        total: b.total_amount, subtotal: b.total_amount, discount: b.discount || 0, tax: 0,
+        status: b.status, created_at: b.created_at,
+        payment_method: b.payment_method, payment_status: b.payment_status,
+        user_id: b.user_id, package_name: b.package_name, booking_date: b.booking_date, slot_time: b.slot_time, num_kids: b.num_kids,
+      };
+    }) : [];
+
+    const merged = [...fetchedOrders, ...packs, ...bookings].sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+    setOrders(merged);
+
+    // Eagerly fetch order items for real food orders only
     if (fetchedOrders.length > 0) {
       const orderIds = fetchedOrders.map(o => o.id);
       const { data: allItems } = await supabase
@@ -266,17 +304,12 @@ const OpsOrdersPage = () => {
 
       const grouped: Record<string, any[]> = {};
       const prepTimes: Record<string, number> = {};
-
       (allItems || []).forEach((item: any) => {
-        // Group items by order
         if (!grouped[item.order_id]) grouped[item.order_id] = [];
         grouped[item.order_id].push(item);
-
-        // Track max prep time per order (parallel cooking = max item time)
         const itemPrep = item.menu_items?.prep_time || defaultPrepTime;
         prepTimes[item.order_id] = Math.max(prepTimes[item.order_id] || 0, itemPrep);
       });
-
       setOrderItems(grouped);
       setOrderPrepTimes(prepTimes);
     }

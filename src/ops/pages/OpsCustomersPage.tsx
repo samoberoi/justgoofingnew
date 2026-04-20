@@ -1,26 +1,19 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import OpsBottomNav from '../components/OpsBottomNav';
-import { Users, Phone, ShoppingBag, Search, ArrowLeft } from 'lucide-react';
+import { Users, Phone, Search, ArrowLeft, Ticket, CalendarCheck, ShoppingBag } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useLocation } from 'react-router-dom';
-
-interface Customer {
-  name: string;
-  phone: string;
-  userId: string | null;
-  orders: number;
-  spent: number;
-  lastOrderDate: string;
-}
+import { fetchUnifiedTransactions, aggregateCustomers, type UnifiedCustomer, type UnifiedTxn } from '../lib/unifiedTransactions';
 
 const OpsCustomersPage = () => {
   const location = useLocation();
-  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [customers, setCustomers] = useState<UnifiedCustomer[]>([]);
+  const [allTxns, setAllTxns] = useState<UnifiedTxn[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
-  const [customerOrders, setCustomerOrders] = useState<any[]>([]);
+  const [selectedCustomer, setSelectedCustomer] = useState<UnifiedCustomer | null>(null);
+  const [customerTxns, setCustomerTxns] = useState<UnifiedTxn[]>([]);
   const [customerAddresses, setCustomerAddresses] = useState<any[]>([]);
 
   useEffect(() => {
@@ -37,69 +30,22 @@ const OpsCustomersPage = () => {
   }, [customers, location.state]);
 
   const fetchCustomers = async () => {
-    // Fetch orders and profiles in parallel
-    const [ordersRes, profilesRes] = await Promise.all([
-      supabase.from('orders').select('customer_name, customer_phone, total, created_at, user_id').order('created_at', { ascending: false }),
-      supabase.from('profiles').select('user_id, phone, full_name'),
-    ]);
-
-    const orders = ordersRes.data;
-    const profiles = profilesRes.data || [];
-    if (!orders) { setLoading(false); return; }
-
-    // Build a profile lookup by user_id
-    const profileMap = new Map<string, { phone: string | null; name: string | null }>();
-    profiles.forEach(p => profileMap.set(p.user_id, { phone: p.phone, name: p.full_name }));
-
-    // Aggregate by user_id first, fallback to phone/name
-    const map = new Map<string, Customer>();
-    orders.forEach(o => {
-      const profile = o.user_id ? profileMap.get(o.user_id) : null;
-      const phone = o.customer_phone || profile?.phone || '';
-      const name = o.customer_name || profile?.name || 'Guest';
-      const key = o.user_id || phone || name;
-
-      const existing = map.get(key);
-      if (existing) {
-        existing.orders += 1;
-        existing.spent += Number(o.total);
-        // Update phone/name if we now have better data
-        if (!existing.phone && phone) existing.phone = phone;
-        if (existing.name === 'Guest' && name !== 'Guest') existing.name = name;
-      } else {
-        map.set(key, {
-          name,
-          phone: phone || '-',
-          userId: o.user_id || null,
-          orders: 1,
-          spent: Number(o.total),
-          lastOrderDate: o.created_at,
-        });
-      }
-    });
-
-    setCustomers(Array.from(map.values()).sort((a, b) => b.spent - a.spent));
+    const txns = await fetchUnifiedTransactions();
+    setAllTxns(txns);
+    setCustomers(aggregateCustomers(txns));
     setLoading(false);
   };
 
-  const viewCustomer = async (customer: Customer) => {
+  const viewCustomer = async (customer: UnifiedCustomer) => {
     setSelectedCustomer(customer);
     window.scrollTo(0, 0);
+    const matched = allTxns.filter(t => {
+      if (customer.userId && t.user_id === customer.userId) return true;
+      if (!customer.userId && t.customer_phone && t.customer_phone === customer.phone) return true;
+      return false;
+    });
+    setCustomerTxns(matched);
 
-    // Build query based on available identifiers
-    let ordersQuery = supabase.from('orders').select('*').order('created_at', { ascending: false }).limit(20);
-    if (customer.userId) {
-      ordersQuery = ordersQuery.eq('user_id', customer.userId);
-    } else if (customer.phone && customer.phone !== '-') {
-      ordersQuery = ordersQuery.eq('customer_phone', customer.phone);
-    } else {
-      ordersQuery = ordersQuery.eq('customer_name', customer.name);
-    }
-
-    const ordersRes = await ordersQuery;
-    setCustomerOrders(ordersRes.data || []);
-
-    // Fetch addresses if we have a userId
     if (customer.userId) {
       const addrsRes = await supabase.from('addresses').select('*').eq('user_id', customer.userId).order('created_at', { ascending: false });
       setCustomerAddresses(addrsRes.data || []);
@@ -116,12 +62,20 @@ const OpsCustomersPage = () => {
 
   const formatDate = (d: string) => new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 
+  const txnLabel = (t: UnifiedTxn) => {
+    if (t.source === 'pack') return { tag: 'PACK', cls: 'bg-purple-500/10 text-purple-400', subtitle: t.pack_name || 'Play Pack' };
+    if (t.source === 'booking') return { tag: 'BOOKING', cls: 'bg-blue-500/10 text-blue-400', subtitle: `${t.package_name} · ${t.booking_date}` };
+    return { tag: 'ORDER', cls: 'bg-secondary/10 text-secondary', subtitle: t.number };
+  };
+
   if (selectedCustomer) {
+    const avg = selectedCustomer.totalTransactions > 0
+      ? Math.round(selectedCustomer.totalSpent / selectedCustomer.totalTransactions) : 0;
     return (
       <div className="min-h-screen bg-background pb-20">
         <div className="sticky top-0 z-40 bg-card/95 backdrop-blur-xl border-b border-border px-4 py-3">
           <div className="flex items-center gap-3">
-            <button onClick={() => { setSelectedCustomer(null); setCustomerOrders([]); setCustomerAddresses([]); }}>
+            <button onClick={() => { setSelectedCustomer(null); setCustomerTxns([]); setCustomerAddresses([]); }}>
               <ArrowLeft size={20} className="text-foreground" />
             </button>
             <h1 className="font-heading text-lg text-foreground">{selectedCustomer.name}</h1>
@@ -129,7 +83,6 @@ const OpsCustomersPage = () => {
         </div>
 
         <div className="px-4 py-4 space-y-4">
-          {/* Customer summary */}
           <div className="bg-card border border-border rounded-xl p-4 space-y-3">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-full bg-secondary/20 flex items-center justify-center">
@@ -144,21 +97,31 @@ const OpsCustomersPage = () => {
             </div>
             <div className="grid grid-cols-3 gap-3 pt-2 border-t border-border">
               <div className="text-center">
-                <p className="font-heading text-lg text-secondary">{selectedCustomer.orders}</p>
-                <p className="text-[10px] text-muted-foreground">Orders</p>
+                <p className="font-heading text-lg text-secondary">{selectedCustomer.totalTransactions}</p>
+                <p className="text-[10px] text-muted-foreground">Total Sales</p>
               </div>
               <div className="text-center">
-                <p className="font-heading text-lg text-secondary">₹{selectedCustomer.spent.toLocaleString()}</p>
+                <p className="font-heading text-lg text-secondary">₹{selectedCustomer.totalSpent.toLocaleString()}</p>
                 <p className="text-[10px] text-muted-foreground">Total Spent</p>
               </div>
               <div className="text-center">
-                <p className="font-heading text-lg text-secondary">₹{Math.round(selectedCustomer.spent / selectedCustomer.orders)}</p>
-                <p className="text-[10px] text-muted-foreground">Avg Order</p>
+                <p className="font-heading text-lg text-secondary">₹{avg}</p>
+                <p className="text-[10px] text-muted-foreground">Avg Ticket</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-2 pt-2 border-t border-border text-center">
+              <div className="flex items-center justify-center gap-1 text-[11px] text-muted-foreground">
+                <Ticket size={10} className="text-purple-400" /> {selectedCustomer.packs} packs
+              </div>
+              <div className="flex items-center justify-center gap-1 text-[11px] text-muted-foreground">
+                <CalendarCheck size={10} className="text-blue-400" /> {selectedCustomer.bookings} bookings
+              </div>
+              <div className="flex items-center justify-center gap-1 text-[11px] text-muted-foreground">
+                <ShoppingBag size={10} className="text-secondary" /> {selectedCustomer.orders} orders
               </div>
             </div>
           </div>
 
-          {/* Saved Addresses */}
           {customerAddresses.length > 0 && (
             <div>
               <h2 className="font-heading text-xs text-muted-foreground uppercase tracking-wider mb-2">Saved Addresses</h2>
@@ -175,31 +138,30 @@ const OpsCustomersPage = () => {
             </div>
           )}
 
-          {/* Order history */}
           <div>
-            <h2 className="font-heading text-xs text-muted-foreground uppercase tracking-wider mb-2">Order History</h2>
-            {customerOrders.length === 0 ? (
-              <p className="text-xs text-muted-foreground py-4 text-center">No orders found</p>
+            <h2 className="font-heading text-xs text-muted-foreground uppercase tracking-wider mb-2">Activity History</h2>
+            {customerTxns.length === 0 ? (
+              <p className="text-xs text-muted-foreground py-4 text-center">No activity found</p>
             ) : (
               <div className="space-y-2">
-                {customerOrders.map(order => (
-                  <div key={order.id} className="bg-card border border-border rounded-lg p-3">
-                    <div className="flex items-center justify-between">
-                      <span className="font-heading text-sm text-foreground">{order.order_number}</span>
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                        order.status === 'delivered' ? 'bg-green-500/10 text-green-500'
-                          : order.status === 'cancelled' ? 'bg-red-500/10 text-red-500'
-                          : 'bg-secondary/10 text-secondary'
-                      }`}>
-                        {order.status?.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()) || 'Unknown'}
-                      </span>
+                {customerTxns.map(t => {
+                  const lbl = txnLabel(t);
+                  return (
+                    <div key={`${t.source}-${t.id}`} className="bg-card border border-border rounded-lg p-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${lbl.cls}`}>{lbl.tag}</span>
+                          <span className="font-heading text-sm text-foreground">{t.number}</span>
+                        </div>
+                        <span className="font-heading text-foreground">₹{t.amount.toLocaleString()}</span>
+                      </div>
+                      <div className="flex items-center justify-between mt-1 text-xs text-muted-foreground">
+                        <span className="truncate">{lbl.subtitle}</span>
+                        <span>{formatDate(t.created_at)}</span>
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between mt-1 text-xs text-muted-foreground">
-                      <span>{formatDate(order.created_at)}</span>
-                      <span className="font-heading text-foreground">₹{Number(order.total).toLocaleString()}</span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -231,7 +193,8 @@ const OpsCustomersPage = () => {
         ) : filtered.length === 0 ? (
           <div className="text-center py-16 text-muted-foreground">
             <Users size={40} className="mx-auto mb-3 opacity-30" />
-            <p className="text-sm">No customers found</p>
+            <p className="text-sm">No customers yet</p>
+            <p className="text-xs mt-1 opacity-60">Customers appear after their first pack, booking, or order</p>
           </div>
         ) : (
           filtered.map((c, i) => (
@@ -253,8 +216,8 @@ const OpsCustomersPage = () => {
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-sm font-heading text-secondary">₹{c.spent.toLocaleString()}</p>
-                <p className="text-[10px] text-muted-foreground">{c.orders} order{c.orders > 1 ? 's' : ''}</p>
+                <p className="text-sm font-heading text-secondary">₹{c.totalSpent.toLocaleString()}</p>
+                <p className="text-[10px] text-muted-foreground">{c.totalTransactions} sale{c.totalTransactions > 1 ? 's' : ''}</p>
               </div>
             </motion.button>
           ))
