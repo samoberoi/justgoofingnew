@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Search, UserPlus, CheckCircle2, Clock, Users, X, LogOut } from 'lucide-react';
+import { ArrowLeft, Search, UserPlus, CheckCircle2, Clock, Users, X, LogOut, ScanLine, Wallet, IndianRupee } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '../hooks/useAuth';
 import OpsBottomNav from '../components/OpsBottomNav';
+import QrScanner from '../components/QrScanner';
 import { calcAge } from '../../app/hooks/useKids';
 import { toast } from 'sonner';
 
@@ -40,12 +41,24 @@ interface ActiveSession {
   user_id: string;
 }
 
+interface PendingPack {
+  id: string;
+  pack_name: string;
+  total_hours: number;
+  amount_paid: number;
+  user_id: string;
+  purchased_at: string;
+  customer_name?: string | null;
+  customer_phone?: string | null;
+}
+
 const StaffCheckInPage = () => {
   const navigate = useNavigate();
   const { user, storeId } = useAuth();
 
-  const [tab, setTab] = useState<'checkin' | 'active'>('checkin');
+  const [tab, setTab] = useState<'checkin' | 'active' | 'pending'>('checkin');
   const [search, setSearch] = useState('');
+  const [scannerOpen, setScannerOpen] = useState(false);
   const [scannedBooking, setScannedBooking] = useState<Booking | null>(null);
   const [parentKids, setParentKids] = useState<KidRow[]>([]);
   const [selectedKidId, setSelectedKidId] = useState<string | null>(null);
@@ -53,6 +66,8 @@ const StaffCheckInPage = () => {
   const [submitting, setSubmitting] = useState(false);
 
   const [activeSessions, setActiveSessions] = useState<ActiveSession[]>([]);
+  const [pendingPacks, setPendingPacks] = useState<PendingPack[]>([]);
+  const [settlingId, setSettlingId] = useState<string | null>(null);
   const [now, setNow] = useState(Date.now());
 
   // Live clock for active session timers
