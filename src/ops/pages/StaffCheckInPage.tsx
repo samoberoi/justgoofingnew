@@ -273,9 +273,9 @@ const StaffCheckInPage = () => {
   };
 
   // Search booking by QR code, booking number, customer QR token, or phone number
-  const handleSearch = async () => {
-    if (!search.trim()) return;
-    const term = search.trim();
+  const handleSearch = async (rawTerm?: string) => {
+    const term = (rawTerm ?? search).trim();
+    if (!term) return;
 
     // Customer QR token format: "JG:<userId>:<ts>:<rand>"
     if (term.startsWith('JG:')) {
