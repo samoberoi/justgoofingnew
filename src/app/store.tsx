@@ -185,15 +185,17 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       .eq('user_id', userId);
     setTotalOrders(count || 0);
 
-    // Fetch profile (phone + name) — fall back to auth phone if profile missing
+    // Fetch profile (phone + name) — fall back to auth phone, then mock-auth email local part
     const { data: profile } = await supabase
       .from('profiles')
       .select('phone, full_name')
       .eq('user_id', userId)
       .maybeSingle() as any;
     const { data: { user: authUser } } = await supabase.auth.getUser();
-    const resolvedPhone = profile?.phone || authUser?.phone || '';
-    if (resolvedPhone) setPhoneNumber(resolvedPhone);
+    const emailLocalPart = authUser?.email?.split('@')[0] || '';
+    const derivedPhone = /^\d{10,15}$/.test(emailLocalPart) ? emailLocalPart : '';
+    const resolvedPhone = profile?.phone || authUser?.phone || derivedPhone || '';
+    setPhoneNumber(resolvedPhone);
     if (profile?.full_name) setUserName(profile.full_name);
 
     // Fetch badges
