@@ -187,6 +187,25 @@ const StaffCheckInPage = () => {
 
   // Helper: load a customer by user_id and prepare a synthetic "checkin context"
   const loadCustomerByUserId = async (userId: string) => {
+    // Block if customer already has an active session
+    const { data: existingSession } = await supabase
+      .from('play_sessions' as any)
+      .select('id, kid_name, checked_in_at')
+      .eq('user_id', userId)
+      .eq('status', 'active')
+      .order('checked_in_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (existingSession) {
+      const who = (existingSession as any).kid_name || 'this customer';
+      toast.error('Already checked in 🚫', {
+        description: `${who} has an active session. Check them out before starting a new one.`,
+      });
+      setTab('active');
+      setScannedBooking(null);
+      return;
+    }
+
     const { data: profile } = await supabase
       .from('profiles')
       .select('full_name, phone')
