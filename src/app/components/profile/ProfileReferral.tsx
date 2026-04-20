@@ -9,22 +9,22 @@ interface ProfileReferralProps {
 const ProfileReferral = ({ referralCode }: ProfileReferralProps) => {
   const [copied, setCopied] = useState(false);
 
-  const appLink = 'https://biryaan.lovable.app';
+  const appLink = 'https://justgoofing.lovable.app';
 
   const handleShare = () => {
     const shareText = [
-      `🍛👑 Join BIRYAAN — the Sultanat of Biryani!`,
+      `🎉 Join Just Goofing — Where Fun Meets Innovation!`,
       ``,
-      `Use my referral code ${referralCode} when you sign up and we both earn Biryan Points!`,
+      `Use my referral code ${referralCode} when you sign up and we both earn Goofy Points!`,
       ``,
-      `🔗 Order now: ${appLink}`,
+      `🔗 Join now: ${appLink}`,
       ``,
-      `Download the app & start your royal feast today! 🏰`,
+      `Download the app & let the goofing begin! 🎈`,
     ].join('\n');
 
     if (navigator.share) {
       navigator.share({
-        title: 'BIRYAAN — Royal Biryani, Delivered',
+        title: 'Just Goofing — Where Fun Meets Innovation',
         text: shareText,
         url: appLink,
       }).catch(() => {
@@ -52,7 +52,7 @@ const ProfileReferral = ({ referralCode }: ProfileReferralProps) => {
           <Gift size={16} className="text-secondary" />
           <p className="text-sm font-heading text-foreground">Refer & Earn</p>
         </div>
-        <p className="text-xs text-muted-foreground">Share your code — both you and your friend earn Biryan Points on their first order!</p>
+        <p className="text-xs text-muted-foreground">Share your code — both you and your friend earn Goofy Points on their first order!</p>
 
         {/* Referral code */}
         <div className="flex items-center gap-2 bg-muted/60 rounded-xl p-3 border border-border">

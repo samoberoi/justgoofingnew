@@ -106,7 +106,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       if (session?.user) {
         const uid = session.user.id;
         setUserId(uid);
-        const code = 'BIRYAAN-' + uid.slice(0, 6).toUpperCase();
+        const code = 'GOOFY-' + uid.slice(0, 6).toUpperCase();
         setReferralCode(code);
 
         // Fire-and-forget referral setup — completely detached from callback

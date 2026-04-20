@@ -17,7 +17,7 @@ const WalletPage = () => {
       <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-2xl border-b border-secondary/10">
         <div className="flex items-center gap-3 px-4 h-14">
           <button onClick={() => navigate(-1)}><ArrowLeft size={20} className="text-foreground" /></button>
-          <h1 className="font-heading text-lg text-foreground">Biryan Points</h1>
+          <h1 className="font-heading text-lg text-foreground">Goofy Points</h1>
         </div>
       </header>
 
@@ -33,7 +33,7 @@ const WalletPage = () => {
             <div className="w-14 h-14 rounded-full bg-secondary/15 border border-secondary/25 flex items-center justify-center mx-auto mb-3">
               <Coins size={24} className="text-secondary" />
             </div>
-            <p className="text-xs text-muted-foreground uppercase tracking-[0.2em] font-heading">Biryan Points</p>
+            <p className="text-xs text-muted-foreground uppercase tracking-[0.2em] font-heading">Goofy Points</p>
             <p className="font-display text-5xl text-gradient-gold mt-2">{walletBalance}</p>
             <p className="text-xs text-muted-foreground mt-2">1 Point = ₹1 • Redeem at checkout</p>
           </div>

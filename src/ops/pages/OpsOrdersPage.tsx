@@ -175,7 +175,7 @@ const printDeliveryOrder = (order: any, items: any[]) => {
   .row { display: flex; justify-content: space-between; padding: 2px 0; }
   h2 { font-size: 14px; } .total-row { font-size: 14px; font-weight: bold; }
 </style></head><body>
-  <div class="center"><h2>BIRYAAN</h2><p style="font-size:10px;">Royal Biryani Experience</p></div>
+  <div class="center"><h2>JUST GOOFING</h2><p style="font-size:10px;">Where Fun Meets Innovation</p></div>
   <div class="line"></div>
   <div class="center bold" style="font-size:13px;">DELIVERY ORDER</div>
   <div class="line"></div>
@@ -201,7 +201,7 @@ const printDeliveryOrder = (order: any, items: any[]) => {
   <div class="row total-row"><span>TOTAL</span><span>₹${Number(order.total).toFixed(0)}</span></div>
   <div class="line"></div>
   ${order.special_instructions ? `<div style="padding:4px 0;font-style:italic;font-size:10px;">Note: ${order.special_instructions}</div><div class="line"></div>` : ''}
-  <div class="center" style="margin-top:8px;font-size:9px;">Thank you for ordering with Biryaan!<br/>Printed: ${new Date().toLocaleString('en-IN')}</div>
+  <div class="center" style="margin-top:8px;font-size:9px;">Thank you for ordering with Just Goofing!<br/>Printed: ${new Date().toLocaleString('en-IN')}</div>
 </body></html>`);
   win.document.close(); win.print();
 };

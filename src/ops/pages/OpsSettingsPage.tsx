@@ -49,7 +49,7 @@ const StoreFormFields = ({ form, setForm, onSave, onCancel, saving, submitLabel 
   <div className="bg-card border border-border rounded-xl p-4 mb-4 space-y-3">
     <div>
       <label className={labelClass}>Store Name *</label>
-      <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. BIRYAAN HSR Layout" className={inputClass} />
+      <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Just Goofing HSR Layout" className={inputClass} />
     </div>
     <div>
       <label className={labelClass}>Full Address</label>
