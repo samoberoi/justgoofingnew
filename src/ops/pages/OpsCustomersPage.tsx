@@ -15,6 +15,8 @@ const OpsCustomersPage = () => {
   const [selectedCustomer, setSelectedCustomer] = useState<UnifiedCustomer | null>(null);
   const [customerTxns, setCustomerTxns] = useState<UnifiedTxn[]>([]);
   const [customerAddresses, setCustomerAddresses] = useState<any[]>([]);
+  const [customerSessions, setCustomerSessions] = useState<any[]>([]);
+  const [storeMap, setStoreMap] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
     fetchCustomers();
