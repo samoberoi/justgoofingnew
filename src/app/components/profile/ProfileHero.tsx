@@ -115,7 +115,6 @@ const ProfileHero = ({ userId, userName, phoneNumber, tierName, tierEmoji, total
             <div className="flex items-center gap-1.5 mt-1.5">
               <Crown size={12} className="text-secondary" />
               <span className="text-xs text-secondary font-heading uppercase tracking-wider">{tierName}</span>
-              <span className="text-[10px] text-muted-foreground ml-1">• {totalOrders} orders</span>
             </div>
           </div>
         </div>
