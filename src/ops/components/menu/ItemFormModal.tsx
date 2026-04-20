@@ -200,7 +200,7 @@ const ItemFormModal = ({ item, categories, addonGroups, onClose, onSaved }: Prop
     let itemId = item?.id;
 
     if (item) {
-      await supabase.from('menu_items').update(payload).eq('id', item.id);
+      await supabase.from('menu_items').update(payload as any).eq('id', item.id);
     } else {
       const { data } = await supabase.from('menu_items').insert(payload as any).select('id').single();
       itemId = data?.id;
