@@ -8,19 +8,52 @@ import BottomNav from '../components/BottomNav';
 const StreakPage = () => {
   const navigate = useNavigate();
   const [streakCampaigns, setStreakCampaigns] = useState<any[]>([]);
+  const [currentWeek, setCurrentWeek] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetch = async () => {
-      const { data } = await supabase.from('streak_campaigns').select('*').eq('is_active', true) as any;
-      setStreakCampaigns(data || []);
+      const [campaignsRes, userRes] = await Promise.all([
+        supabase.from('streak_campaigns').select('*').eq('is_active', true),
+        supabase.auth.getUser(),
+      ]);
+      setStreakCampaigns(campaignsRes.data || []);
+
+      const userId = userRes.data.user?.id;
+      const campaign = campaignsRes.data?.[0];
+      if (userId && campaign) {
+        // Compute weeks completed: count distinct ISO weeks since campaign-relevant activity
+        const startMs = Date.now() - campaign.duration_weeks * 7 * 24 * 60 * 60 * 1000;
+        const startIso = new Date(startMs).toISOString();
+        const [packsRes, bookingsRes, ordersRes] = await Promise.all([
+          supabase.from('user_packs').select('purchased_at').eq('user_id', userId).gte('purchased_at', startIso),
+          supabase.from('bookings').select('created_at').eq('user_id', userId).gte('created_at', startIso),
+          supabase.from('orders').select('created_at').eq('user_id', userId).gte('created_at', startIso),
+        ]);
+        const allDates: string[] = [
+          ...(packsRes.data || []).map(r => r.purchased_at),
+          ...(bookingsRes.data || []).map(r => r.created_at),
+          ...(ordersRes.data || []).map(r => r.created_at),
+        ];
+        // Group by week-of-year, count weeks where activity >= min_orders_per_week
+        const weekCounts: Record<string, number> = {};
+        allDates.forEach(d => {
+          const date = new Date(d);
+          const year = date.getFullYear();
+          const oneJan = new Date(year, 0, 1);
+          const week = Math.ceil(((date.getTime() - oneJan.getTime()) / 86400000 + oneJan.getDay() + 1) / 7);
+          const key = `${year}-${week}`;
+          weekCounts[key] = (weekCounts[key] || 0) + 1;
+        });
+        const completedWeeks = Object.values(weekCounts).filter(c => c >= (campaign.min_orders_per_week || 1)).length;
+        setCurrentWeek(Math.min(completedWeeks, campaign.duration_weeks));
+      }
       setLoading(false);
     };
     fetch();
   }, []);
 
   const campaign = streakCampaigns[0];
-  const currentWeek = 0;
   const durationWeeks = campaign?.duration_weeks || 4;
 
   const weeks = Array.from({ length: durationWeeks }, (_, i) => ({
