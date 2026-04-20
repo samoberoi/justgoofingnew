@@ -447,6 +447,10 @@ export type Database = {
           name: string
           notes: string | null
           parent_user_id: string
+          parent1_name: string | null
+          parent1_phone: string | null
+          parent2_name: string | null
+          parent2_phone: string | null
           school: string | null
           updated_at: string
         }
@@ -459,6 +463,10 @@ export type Database = {
           name: string
           notes?: string | null
           parent_user_id: string
+          parent1_name?: string | null
+          parent1_phone?: string | null
+          parent2_name?: string | null
+          parent2_phone?: string | null
           school?: string | null
           updated_at?: string
         }
@@ -471,6 +479,10 @@ export type Database = {
           name?: string
           notes?: string | null
           parent_user_id?: string
+          parent1_name?: string | null
+          parent1_phone?: string | null
+          parent2_name?: string | null
+          parent2_phone?: string | null
           school?: string | null
           updated_at?: string
         }
