@@ -776,6 +776,116 @@ const StaffCheckInPage = () => {
   );
 };
 
+// ===== Active Session Card with countdown timer + Extend/Checkout =====
+const SLOT_HOURS = 1; // base slot length
+const ActiveSessionCard = ({
+  session,
+  now,
+  busy,
+  onExtend,
+  onCheckOut,
+}: {
+  session: ActiveSession;
+  now: number;
+  busy: boolean;
+  onExtend: () => void;
+  onCheckOut: () => void;
+}) => {
+  const checkedInMs = new Date(session.checked_in_at).getTime();
+  const allowedMs = (SLOT_HOURS + Number(session.extended_hours || 0)) * 3600_000;
+  const elapsedMs = Math.max(0, now - checkedInMs);
+  const remainingMs = allowedMs - elapsedMs; // can go negative (overrun)
+  const minsLeft = remainingMs / 60000;
+
+  // Color phases
+  let phase: 'green' | 'amber' | 'red' | 'over' = 'green';
+  if (remainingMs <= 0) phase = 'over';
+  else if (minsLeft <= 3) phase = 'red';
+  else if (minsLeft <= 10) phase = 'amber';
+
+  const phaseStyle = {
+    green: { bar: 'bg-mint', text: 'text-mint', ring: 'border-mint/30', chip: 'bg-mint/15 text-mint' },
+    amber: { bar: 'bg-butter', text: 'text-ink', ring: 'border-butter', chip: 'bg-butter text-ink' },
+    red: { bar: 'bg-coral', text: 'text-coral', ring: 'border-coral', chip: 'bg-coral text-white' },
+    over: { bar: 'bg-coral', text: 'text-coral', ring: 'border-coral', chip: 'bg-coral text-white' },
+  }[phase];
+
+  const fmtCountdown = (ms: number) => {
+    const sign = ms < 0 ? '-' : '';
+    const abs = Math.abs(ms);
+    const m = Math.floor(abs / 60000);
+    const s = Math.floor((abs % 60000) / 1000);
+    return `${sign}${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  };
+
+  const pct = Math.min(100, Math.max(0, (elapsedMs / allowedMs) * 100));
+  const showActions = phase === 'amber' || phase === 'red' || phase === 'over';
+
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={`bg-card border-2 ${phaseStyle.ring} rounded-3xl p-4 shadow-pop`}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-mint flex items-center justify-center font-display text-lg text-ink shrink-0">
+            {session.kid_name?.charAt(0).toUpperCase() || '?'}
+          </div>
+          <div className="min-w-0">
+            <p className="font-display text-base text-ink truncate">{session.kid_name || 'Guest'}</p>
+            <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+              <span className={`px-1.5 py-0.5 ${phaseStyle.chip} text-[9px] font-heading rounded-full`}>
+                {session.num_kids > 1 ? `×${session.num_kids} kids` : '1 kid'}
+              </span>
+              {Number(session.extended_hours) > 0 && (
+                <span className="px-1.5 py-0.5 bg-lavender/30 text-ink text-[9px] font-heading rounded-full">
+                  +{session.extended_hours}h ext
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+        <div className="text-right shrink-0">
+          <p className={`font-display text-2xl ${phaseStyle.text} tabular-nums leading-none`}>
+            {fmtCountdown(remainingMs)}
+          </p>
+          <p className="text-[10px] text-ink/50 font-heading uppercase tracking-wider mt-0.5">
+            {phase === 'over' ? 'Over time' : 'Time left'}
+          </p>
+        </div>
+      </div>
+
+      {/* Progress bar */}
+      <div className="mt-3 h-2 rounded-full bg-ink/8 overflow-hidden">
+        <div className={`h-full ${phaseStyle.bar} transition-all`} style={{ width: `${pct}%` }} />
+      </div>
+
+      {/* Actions: always show checkout; show extend in amber/red/over */}
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <motion.button
+          whileTap={{ scale: 0.96 }}
+          onClick={onExtend}
+          disabled={busy}
+          className={`py-2.5 rounded-2xl text-xs font-heading border-2 transition-all flex items-center justify-center gap-1.5 disabled:opacity-50 ${
+            showActions ? 'bg-mint border-mint text-ink shadow-pop-mint' : 'bg-card border-ink/10 text-ink/70'
+          }`}
+        >
+          ⏱️ Extend +1h
+        </motion.button>
+        <motion.button
+          whileTap={{ scale: 0.96 }}
+          onClick={onCheckOut}
+          className="py-2.5 bg-gradient-coral rounded-2xl text-xs font-heading text-white shadow-pop-coral flex items-center justify-center gap-1.5"
+        >
+          <LogOut size={13} /> Check Out
+        </motion.button>
+      </div>
+    </motion.div>
+  );
+};
+
 const SettleCard = ({ pack, onSettle, busy }: { pack: PendingPack; onSettle: (m: 'cash' | 'upi' | 'card' | 'online') => void; busy: boolean }) => {
   const [picking, setPicking] = useState(false);
   const methods: { key: 'cash' | 'upi' | 'card' | 'online'; label: string; emoji: string }[] = [
