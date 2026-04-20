@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import OpsBottomNav from '../components/OpsBottomNav';
-import { Users, Phone, Search, ArrowLeft, Ticket, CalendarCheck, ShoppingBag } from 'lucide-react';
+import { Users, Phone, Search, ArrowLeft, Ticket, CalendarCheck, ShoppingBag, Clock, MapPin, Hourglass } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useLocation } from 'react-router-dom';
 import { fetchUnifiedTransactions, aggregateCustomers, type UnifiedCustomer, type UnifiedTxn } from '../lib/unifiedTransactions';
