@@ -626,4 +626,66 @@ const StaffCheckInPage = () => {
   );
 };
 
+const SettleCard = ({ pack, onSettle, busy }: { pack: PendingPack; onSettle: (m: 'cash' | 'upi' | 'card' | 'online') => void; busy: boolean }) => {
+  const [picking, setPicking] = useState(false);
+  const methods: { key: 'cash' | 'upi' | 'card' | 'online'; label: string; emoji: string }[] = [
+    { key: 'cash', label: 'Cash', emoji: '💵' },
+    { key: 'upi', label: 'UPI / Paytm', emoji: '📱' },
+    { key: 'card', label: 'Card', emoji: '💳' },
+    { key: 'online', label: 'Online', emoji: '🌐' },
+  ];
+  return (
+    <motion.div layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="bg-card border-2 border-ink/8 rounded-3xl p-4 shadow-pop">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="font-display text-base text-ink truncate">{pack.pack_name}</p>
+            <span className="text-[9px] px-2 py-0.5 rounded-full bg-coral text-white font-display">PENDING</span>
+          </div>
+          <p className="text-xs text-ink/70 mt-1">
+            👤 {pack.customer_name || 'Guest'} · 📞 {pack.customer_phone || '—'}
+          </p>
+          <p className="text-xs text-ink/60 mt-0.5">
+            {pack.total_hours} hrs · reserved {new Date(pack.purchased_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+          </p>
+        </div>
+        <div className="text-right shrink-0">
+          <p className="font-display text-2xl text-ink leading-none">₹{Number(pack.amount_paid)}</p>
+        </div>
+      </div>
+      {!picking ? (
+        <motion.button
+          whileTap={{ scale: 0.97 }}
+          onClick={() => setPicking(true)}
+          disabled={busy}
+          className="mt-3 w-full py-3 bg-gradient-coral rounded-2xl text-sm font-heading text-white shadow-pop-coral flex items-center justify-center gap-2 disabled:opacity-50"
+        >
+          <Wallet size={16} /> Settle Payment
+        </motion.button>
+      ) : (
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          {methods.map(m => (
+            <motion.button
+              key={m.key}
+              whileTap={{ scale: 0.96 }}
+              onClick={() => onSettle(m.key)}
+              disabled={busy}
+              className="py-3 bg-mint/20 border-2 border-ink/8 rounded-2xl text-xs font-heading text-ink hover:bg-mint/40 transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5"
+            >
+              <span>{m.emoji}</span> {m.label}
+            </motion.button>
+          ))}
+          <button
+            onClick={() => setPicking(false)}
+            disabled={busy}
+            className="col-span-2 py-2 text-xs text-ink/50 font-heading"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
+    </motion.div>
+  );
+};
+
 export default StaffCheckInPage;
