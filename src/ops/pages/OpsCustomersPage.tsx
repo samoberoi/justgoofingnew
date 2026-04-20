@@ -54,11 +54,15 @@ const OpsCustomersPage = () => {
     }
   };
 
-  const filtered = customers.filter(c =>
-    !search ||
-    c.name.toLowerCase().includes(search.toLowerCase()) ||
-    c.phone.includes(search)
-  );
+  const filtered = customers.filter(c => {
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return (
+      c.name.toLowerCase().includes(q) ||
+      c.phone.includes(search) ||
+      c.kidNames.some(k => k.toLowerCase().includes(q))
+    );
+  });
 
   const formatDate = (d: string) => new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 
@@ -182,7 +186,7 @@ const OpsCustomersPage = () => {
         <div className="relative">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <input value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Search by name or phone..."
+            placeholder="Search by parent, kid, or phone..."
             className="w-full pl-9 pr-4 py-2 bg-muted border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-secondary" />
         </div>
       </div>
@@ -213,6 +217,11 @@ const OpsCustomersPage = () => {
                 <div>
                   <p className="text-sm font-medium text-foreground">{c.name}</p>
                   <p className="text-xs text-muted-foreground">{c.phone}</p>
+                  {c.kidNames.length > 0 && (
+                    <p className="text-[10px] text-secondary/80 mt-0.5 truncate max-w-[180px]">
+                      Kids: {c.kidNames.join(', ')}
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="text-right">

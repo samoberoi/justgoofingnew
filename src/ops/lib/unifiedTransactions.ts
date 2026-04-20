@@ -39,6 +39,7 @@ export interface UnifiedCustomer {
   bookings: number;
   orders: number;
   lastActivity: string;
+  kidNames: string[];
 }
 
 /** Fetch packs+bookings+orders within a date range and unify them into one list. */
@@ -61,17 +62,28 @@ export const fetchUnifiedTransactions = async (
     ordersQuery.lte('created_at', toIso);
   }
 
-  const [packsRes, bookingsRes, ordersRes, profilesRes] = await Promise.all([
+  const [packsRes, bookingsRes, ordersRes, profilesRes, kidsRes] = await Promise.all([
     packsQuery,
     bookingsQuery,
     ordersQuery,
-    supabase.from('profiles').select('user_id, phone, full_name'),
+    supabase.from('profiles').select('user_id, phone, full_name, parent1_name, parent2_name'),
+    supabase.from('kids').select('parent_user_id, name').eq('is_active', true),
   ]);
 
   const profileMap = new Map<string, { phone: string | null; name: string | null }>();
-  (profilesRes.data || []).forEach(p =>
-    profileMap.set(p.user_id, { phone: p.phone, name: p.full_name })
-  );
+  (profilesRes.data || []).forEach((p: any) => {
+    // Prefer full_name, fall back to parent1_name then parent2_name
+    const resolved = p.full_name || p.parent1_name || p.parent2_name || null;
+    profileMap.set(p.user_id, { phone: p.phone, name: resolved });
+  });
+
+  const kidsMap = new Map<string, string[]>();
+  (kidsRes.data || []).forEach((k: any) => {
+    if (!k.parent_user_id || !k.name) return;
+    const arr = kidsMap.get(k.parent_user_id) || [];
+    arr.push(k.name);
+    kidsMap.set(k.parent_user_id, arr);
+  });
 
   const txns: UnifiedTxn[] = [];
 
@@ -82,7 +94,7 @@ export const fetchUnifiedTransactions = async (
       source: 'pack',
       number: `PACK-${p.id.slice(0, 6).toUpperCase()}`,
       user_id: p.user_id,
-      customer_name: profile?.name || 'Goofer',
+      customer_name: profile?.name || 'Guest',
       customer_phone: profile?.phone || '',
       amount: Number(p.amount_paid) || 0,
       status: p.status,
@@ -100,7 +112,7 @@ export const fetchUnifiedTransactions = async (
       source: 'booking',
       number: b.booking_number || `GOOF-${b.id.slice(0, 6).toUpperCase()}`,
       user_id: b.user_id,
-      customer_name: b.customer_name || profile?.name || 'Goofer',
+      customer_name: profile?.name || b.customer_name || 'Guest',
       customer_phone: b.customer_phone || profile?.phone || '',
       amount: Number(b.total_amount) || 0,
       status: b.status,
@@ -119,7 +131,7 @@ export const fetchUnifiedTransactions = async (
       source: 'order',
       number: o.order_number,
       user_id: o.user_id,
-      customer_name: o.customer_name || profile?.name || 'Goofer',
+      customer_name: profile?.name || o.customer_name || 'Guest',
       customer_phone: o.customer_phone || profile?.phone || '',
       amount: Number(o.total) || 0,
       status: o.status,
@@ -129,11 +141,14 @@ export const fetchUnifiedTransactions = async (
   });
 
   txns.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  // Attach kids list onto each txn via a side map (returned separately below)
+  (txns as any)._kidsMap = kidsMap;
   return txns;
 };
 
 /** Aggregate transactions into customers by user_id (or phone fallback). */
 export const aggregateCustomers = (txns: UnifiedTxn[]): UnifiedCustomer[] => {
+  const kidsMap: Map<string, string[]> = (txns as any)._kidsMap || new Map();
   const map = new Map<string, UnifiedCustomer>();
   txns.forEach(t => {
     const key = t.user_id || t.customer_phone || t.customer_name || 'unknown';
@@ -147,15 +162,14 @@ export const aggregateCustomers = (txns: UnifiedTxn[]): UnifiedCustomer[] => {
       if (new Date(t.created_at) > new Date(existing.lastActivity)) {
         existing.lastActivity = t.created_at;
       }
-      // upgrade name/phone if better data found
-      if (existing.name === 'Goofer' && t.customer_name && t.customer_name !== 'Goofer') {
+      if ((existing.name === 'Guest' || existing.name === 'Goofer') && t.customer_name && t.customer_name !== 'Guest' && t.customer_name !== 'Goofer') {
         existing.name = t.customer_name;
       }
       if (!existing.phone && t.customer_phone) existing.phone = t.customer_phone;
     } else {
       map.set(key, {
         userId: t.user_id,
-        name: t.customer_name || 'Goofer',
+        name: t.customer_name || 'Guest',
         phone: t.customer_phone || '-',
         totalSpent: t.amount,
         totalTransactions: 1,
@@ -163,8 +177,13 @@ export const aggregateCustomers = (txns: UnifiedTxn[]): UnifiedCustomer[] => {
         bookings: t.source === 'booking' ? 1 : 0,
         orders: t.source === 'order' ? 1 : 0,
         lastActivity: t.created_at,
+        kidNames: [],
       });
     }
+  });
+  // Attach kid names per customer
+  map.forEach(c => {
+    if (c.userId) c.kidNames = kidsMap.get(c.userId) || [];
   });
   return Array.from(map.values()).sort((a, b) => b.totalSpent - a.totalSpent);
 };
