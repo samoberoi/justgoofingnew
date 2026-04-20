@@ -81,10 +81,11 @@ const LoginPage = () => {
 
   const onAuthSuccess = async () => {
     setLoggedIn(true);
+    setPhoneNumber(phone);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user && phone) {
-        await supabase.from('profiles').update({ phone }).eq('user_id', user.id);
+        await supabase.from('profiles').upsert({ user_id: user.id, phone }, { onConflict: 'user_id' });
       }
     } catch {}
 
