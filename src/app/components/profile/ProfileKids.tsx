@@ -70,8 +70,12 @@ const ProfileKids = ({ userId }: ProfileKidsProps) => {
                 transition={{ delay: i * 0.05 }}
                 className="bg-card rounded-3xl p-3 border-2 border-ink/8 min-w-[140px] shrink-0 text-left active:scale-95 transition-transform"
               >
-                <div className={`w-14 h-14 rounded-2xl ${colorClass} flex items-center justify-center text-white font-display text-xl mb-2`}>
-                  {initial}
+                <div className={`w-14 h-14 rounded-2xl ${colorClass} flex items-center justify-center text-white font-display text-xl mb-2 overflow-hidden`}>
+                  {k.photo_url ? (
+                    <img src={k.photo_url} alt={k.name} className="w-full h-full object-cover" />
+                  ) : (
+                    initial
+                  )}
                 </div>
                 <p className="font-heading text-sm text-ink truncate">{k.name}</p>
                 {age !== null && (
