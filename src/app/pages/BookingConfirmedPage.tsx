@@ -81,10 +81,10 @@ const BookingConfirmedPage = () => {
             <Users size={14} className="text-secondary" />
             {booking.num_kids} {booking.num_kids === 1 ? 'kid' : 'kids'}
           </div>
-          {selectedStore?.address && (
+          {selectedStore?.name && (
             <div className="flex items-start gap-2 text-xs text-muted-foreground">
               <MapPin size={12} className="text-secondary mt-0.5 shrink-0" />
-              {selectedStore.address}
+              {selectedStore.name}
             </div>
           )}
         </div>
