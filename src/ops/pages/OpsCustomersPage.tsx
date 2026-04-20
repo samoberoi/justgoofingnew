@@ -153,6 +153,65 @@ const OpsCustomersPage = () => {
             </div>
           )}
 
+          {customerSessions.length > 0 && (
+            <div>
+              <h2 className="font-heading text-xs text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                <Hourglass size={11} className="text-purple-400" /> Pack Usage History
+              </h2>
+              <div className="space-y-2">
+                {customerSessions.map((s: any) => {
+                  const checkedIn = new Date(s.checked_in_at);
+                  const checkedOut = s.checked_out_at ? new Date(s.checked_out_at) : null;
+                  const durationMin = checkedOut ? Math.round((checkedOut.getTime() - checkedIn.getTime()) / 60000) : null;
+                  const storeName = s.store_id ? storeMap.get(s.store_id) : null;
+                  const isActive = s.status === 'active';
+                  return (
+                    <div key={s.id} className="bg-card border border-border rounded-lg p-3 space-y-1.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase ${
+                            isActive ? 'bg-green-500/15 text-green-500' :
+                            s.status === 'completed' ? 'bg-muted text-muted-foreground' :
+                            'bg-amber-500/15 text-amber-500'
+                          }`}>
+                            {s.status}
+                          </span>
+                          {s.kid_name && (
+                            <span className="text-xs font-medium text-foreground">{s.kid_name}</span>
+                          )}
+                          {s.plus_one && (
+                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-secondary/15 text-secondary font-bold">+1</span>
+                          )}
+                        </div>
+                        <span className="text-xs font-heading text-purple-400">
+                          {Number(s.hours_consumed || 0).toFixed(2)}h used
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-[11px] text-muted-foreground gap-2 flex-wrap">
+                        <span className="flex items-center gap-1">
+                          <Clock size={10} />
+                          {checkedIn.toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                          {checkedOut && (
+                            <> → {checkedOut.toLocaleString('en-IN', { hour: '2-digit', minute: '2-digit' })}</>
+                          )}
+                          {durationMin !== null && <span className="opacity-70">({durationMin}m)</span>}
+                        </span>
+                        {storeName && (
+                          <span className="flex items-center gap-1">
+                            <MapPin size={10} /> {storeName}
+                          </span>
+                        )}
+                      </div>
+                      {s.num_kids > 1 && (
+                        <p className="text-[10px] text-muted-foreground">{s.num_kids} kids in session</p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           <div>
             <h2 className="font-heading text-xs text-muted-foreground uppercase tracking-wider mb-2">Activity History</h2>
             {customerTxns.length === 0 ? (
