@@ -32,7 +32,7 @@ const CartPage = () => {
           <ShoppingBag size={32} className="text-muted-foreground/40" />
         </div>
         <h2 className="font-heading text-lg text-foreground">Your Cart is Empty</h2>
-        <p className="text-muted-foreground text-sm mt-2">Add biryani to begin your royal feast</p>
+        <p className="text-muted-foreground text-sm mt-2">Add some items to start your order</p>
         <motion.button whileTap={{ scale: 0.97 }} onClick={() => navigate('/home')}
           className="mt-6 px-8 py-3.5 bg-gradient-saffron rounded-xl font-heading text-sm text-primary-foreground shadow-saffron">
           Browse Menu
@@ -46,7 +46,7 @@ const CartPage = () => {
       <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-2xl border-b border-secondary/10">
         <div className="flex items-center gap-3 px-4 h-14">
           <button onClick={() => navigate(-1)}><ArrowLeft size={20} className="text-foreground" /></button>
-          <h1 className="font-heading text-lg text-foreground">Your Dawat</h1>
+          <h1 className="font-heading text-lg text-foreground">Your Cart</h1>
           <span className="ml-auto text-xs text-muted-foreground">{cart.length} item{cart.length > 1 ? 's' : ''}</span>
         </div>
       </header>

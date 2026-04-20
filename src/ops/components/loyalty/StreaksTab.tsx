@@ -89,7 +89,7 @@ const StreaksTab = () => {
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="bg-card border border-border rounded-xl p-4 space-y-3">
           <h3 className="font-heading text-sm text-foreground">{editId ? 'Edit' : 'Create'} Streak</h3>
           <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-            placeholder="e.g. Sultan's Weekly Challenge" className="w-full px-3 py-2 bg-muted border border-border rounded-lg text-sm text-foreground" />
+            placeholder="e.g. Weekly Streak Challenge" className="w-full px-3 py-2 bg-muted border border-border rounded-lg text-sm text-foreground" />
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="text-[10px] text-muted-foreground">Min Orders/Week</label>

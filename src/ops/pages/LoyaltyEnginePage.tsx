@@ -25,7 +25,7 @@ const LoyaltyEnginePage = () => {
     <div className="min-h-screen bg-background pb-20">
       <div className="sticky top-0 z-40 bg-card/95 backdrop-blur-xl border-b border-border">
         <div className="px-4 py-3">
-          <h1 className="font-heading text-lg text-gradient-gold">Sultan Rewards & Loyalty</h1>
+          <h1 className="font-heading text-lg text-gradient-gold">Rewards & Loyalty</h1>
           <p className="text-muted-foreground text-[10px]">Manage campaigns, streaks, badges & points</p>
         </div>
         <div className="flex overflow-x-auto px-2 pb-2 gap-1 no-scrollbar">

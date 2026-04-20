@@ -66,8 +66,8 @@ const ProfilePage = () => {
     navigate('/');
   };
 
-  const tierName = totalOrders >= 50 ? 'Sultan' : totalOrders >= 25 ? 'Nawab' : totalOrders >= 10 ? 'Shahzada' : 'Sipahi';
-  const tierEmoji = totalOrders >= 50 ? '👑' : totalOrders >= 25 ? '🏰' : totalOrders >= 10 ? '⚔️' : '🛡️';
+  const tierName = totalOrders >= 50 ? 'Legend' : totalOrders >= 25 ? 'Elite' : totalOrders >= 10 ? 'Pro' : 'Rookie';
+  const tierEmoji = totalOrders >= 50 ? '👑' : totalOrders >= 25 ? '🏆' : totalOrders >= 10 ? '⭐' : '🌱';
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -118,7 +118,7 @@ const ProfilePage = () => {
       {/* Quick links */}
       <div className="px-4 pt-4 space-y-1.5">
         {[
-          { label: 'Biryan Points Wallet', path: '/wallet', icon: '💰' },
+          { label: 'Goofy Points Wallet', path: '/wallet', icon: '💰' },
           { label: 'Order History', path: '/orders', icon: '📦' },
         ].map(item => (
           <motion.button key={item.path} whileTap={{ scale: 0.98 }} onClick={() => navigate(item.path)}
@@ -172,7 +172,7 @@ const ProfilePage = () => {
       <div className="px-4 pt-6 pb-8">
         <motion.button whileTap={{ scale: 0.97 }} onClick={handleLogout}
           className="w-full py-3.5 border border-accent/30 rounded-xl text-accent text-sm font-heading flex items-center justify-center gap-2 hover:bg-accent/5 transition-colors">
-          <LogOut size={14} /> Leave the Sultanat
+          <LogOut size={14} /> Sign Out
         </motion.button>
       </div>
 

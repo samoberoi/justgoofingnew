@@ -11,7 +11,7 @@ const OpsLoginPage = () => {
   const [sending, setSending] = useState(false);
 
   // Mock email from phone for dev login
-  const mockEmail = (p: string) => `${p}@ops.biryaan.app`;
+  const mockEmail = (p: string) => `${p}@ops.justgoofing.app`;
 
   const handlePhoneSubmit = async () => {
     if (phone.length < 10) return;
@@ -36,7 +36,7 @@ const OpsLoginPage = () => {
 
     if (newOtp.every(d => d !== '')) {
       setError('');
-      const password = `${phone}-biryaan-2024`;
+      const password = `${phone}-justgoofing-2024`;
       const email = mockEmail(phone);
 
       // Try sign in first
@@ -95,8 +95,8 @@ const OpsLoginPage = () => {
           >
             <div className="space-y-2">
               <div className="flex items-center justify-center gap-2">
-                <ChefHat className="text-secondary" size={28} />
-                <span className="font-display text-2xl text-gradient-gold">BIRYAAN OPS</span>
+                <img src="/logo.png" alt="Just Goofing" className="h-12" />
+                <span className="font-display text-2xl text-gradient-gold">OPS</span>
               </div>
               <p className="text-muted-foreground text-sm">Operations Command Center</p>
             </div>
