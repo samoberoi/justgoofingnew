@@ -104,16 +104,15 @@ const ProfileHero = ({ userId, userName, phoneNumber, tierName, tierEmoji, total
 
           {/* Info */}
           <div className="flex-1 min-w-0">
-            <p className="font-heading text-lg text-foreground truncate">{userName || 'Royal Guest'}</p>
-
             {phoneNumber && (
-              <div className="flex items-center gap-1.5 mt-1">
-                <Phone size={11} className="text-secondary shrink-0" />
-                <span className="text-sm text-muted-foreground font-mono tracking-wide">{formatPhone(phoneNumber)}</span>
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-coral/10 rounded-full mb-1.5">
+                <Phone size={10} className="text-coral shrink-0" />
+                <span className="text-[12px] text-coral font-heading tracking-wide">{formatPhone(phoneNumber)}</span>
               </div>
             )}
+            <p className="font-display text-xl text-ink truncate">{userName || 'Royal Guest'}</p>
 
-            <div className="flex items-center gap-1.5 mt-2">
+            <div className="flex items-center gap-1.5 mt-1.5">
               <Crown size={12} className="text-secondary" />
               <span className="text-xs text-secondary font-heading uppercase tracking-wider">{tierName}</span>
               <span className="text-[10px] text-muted-foreground ml-1">• {totalOrders} orders</span>

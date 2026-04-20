@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Plus, Baby, Cake, GraduationCap, Trash2, Edit3, X, Check } from 'lucide-react';
+import { ArrowLeft, Plus, Baby, Cake, GraduationCap, Trash2, Edit3, X, Check, Phone, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store';
 import { useKids, calcAge, Kid } from '../hooks/useKids';
@@ -28,9 +28,16 @@ interface FormState {
   date_of_birth: string;
   school: string;
   notes: string;
+  parent1_name: string;
+  parent1_phone: string;
+  parent2_name: string;
+  parent2_phone: string;
 }
 
-const empty: FormState = { name: '', gender: '', date_of_birth: '', school: '', notes: '' };
+const empty: FormState = {
+  name: '', gender: '', date_of_birth: '', school: '', notes: '',
+  parent1_name: '', parent1_phone: '', parent2_name: '', parent2_phone: '',
+};
 
 const KidsPage = () => {
   const navigate = useNavigate();
@@ -57,6 +64,10 @@ const KidsPage = () => {
       date_of_birth: kid.date_of_birth || '',
       school: kid.school || '',
       notes: kid.notes || '',
+      parent1_name: kid.parent1_name || '',
+      parent1_phone: kid.parent1_phone || '',
+      parent2_name: kid.parent2_name || '',
+      parent2_phone: kid.parent2_phone || '',
     });
     setEditingId(kid.id);
     setShowForm(true);
@@ -80,6 +91,10 @@ const KidsPage = () => {
       date_of_birth: form.date_of_birth || null,
       school: form.school.trim() || null,
       notes: form.notes.trim() || null,
+      parent1_name: form.parent1_name.trim() || null,
+      parent1_phone: form.parent1_phone.trim() || null,
+      parent2_name: form.parent2_name.trim() || null,
+      parent2_phone: form.parent2_phone.trim() || null,
     };
     if (editingId) {
       await updateKid(editingId, payload as any);
