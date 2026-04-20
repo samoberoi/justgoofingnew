@@ -33,8 +33,8 @@ const SubscriptionPage = () => {
       <div className="fixed inset-0 bg-background flex flex-col items-center justify-center px-6">
         <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring' }} className="text-center space-y-4">
           <div className="text-6xl">📦</div>
-          <h1 className="font-heading text-2xl text-gradient-gold">Royal Subscriber</h1>
-          <p className="text-muted-foreground text-sm">Your biryani subscription is active</p>
+          <h1 className="font-heading text-2xl text-gradient-gold">Subscriber Activated</h1>
+          <p className="text-muted-foreground text-sm">Your subscription is active</p>
           <div className="flex gap-3">
             <button onClick={() => setSubscribed(false)} className="px-4 py-2 bg-muted rounded-lg text-xs font-heading text-foreground flex items-center gap-1">
               <Pause size={12} /> Pause
@@ -53,7 +53,7 @@ const SubscriptionPage = () => {
       <header className="sticky top-0 z-40 bg-card/95 backdrop-blur-xl border-b border-border">
         <div className="flex items-center gap-3 px-4 h-14">
           <button onClick={() => navigate(-1)}><ArrowLeft size={20} className="text-foreground" /></button>
-          <h1 className="font-heading text-lg text-foreground">Royal Subscription</h1>
+          <h1 className="font-heading text-lg text-foreground">Subscription</h1>
         </div>
       </header>
 

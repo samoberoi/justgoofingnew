@@ -18,7 +18,7 @@ const NotificationsPage = () => {
       <header className="sticky top-0 z-40 bg-card/95 backdrop-blur-xl border-b border-border">
         <div className="flex items-center gap-3 px-4 h-14">
           <button onClick={() => navigate(-1)}><ArrowLeft size={20} className="text-foreground" /></button>
-          <h1 className="font-heading text-lg text-foreground">Royal Notifications</h1>
+          <h1 className="font-heading text-lg text-foreground">Notifications</h1>
         </div>
       </header>
 
