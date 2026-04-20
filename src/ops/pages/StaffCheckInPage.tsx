@@ -208,7 +208,7 @@ const StaffCheckInPage = () => {
       bookingForCheckin = booking as any;
     } else {
       // Look for an active pack — synthesize a "walk-in" booking shell
-      const { data: activePack } = await supabase
+      const { data: activePackRaw } = await supabase
         .from('user_packs' as any)
         .select('id, pack_name, total_hours, hours_used, status')
         .eq('user_id', userId)
@@ -216,16 +216,18 @@ const StaffCheckInPage = () => {
         .order('purchased_at', { ascending: true })
         .limit(1)
         .maybeSingle();
+      const activePack = activePackRaw as any;
 
       if (!activePack) {
         // Maybe they have a pending (unpaid) pack
-        const { data: pendingPack } = await supabase
+        const { data: pendingPackRaw } = await supabase
           .from('user_packs' as any)
           .select('id, pack_name, status')
           .eq('user_id', userId)
           .eq('status', 'pending')
           .limit(1)
           .maybeSingle();
+        const pendingPack = pendingPackRaw as any;
         if (pendingPack) {
           toast.error('Pack not paid yet', {
             description: `Settle ₹ in the Pay tab first, then scan again.`,
