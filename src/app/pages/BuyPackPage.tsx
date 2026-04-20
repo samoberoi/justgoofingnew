@@ -205,10 +205,10 @@ const BuyPackPage = () => {
             disabled={purchasing || alreadyClaimed}
             className="w-full py-4 bg-gradient-coral rounded-2xl font-display text-base text-ink shadow-pop-coral border-2 border-ink/10 disabled:opacity-40"
           >
-            {purchasing ? 'Adding…' : alreadyClaimed ? 'Already Claimed' : isFree ? 'Claim My Free Hour 🎁' : `Get for ₹${pack.price} · Pay at Venue`}
+            {purchasing ? 'Adding…' : alreadyClaimed ? 'Already Claimed' : isFree ? 'Claim My Free Hour 🎁' : `Reserve for ₹${pack.price} · Pay at Venue`}
           </motion.button>
           <p className="text-[11px] text-muted-foreground text-center mt-2 font-medium">
-            {isFree ? 'No payment needed ✨' : 'Online payment coming soon. Cash/UPI at venue for now.'}
+            {isFree ? 'No payment needed ✨' : 'You\'ll see your pack as Pending. Visit the centre to settle payment & activate.'}
           </p>
         </div>
       </div>

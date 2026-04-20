@@ -16,6 +16,8 @@ interface UserPack {
   status: string;
   is_free_welcome: boolean;
   purchased_at: string;
+  payment_status?: string;
+  amount_paid?: number;
 }
 
 interface Booking {
@@ -107,7 +109,7 @@ const DashboardPage = () => {
     const today = new Date().toISOString().split('T')[0];
 
     const [packsRes, bookingsRes, sessionRes] = await Promise.all([
-      supabase.from('user_packs' as any).select('*').eq('user_id', userId).eq('status', 'active').order('purchased_at', { ascending: false }),
+      supabase.from('user_packs' as any).select('*').eq('user_id', userId).in('status', ['active', 'pending']).order('purchased_at', { ascending: false }),
       supabase.from('bookings' as any).select('id, booking_number, package_name, booking_date, slot_time, status, num_kids').eq('user_id', userId).gte('booking_date', today).not('status', 'in', '("completed","cancelled")').order('booking_date', { ascending: true }).limit(5),
       supabase.from('play_sessions' as any).select('*').eq('user_id', userId).eq('status', 'active').order('checked_in_at', { ascending: false }).limit(1).maybeSingle(),
     ]);
@@ -129,7 +131,9 @@ const DashboardPage = () => {
     return () => { supabase.removeChannel(channel); };
   }, [userId, loadData]);
 
-  const totalHoursOwned = packs.reduce((sum, p) => sum + (Number(p.total_hours) - Number(p.hours_used)), 0);
+  const activePacks = packs.filter(p => p.status === 'active');
+  const pendingPacks = packs.filter(p => p.status === 'pending' || p.payment_status === 'pending');
+  const totalHoursOwned = activePacks.reduce((sum, p) => sum + (Number(p.total_hours) - Number(p.hours_used)), 0);
   const hasAnything = packs.length > 0 || bookings.length > 0 || activeSession;
   const firstName = (userName || '').split(' ')[0] || 'Goofer';
 
