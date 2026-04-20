@@ -757,38 +757,14 @@ const StaffCheckInPage = () => {
               </div>
             ) : (
               activeSessions.map(s => (
-                <motion.div
+                <ActiveSessionCard
                   key={s.id}
-                  layout
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="bg-card border-2 border-ink/8 rounded-3xl p-4 shadow-pop"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-12 h-12 rounded-2xl bg-gradient-mint flex items-center justify-center font-display text-lg text-ink shrink-0">
-                        {s.kid_name?.charAt(0).toUpperCase() || '?'}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-display text-base text-ink truncate">{s.kid_name || 'Guest'}</p>
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          <Clock size={11} className="text-mint" />
-                          <span className="text-xs font-heading text-mint tabular-nums">{formatDuration(s.checked_in_at)}</span>
-                          {s.plus_one && (
-                            <span className="px-1.5 py-0.5 bg-coral/15 text-coral text-[9px] font-heading rounded-full">+1 ×2</span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    <motion.button
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => handleCheckOut(s.id)}
-                      className="px-3.5 py-2 bg-gradient-coral rounded-xl text-xs font-heading text-white shadow-pop-coral shrink-0"
-                    >
-                      Check Out
-                    </motion.button>
-                  </div>
-                </motion.div>
+                  session={s}
+                  now={now}
+                  busy={extendingId === s.id}
+                  onExtend={() => handleExtend(s.id)}
+                  onCheckOut={() => handleCheckOut(s.id)}
+                />
               ))
             )}
           </div>
