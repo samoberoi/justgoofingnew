@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, QrCode, Timer, ChevronRight, Plus } from 'lucide-react';
+import { ArrowRight, ChevronRight, Plus } from 'lucide-react';
 import PlayfulHeader from '../components/RoyalHeader';
 import BottomNav from '../components/BottomNav';
+import Icon3D from '../components/Icon3D';
 import { useAppStore } from '../store';
 import { supabase } from '@/integrations/supabase/client';
 import charHero from '@/assets/char-hero.png';
@@ -157,7 +158,7 @@ const DashboardPage = () => {
                 </span>
               </div>
               <div className="flex items-center gap-2 mb-2">
-                <Timer size={16} className="text-mint" />
+                <Icon3D name="clock" size={20} alt="" />
                 <p className="font-heading text-sm text-white/70">Playing right now</p>
               </div>
               <div className="py-2">
@@ -223,7 +224,7 @@ const DashboardPage = () => {
                       className="w-12 h-12 bg-white/10 backdrop-blur rounded-full flex items-center justify-center"
                       aria-label="QR"
                     >
-                      <QrCode size={18} className="text-white" strokeWidth={2.5} />
+                      <Icon3D name="qr" size={22} alt="QR" />
                     </button>
                   )}
                 </div>

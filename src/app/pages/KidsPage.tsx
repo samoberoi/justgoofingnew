@@ -4,7 +4,8 @@ import { ArrowLeft, Plus, Cake, GraduationCap, Trash2, Edit3, X, Check, Camera, 
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAppStore } from '../store';
 import { useKids, calcAge, Kid, uploadKidPhoto } from '../hooks/useKids';
-import { Star, Sparkle, Cloud } from '../components/Stickers';
+import Icon3D from '../components/Icon3D';
+import illusKids from '@/assets/illus/illus-kids.png';
 import { toast } from 'sonner';
 
 const GENDERS = [
@@ -138,31 +139,26 @@ const KidsPage = () => {
 
   return (
     <div className="min-h-screen bg-background pb-32 relative overflow-hidden">
-      {/* Decorative stickers */}
-      <Star className="absolute top-24 right-6 w-8 h-8 text-butter opacity-40 animate-wobble" />
-      <Sparkle className="absolute top-44 left-8 w-6 h-6 text-coral opacity-50 animate-bounce-soft" />
-      <Cloud className="absolute top-72 right-10 w-10 h-10 text-mint opacity-30" />
-
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-background/85 backdrop-blur-xl border-b-2 border-ink/5">
-        <div className="flex items-center gap-3 px-4 h-16">
+      <header className="sticky top-0 z-40 bg-background/85 backdrop-blur-xl">
+        <div className="flex items-center gap-3 px-5 h-16 max-w-lg mx-auto">
           <motion.button
             whileTap={{ scale: 0.9 }}
             onClick={() => navigate(-1)}
-            className="w-10 h-10 rounded-2xl bg-card border-2 border-ink/8 shadow-soft flex items-center justify-center"
+            className="w-10 h-10 rounded-full bg-muted flex items-center justify-center"
           >
-            <ArrowLeft size={18} className="text-ink" />
+            <ArrowLeft size={18} className="text-ink" strokeWidth={2.5} />
           </motion.button>
           <div className="flex-1">
-            <h1 className="font-display text-xl text-ink leading-tight">My Kids 👶</h1>
-            <p className="text-[11px] text-ink/55">Tap a kid to edit · Add as many as you want</p>
+            <h1 className="font-display text-xl text-ink leading-tight -tracking-wide">My Kids</h1>
+            <p className="text-[11px] text-muted-foreground font-heading">Tap to edit · add as many as you want</p>
           </div>
           <motion.button
             whileTap={{ scale: 0.92 }}
             onClick={openAdd}
-            className="px-3.5 h-10 rounded-2xl bg-gradient-coral shadow-pop-coral flex items-center gap-1.5 text-white text-xs font-heading"
+            className="px-4 h-10 rounded-full bg-ink text-white flex items-center gap-1.5 text-xs font-display"
           >
-            <Plus size={14} /> Add
+            <Plus size={14} strokeWidth={2.5} /> Add
           </motion.button>
         </div>
       </header>
@@ -177,19 +173,17 @@ const KidsPage = () => {
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-card border-2 border-ink/8 rounded-3xl p-8 text-center shadow-pop"
+            className="bg-muted rounded-[32px] p-8 text-center"
           >
-            <div className="w-20 h-20 rounded-3xl bg-gradient-coral mx-auto mb-4 flex items-center justify-center text-4xl shadow-pop-coral animate-bounce-soft">
-              👶
-            </div>
-            <p className="font-display text-xl text-ink">No kids yet!</p>
-            <p className="text-sm text-ink/55 mt-1">Add your little goofers so check-ins are super fast.</p>
+            <img src={illusKids} alt="" className="w-32 h-32 mx-auto mb-3 object-contain" />
+            <p className="font-display text-2xl text-ink -tracking-wide">No kids yet!</p>
+            <p className="text-sm text-muted-foreground mt-1.5 font-heading">Add your little goofers so check-ins are super fast.</p>
             <motion.button
               whileTap={{ scale: 0.96 }}
               onClick={openAdd}
-              className="mt-5 inline-flex items-center gap-2 px-6 py-3 bg-gradient-coral rounded-2xl font-heading text-sm text-white shadow-pop-coral"
+              className="mt-5 inline-flex items-center gap-2 px-7 py-3.5 bg-ink rounded-full font-display text-sm text-white"
             >
-              <Plus size={16} /> Add a Kid
+              <Plus size={16} strokeWidth={2.5} /> Add a Kid
             </motion.button>
           </motion.div>
         ) : (
