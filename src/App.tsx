@@ -2,10 +2,12 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { AnimatePresence } from "framer-motion";
 import { AppProvider } from "./app/store";
 import { StoreSelectionProvider } from "./app/hooks/useStoreSelection";
 import { OpsAuthProvider, useAuth } from "./ops/hooks/useAuth";
+import PageTransition from "./app/components/PageTransition";
 import SplashScreen from "./app/pages/SplashScreen";
 import LoginPage from "./app/pages/LoginPage";
 import WelcomePage from "./app/pages/WelcomePage";
@@ -23,6 +25,7 @@ import StreakPage from "./app/pages/StreakPage";
 import ProfilePage from "./app/pages/ProfilePage";
 import KidsPage from "./app/pages/KidsPage";
 import NotificationsPage from "./app/pages/NotificationsPage";
+import PaymentPage from "./app/pages/PaymentPage";
 
 // Ops pages
 import SuperAdminDashboard from "./ops/pages/SuperAdminDashboard";
@@ -36,6 +39,7 @@ import OpsCustomersPage from "./ops/pages/OpsCustomersPage";
 import KitchenView from "./ops/pages/KitchenView";
 import DeliveryView from "./ops/pages/DeliveryView";
 import StaffCheckInPage from "./ops/pages/StaffCheckInPage";
+
 const queryClient = new QueryClient();
 
 const OpsRoute = ({ children, allowedRoles }: { children: React.ReactNode; allowedRoles: string[] }) => {
@@ -55,92 +59,104 @@ const OpsRoute = ({ children, allowedRoles }: { children: React.ReactNode; allow
   return <>{children}</>;
 };
 
+const T = ({ children }: { children: React.ReactNode }) => <PageTransition>{children}</PageTransition>;
+
+const AnimatedRoutes = () => {
+  const location = useLocation();
+  return (
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        <Route path="/" element={<SplashScreen />} />
+        <Route path="/login" element={<T><LoginPage /></T>} />
+
+        {/* Customer routes */}
+        <Route path="/welcome" element={<T><WelcomePage /></T>} />
+        <Route path="/home" element={<T><DashboardPage /></T>} />
+        <Route path="/menu" element={<T><MenuPage /></T>} />
+        <Route path="/buy-pack/:packId" element={<T><BuyPackPage /></T>} />
+        <Route path="/my-qr" element={<T><MyQRPage /></T>} />
+        <Route path="/extend-session/:sessionId" element={<T><ExtendSessionPage /></T>} />
+        <Route path="/book/:itemId" element={<T><BookingPage /></T>} />
+        <Route path="/booking-confirmed/:bookingId" element={<T><BookingConfirmedPage /></T>} />
+        <Route path="/wallet" element={<T><WalletPage /></T>} />
+        <Route path="/orders" element={<T><OrdersPage /></T>} />
+        <Route path="/tiers" element={<T><TiersPage /></T>} />
+        <Route path="/streak" element={<T><StreakPage /></T>} />
+        <Route path="/profile" element={<T><ProfilePage /></T>} />
+        <Route path="/kids" element={<T><KidsPage /></T>} />
+        <Route path="/notifications" element={<T><NotificationsPage /></T>} />
+        <Route path="/payment" element={<T><PaymentPage /></T>} />
+
+        {/* Ops routes */}
+        <Route path="/dashboard" element={
+          <OpsRoute allowedRoles={['super_admin', 'store_manager']}>
+            <DashboardSwitch />
+          </OpsRoute>
+        } />
+        <Route path="/check-in" element={
+          <OpsRoute allowedRoles={['super_admin', 'store_manager']}>
+            <StaffCheckInPage />
+          </OpsRoute>
+        } />
+        <Route path="/ops-orders" element={
+          <OpsRoute allowedRoles={['super_admin', 'store_manager']}>
+            <OpsOrdersPage />
+          </OpsRoute>
+        } />
+        <Route path="/ops-menu" element={
+          <OpsRoute allowedRoles={['super_admin', 'store_manager']}>
+            <OpsMenuPage />
+          </OpsRoute>
+        } />
+        <Route path="/customers" element={
+          <OpsRoute allowedRoles={['super_admin', 'store_manager']}>
+            <OpsCustomersPage />
+          </OpsRoute>
+        } />
+        <Route path="/analytics" element={
+          <OpsRoute allowedRoles={['super_admin']}>
+            <OpsAnalyticsPage />
+          </OpsRoute>
+        } />
+        <Route path="/settings" element={
+          <OpsRoute allowedRoles={['super_admin']}>
+            <OpsSettingsPage />
+          </OpsRoute>
+        } />
+        <Route path="/loyalty" element={
+          <OpsRoute allowedRoles={['super_admin']}>
+            <LoyaltyEnginePage />
+          </OpsRoute>
+        } />
+        <Route path="/kitchen" element={
+          <OpsRoute allowedRoles={['kitchen_manager']}>
+            <KitchenView />
+          </OpsRoute>
+        } />
+        <Route path="/deliveries" element={
+          <OpsRoute allowedRoles={['delivery_partner']}>
+            <DeliveryView />
+          </OpsRoute>
+        } />
+
+        <Route path="*" element={<Navigate to="/home" replace />} />
+      </Routes>
+    </AnimatePresence>
+  );
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <AppProvider>
         <StoreSelectionProvider>
-        <OpsAuthProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<SplashScreen />} />
-              <Route path="/login" element={<LoginPage />} />
-
-              {/* Customer routes */}
-              <Route path="/welcome" element={<WelcomePage />} />
-              <Route path="/home" element={<DashboardPage />} />
-              <Route path="/menu" element={<MenuPage />} />
-              <Route path="/buy-pack/:packId" element={<BuyPackPage />} />
-              <Route path="/my-qr" element={<MyQRPage />} />
-              <Route path="/extend-session/:sessionId" element={<ExtendSessionPage />} />
-              <Route path="/book/:itemId" element={<BookingPage />} />
-              <Route path="/booking-confirmed/:bookingId" element={<BookingConfirmedPage />} />
-              <Route path="/wallet" element={<WalletPage />} />
-              <Route path="/orders" element={<OrdersPage />} />
-              <Route path="/tiers" element={<TiersPage />} />
-              <Route path="/streak" element={<StreakPage />} />
-              <Route path="/profile" element={<ProfilePage />} />
-              <Route path="/kids" element={<KidsPage />} />
-              <Route path="/notifications" element={<NotificationsPage />} />
-
-              {/* Ops routes */}
-              <Route path="/dashboard" element={
-                <OpsRoute allowedRoles={['super_admin', 'store_manager']}>
-                  <DashboardSwitch />
-                </OpsRoute>
-              } />
-              <Route path="/check-in" element={
-                <OpsRoute allowedRoles={['super_admin', 'store_manager']}>
-                  <StaffCheckInPage />
-                </OpsRoute>
-              } />
-              <Route path="/ops-orders" element={
-                <OpsRoute allowedRoles={['super_admin', 'store_manager']}>
-                  <OpsOrdersPage />
-                </OpsRoute>
-              } />
-              <Route path="/ops-menu" element={
-                <OpsRoute allowedRoles={['super_admin', 'store_manager']}>
-                  <OpsMenuPage />
-                </OpsRoute>
-              } />
-              <Route path="/customers" element={
-                <OpsRoute allowedRoles={['super_admin', 'store_manager']}>
-                  <OpsCustomersPage />
-                </OpsRoute>
-              } />
-              <Route path="/analytics" element={
-                <OpsRoute allowedRoles={['super_admin']}>
-                  <OpsAnalyticsPage />
-                </OpsRoute>
-              } />
-              <Route path="/settings" element={
-                <OpsRoute allowedRoles={['super_admin']}>
-                  <OpsSettingsPage />
-                </OpsRoute>
-              } />
-              <Route path="/loyalty" element={
-                <OpsRoute allowedRoles={['super_admin']}>
-                  <LoyaltyEnginePage />
-                </OpsRoute>
-              } />
-              <Route path="/kitchen" element={
-                <OpsRoute allowedRoles={['kitchen_manager']}>
-                  <KitchenView />
-                </OpsRoute>
-              } />
-              <Route path="/deliveries" element={
-                <OpsRoute allowedRoles={['delivery_partner']}>
-                  <DeliveryView />
-                </OpsRoute>
-              } />
-
-              <Route path="*" element={<Navigate to="/home" replace />} />
-            </Routes>
-          </BrowserRouter>
-        </OpsAuthProvider>
+          <OpsAuthProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <AnimatedRoutes />
+            </BrowserRouter>
+          </OpsAuthProvider>
         </StoreSelectionProvider>
       </AppProvider>
     </TooltipProvider>

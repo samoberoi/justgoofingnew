@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Calendar, Clock, Users, Hourglass } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import BottomNav from '../components/BottomNav';
@@ -73,8 +73,8 @@ const OrdersPage = () => {
         <div className="p-4">
           <p className="font-display text-base text-ink">{pack.pack_name}</p>
           <div className="mt-2 flex items-center gap-3 text-[11px] text-muted-foreground flex-wrap font-heading">
-            <span className="flex items-center gap-1"><Hourglass size={11} strokeWidth={2.5} /> {hoursLeft}h of {pack.total_hours}h</span>
-            <span className="flex items-center gap-1"><Calendar size={11} strokeWidth={2.5} /> {fmtDateTime(pack.purchased_at)}</span>
+            <span className="flex items-center gap-1"><Icon3D name="clock" size={12} alt="" /> {hoursLeft}h of {pack.total_hours}h</span>
+            <span className="flex items-center gap-1"><Icon3D name="calendar" size={12} alt="" /> {fmtDateTime(pack.purchased_at)}</span>
           </div>
           <div className="mt-3 h-2 bg-muted rounded-full overflow-hidden">
             <div className="h-full bg-mint" style={{ width: `${pct}%` }} />
@@ -113,9 +113,9 @@ const OrdersPage = () => {
         <div className="p-4">
           <p className="font-display text-base text-ink">{booking.package_name}</p>
           <div className="mt-2 flex items-center gap-3 text-[11px] text-muted-foreground flex-wrap font-heading">
-            <span className="flex items-center gap-1"><Calendar size={11} strokeWidth={2.5} /> {fmtDate(booking.booking_date)}</span>
-            <span className="flex items-center gap-1"><Clock size={11} strokeWidth={2.5} /> {String(booking.slot_time).slice(0, 5)}</span>
-            <span className="flex items-center gap-1"><Users size={11} strokeWidth={2.5} /> {booking.num_kids}</span>
+            <span className="flex items-center gap-1"><Icon3D name="calendar" size={12} alt="" /> {fmtDate(booking.booking_date)}</span>
+            <span className="flex items-center gap-1"><Icon3D name="clock" size={12} alt="" /> {String(booking.slot_time).slice(0, 5)}</span>
+            <span className="flex items-center gap-1"><Icon3D name="kid" size={12} alt="" /> {booking.num_kids}</span>
           </div>
           <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
             <span className="text-[11px] text-muted-foreground font-heading">

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Plus, Cake, GraduationCap, Trash2, Edit3, X, Check, Camera, Loader2 } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Edit3, X, Camera, Loader2 } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAppStore } from '../store';
 import { useKids, calcAge, Kid, uploadKidPhoto } from '../hooks/useKids';
@@ -15,12 +15,12 @@ const GENDERS = [
 ];
 
 const KID_COLORS = [
-  'bg-gradient-coral shadow-pop-coral',
-  'bg-gradient-mint shadow-pop-mint',
-  'bg-gradient-butter shadow-pop-butter',
-  'bg-gradient-lavender shadow-pop-lavender',
-  'bg-gradient-sky shadow-pop',
-  'bg-gradient-bubblegum shadow-pop',
+  'bg-coral shadow-pop-coral',
+  'bg-mint shadow-pop-mint',
+  'bg-butter shadow-pop-butter',
+  'bg-lavender shadow-pop-lavender',
+  'bg-sky shadow-pop',
+  'bg-bubblegum shadow-pop',
 ];
 
 interface FormState {
@@ -237,7 +237,7 @@ const KidsPage = () => {
                       <div className="mt-2.5 flex flex-wrap gap-1.5">
                         {age !== null && (
                           <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-butter/20 rounded-full text-[11px] text-ink font-heading">
-                            <Cake size={11} /> {age} {age === 1 ? 'year' : 'years'}
+                            <Icon3D name="calendar" size={12} alt="" /> {age} {age === 1 ? 'year' : 'years'}
                           </span>
                         )}
                         {kid.date_of_birth && (
@@ -247,7 +247,7 @@ const KidsPage = () => {
                         )}
                         {kid.school && (
                           <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-sky/25 rounded-full text-[11px] text-ink">
-                            <GraduationCap size={11} /> {kid.school}
+                            <Icon3D name="badge" size={12} alt="" /> {kid.school}
                           </span>
                         )}
                       </div>
@@ -270,9 +270,9 @@ const KidsPage = () => {
           animate={{ scale: 1 }}
           whileTap={{ scale: 0.9 }}
           onClick={openAdd}
-          className="fixed bottom-6 right-5 z-40 w-16 h-16 bg-gradient-coral rounded-3xl shadow-pop-coral flex items-center justify-center"
+          className="fixed bottom-24 right-5 z-40 w-14 h-14 bg-coral rounded-full shadow-pop-coral flex items-center justify-center"
         >
-          <Plus size={26} className="text-white" />
+          <Plus size={24} className="text-white" strokeWidth={2.5} />
         </motion.button>
       )}
 
@@ -371,8 +371,8 @@ const KidsPage = () => {
 
                 {/* DOB */}
                 <div>
-                  <label className="text-xs font-heading text-ink/70 mb-1.5 block flex items-center gap-1.5">
-                    <Cake size={12} className="text-butter" /> Date of Birth
+                  <label className="text-xs font-heading text-ink/70 mb-1.5 flex items-center gap-1.5">
+                    <Icon3D name="calendar" size={14} alt="" /> Date of Birth
                   </label>
                   <input
                     type="date"
@@ -390,8 +390,8 @@ const KidsPage = () => {
 
                 {/* School */}
                 <div>
-                  <label className="text-xs font-heading text-ink/70 mb-1.5 block flex items-center gap-1.5">
-                    <GraduationCap size={12} className="text-sky" /> School
+                  <label className="text-xs font-heading text-ink/70 mb-1.5 flex items-center gap-1.5">
+                    <Icon3D name="badge" size={14} alt="" /> School
                   </label>
                   <input
                     value={form.school}
@@ -419,7 +419,7 @@ const KidsPage = () => {
                   disabled={saving || !form.name.trim()}
                   className="w-full py-4 bg-gradient-coral rounded-2xl font-heading text-base text-white shadow-pop-coral flex items-center justify-center gap-2 disabled:opacity-40 disabled:shadow-none"
                 >
-                  <Check size={18} /> {saving ? 'Saving…' : editingId ? 'Save Changes' : 'Add Kid'}
+                  ✓ {saving ? 'Saving…' : editingId ? 'Save Changes' : 'Add Kid'}
                 </motion.button>
               </div>
             </motion.div>

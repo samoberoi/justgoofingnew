@@ -21,11 +21,11 @@ const PlayfulHeader = () => {
           <motion.button
             whileTap={{ scale: 0.92 }}
             onClick={() => navigate('/wallet')}
-            className="flex items-center gap-1.5 pl-1.5 pr-3 py-1 rounded-full bg-mint shadow-pop-mint"
+            className="flex items-center gap-1.5 pl-2 pr-3.5 h-9 rounded-full bg-mint shadow-pop-mint"
             aria-label="Wallet"
           >
-            <Icon3D name="wallet" size={22} alt="" />
-            <span className="text-xs text-ink font-display tabular-nums">{walletBalance}</span>
+            <Icon3D name="wallet" size={20} alt="" />
+            <span className="text-xs text-ink font-display tabular-nums leading-none">{walletBalance}</span>
           </motion.button>
 
           <motion.button
@@ -34,7 +34,7 @@ const PlayfulHeader = () => {
             className="relative w-10 h-10 rounded-full bg-muted flex items-center justify-center"
             aria-label="Notifications"
           >
-            <Icon3D name="bell" size={26} alt="" />
+            <Icon3D name="bell" size={22} alt="" />
             <span className="absolute top-1 right-1 w-2 h-2 bg-coral rounded-full ring-2 ring-background" />
           </motion.button>
         </div>

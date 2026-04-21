@@ -1,18 +1,26 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import illusWelcome from '@/assets/illus/illus-welcome.png';
 
 const SplashScreen = () => {
   const navigate = useNavigate();
+  const [exiting, setExiting] = useState(false);
 
   useEffect(() => {
-    const t = setTimeout(() => navigate('/login'), 2400);
-    return () => clearTimeout(t);
+    const fadeT = setTimeout(() => setExiting(true), 2100);
+    const navT = setTimeout(() => navigate('/login'), 2500);
+    return () => { clearTimeout(fadeT); clearTimeout(navT); };
   }, [navigate]);
 
   return (
-    <div className="fixed inset-0 z-[100] bg-ink overflow-hidden flex flex-col">
+    <AnimatePresence>
+      {!exiting && (
+        <motion.div
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.35 }}
+          className="fixed inset-0 z-[100] bg-ink overflow-hidden flex flex-col"
+        >
       <div className="flex items-center justify-between px-7 pt-12 z-10">
         <motion.div
           initial={{ opacity: 0, y: -8 }}
@@ -74,7 +82,9 @@ const SplashScreen = () => {
         </h1>
         <p className="text-white/55 text-sm mt-3 font-heading">Where the fun never stops ✨</p>
       </motion.div>
-    </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
 
