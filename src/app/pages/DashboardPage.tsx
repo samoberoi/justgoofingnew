@@ -142,13 +142,13 @@ const DashboardPage = () => {
       <div className="px-5 pt-2 space-y-6 max-w-lg mx-auto">
         {/* Greeting */}
         <div>
-          <p className="text-xs text-muted-foreground font-heading">Hi {firstName}</p>
-          <h1 className="font-display text-3xl text-ink leading-tight mt-0.5 -tracking-wide">
+          <p className="text-xs text-muted-foreground font-heading">Hi {firstName} 👋</p>
+          <h1 className="font-display text-[34px] text-ink leading-[1.05] mt-1 -tracking-wide">
             Discover fun
           </h1>
         </div>
 
-        {/* === HERO CARD: dark surface OR active session OR balance showcase === */}
+        {/* === HERO CARD === */}
         <AnimatePresence mode="wait">
           {activeSession ? (
             <motion.div
@@ -156,7 +156,7 @@ const DashboardPage = () => {
               initial={{ opacity: 0, scale: 0.96 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0 }}
-              className="relative bg-ink rounded-[32px] p-6 shadow-hero overflow-hidden"
+              className="relative bg-ink rounded-[32px] p-6 shadow-hero overflow-hidden min-h-[260px]"
             >
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
@@ -195,9 +195,12 @@ const DashboardPage = () => {
               key="hero"
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              className="relative bg-ink rounded-[32px] p-6 shadow-hero overflow-hidden"
+              className="relative bg-ink rounded-[32px] p-6 pr-4 shadow-hero overflow-hidden min-h-[280px]"
             >
-              {/* floating dots */}
+              {/* soft glows */}
+              <div className="absolute -top-16 -left-16 w-56 h-56 rounded-full bg-mint/10 blur-3xl pointer-events-none" />
+              <div className="absolute -bottom-20 -right-20 w-64 h-64 rounded-full bg-coral/10 blur-3xl pointer-events-none" />
+
               <motion.div
                 animate={{ y: [0, -10, 0] }}
                 transition={{ duration: 3, repeat: Infinity }}
@@ -206,47 +209,48 @@ const DashboardPage = () => {
               <motion.div
                 animate={{ y: [0, 8, 0] }}
                 transition={{ duration: 2.5, repeat: Infinity }}
-                className="absolute bottom-24 right-12 w-3 h-3 rounded-full bg-coral"
+                className="absolute top-16 right-20 w-1.5 h-1.5 rounded-full bg-coral"
               />
 
-              <div className="relative z-10">
-                <p className="font-heading text-xs text-white/60 uppercase tracking-wider">Your Balance</p>
-                <div className="flex items-baseline gap-1.5 mt-1">
-                  <span className="font-display text-6xl text-white -tracking-wide leading-none">
+              <div className="relative z-10 max-w-[58%]">
+                <p className="font-heading text-[10px] text-white/60 uppercase tracking-[0.18em]">Your Balance</p>
+                <div className="flex items-baseline gap-1.5 mt-2">
+                  <span className="font-display text-[64px] text-white -tracking-[0.04em] leading-[0.9]">
                     {totalHoursOwned}
                   </span>
                   <span className="font-display text-xl text-mint">hrs</span>
                 </div>
-                <p className="text-white/50 text-xs mt-2 font-heading max-w-[60%]">
-                  {totalHoursOwned > 0 ? 'Ready to play whenever you are' : 'Grab a pack to start the fun'}
+                <p className="text-white/55 text-xs mt-3 font-heading leading-relaxed">
+                  {totalHoursOwned > 0 ? 'Ready when you are' : 'Grab a pack to start the fun'}
                 </p>
 
                 <div className="flex gap-2 mt-5">
-                  <button
+                  <motion.button
+                    whileTap={{ scale: 0.96 }}
                     onClick={() => navigate('/menu')}
-                    className="px-5 py-3 bg-mint rounded-full text-sm font-display text-ink flex items-center gap-1.5"
+                    className="px-5 py-3 bg-mint rounded-full text-sm font-display text-ink flex items-center gap-1.5 shadow-pop-mint"
                   >
-                    {totalHoursOwned > 0 ? 'Play more' : 'Get hours'} <ArrowRight size={14} strokeWidth={2.5} />
-                  </button>
+                    {totalHoursOwned > 0 ? 'Play more' : 'Get hours'} <ArrowRight size={14} strokeWidth={2.8} />
+                  </motion.button>
                   {hasAnything && (
-                    <button
+                    <motion.button
+                      whileTap={{ scale: 0.92 }}
                       onClick={() => navigate('/my-qr')}
                       className="w-12 h-12 bg-white/10 backdrop-blur rounded-full flex items-center justify-center"
                       aria-label="QR"
                     >
                       <Icon3D name="qr" size={22} alt="QR" />
-                    </button>
+                    </motion.button>
                   )}
                 </div>
               </div>
 
-              {/* Character peeking */}
               <motion.img
                 src={charHero}
                 alt=""
                 animate={{ y: [0, -6, 0] }}
-                transition={{ duration: 3, repeat: Infinity }}
-                className="absolute -bottom-2 -right-4 w-44 h-44 object-contain pointer-events-none"
+                transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                className="absolute -bottom-3 -right-3 w-48 h-48 object-contain pointer-events-none drop-shadow-2xl"
               />
             </motion.div>
           )}
