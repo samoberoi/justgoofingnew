@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import charHero from '@/assets/char-hero.png';
+import illusWelcome from '@/assets/illus/illus-welcome.png';
 
 const SplashScreen = () => {
   const navigate = useNavigate();
@@ -13,7 +13,6 @@ const SplashScreen = () => {
 
   return (
     <div className="fixed inset-0 z-[100] bg-ink overflow-hidden flex flex-col">
-      {/* Top label */}
       <div className="flex items-center justify-between px-7 pt-12 z-10">
         <motion.div
           initial={{ opacity: 0, y: -8 }}
@@ -21,7 +20,7 @@ const SplashScreen = () => {
           transition={{ delay: 0.2 }}
           className="flex items-center gap-2"
         >
-          <div className="w-8 h-8 rounded-lg bg-mint flex items-center justify-center">
+          <div className="w-9 h-9 rounded-xl bg-mint flex items-center justify-center">
             <span className="font-display text-ink text-sm leading-none">JG</span>
           </div>
         </motion.div>
@@ -35,7 +34,6 @@ const SplashScreen = () => {
         </motion.span>
       </div>
 
-      {/* Hero character on lavender card */}
       <div className="flex-1 flex items-center justify-center px-7 -mt-4">
         <motion.div
           initial={{ scale: 0.85, opacity: 0, rotate: -6 }}
@@ -43,7 +41,6 @@ const SplashScreen = () => {
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           className="relative w-full max-w-[320px] aspect-[3/4] rounded-[40px] bg-lavender overflow-hidden shadow-hero"
         >
-          {/* Floating sparkles */}
           <motion.div
             animate={{ y: [0, -10, 0] }}
             transition={{ duration: 3, repeat: Infinity }}
@@ -55,8 +52,8 @@ const SplashScreen = () => {
             className="absolute bottom-10 left-6 w-4 h-4 rounded-full bg-butter"
           />
           <motion.img
-            src={charHero}
-            alt="Goofy character"
+            src={illusWelcome}
+            alt="Just Goofing mascot"
             animate={{ y: [0, -8, 0] }}
             transition={{ duration: 2.8, repeat: Infinity, ease: 'easeInOut' }}
             className="absolute inset-0 w-full h-full object-contain object-bottom p-4"
@@ -64,7 +61,6 @@ const SplashScreen = () => {
         </motion.div>
       </div>
 
-      {/* Bottom title */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
