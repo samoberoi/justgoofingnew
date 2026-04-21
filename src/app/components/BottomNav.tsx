@@ -55,15 +55,17 @@ const BottomNav = () => {
           </div>
         </div>
 
-        {/* Center FAB — 3D play icon on dark disc */}
+        {/* Center FAB — QR scanner (the user's most-used live moment) */}
         <motion.button
           whileTap={{ scale: 0.9 }}
           whileHover={{ scale: 1.05 }}
-          onClick={() => navigate('/menu')}
+          animate={{ y: [0, -3, 0] }}
+          transition={{ y: { duration: 2.4, repeat: Infinity, ease: 'easeInOut' } }}
+          onClick={() => navigate('/my-qr')}
           className="absolute left-1/2 -translate-x-1/2 -top-3 w-16 h-16 rounded-full bg-ink flex items-center justify-center shadow-hero ring-4 ring-background"
-          aria-label="Play"
+          aria-label="My QR"
         >
-          <Icon3D name="play" size={40} alt="" />
+          <Icon3D name="qr" size={36} alt="" />
         </motion.button>
       </div>
     </nav>

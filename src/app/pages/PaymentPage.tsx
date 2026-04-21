@@ -1,15 +1,16 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Smartphone, CreditCard, Building2, Wallet, CheckCircle2, MapPin, Navigation, Loader2, Home, User, ChevronDown } from 'lucide-react';
+import { ArrowLeft, MapPin, Navigation, Loader2, Home, User, ChevronDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store';
 import { supabase } from '@/integrations/supabase/client';
+import Icon3D, { Icon3DName } from '../components/Icon3D';
 
-const paymentMethods = [
-  { id: 'upi', label: 'UPI', icon: Smartphone, desc: 'Google Pay, PhonePe, Paytm' },
-  { id: 'card', label: 'Card', icon: CreditCard, desc: 'Credit or Debit Card' },
-  { id: 'netbanking', label: 'Net Banking', icon: Building2, desc: 'All major banks' },
-  { id: 'cod', label: 'Cash on Delivery', icon: Wallet, desc: 'Pay when delivered' },
+const paymentMethods: { id: string; label: string; icon: Icon3DName; desc: string }[] = [
+  { id: 'upi', label: 'UPI', icon: 'payment', desc: 'Google Pay, PhonePe, Paytm' },
+  { id: 'card', label: 'Card', icon: 'wallet', desc: 'Credit or Debit Card' },
+  { id: 'netbanking', label: 'Net Banking', icon: 'wallet', desc: 'All major banks' },
+  { id: 'cod', label: 'Pay on arrival', icon: 'pin', desc: 'Pay when you arrive' },
 ];
 
 interface SavedAddress {
@@ -21,12 +22,11 @@ interface SavedAddress {
 
 const PaymentPage = () => {
   const navigate = useNavigate();
-  const { cart, clearCart, userName, phoneNumber, savedAddresses, walletBalance, activeCampaigns, totalOrders, refreshUserData } = useAppStore();
+  const { cart, clearCart, userName, phoneNumber, walletBalance, activeCampaigns, totalOrders, refreshUserData } = useAppStore();
   const [selected, setSelected] = useState('upi');
   const [processing, setProcessing] = useState(false);
   const [success, setSuccess] = useState(false);
   const [orderNumber, setOrderNumber] = useState('');
-  const [orderId, setOrderId] = useState('');
   const [address, setAddress] = useState('');
   const [houseNumber, setHouseNumber] = useState('');
   const [customerName, setCustomerName] = useState(userName || '');
@@ -34,11 +34,8 @@ const PaymentPage = () => {
   const [locatingGPS, setLocatingGPS] = useState(false);
   const [locationDetected, setLocationDetected] = useState(false);
 
-  // Saved addresses from DB
   const [dbAddresses, setDbAddresses] = useState<SavedAddress[]>([]);
   const [showAddressPicker, setShowAddressPicker] = useState(false);
-
-  // Delivery settings from DB
   const [deliveryFee, setDeliveryFee] = useState(30);
   const [freeDeliveryAbove, setFreeDeliveryAbove] = useState(500);
 
@@ -56,46 +53,15 @@ const PaymentPage = () => {
 
       const user = authRes.data?.user;
       if (user) {
-        // Fetch saved addresses
         const { data: addrs } = await supabase
           .from('addresses' as any)
           .select('id, formatted_address, house_number, label')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false });
 
-        // Also fetch unique addresses from past orders and backfill any missing ones
-        const { data: pastOrders } = await supabase
-          .from('orders')
-          .select('customer_address, house_number')
-          .eq('user_id', user.id)
-          .not('customer_address', 'is', null);
-
-        const existingKeys = new Set(
-          ((addrs as unknown as SavedAddress[]) || []).map(a => `${a.formatted_address}||${a.house_number || ''}`)
-        );
-
-        const toInsert: { user_id: string; formatted_address: string; house_number: string | null; label: string }[] = [];
-        const seenOrderKeys = new Set<string>();
-        for (const o of (pastOrders || []) as { customer_address: string; house_number: string | null }[]) {
-          if (!o.customer_address) continue;
-          const key = `${o.customer_address}||${o.house_number || ''}`;
-          if (!existingKeys.has(key) && !seenOrderKeys.has(key)) {
-            seenOrderKeys.add(key);
-            toInsert.push({ user_id: user.id, formatted_address: o.customer_address, house_number: o.house_number || null, label: 'Delivery' });
-          }
-        }
-        if (toInsert.length > 0) {
-          await supabase.from('addresses' as any).insert(toInsert);
-        }
-
-        // Re-fetch all addresses after backfill
-        const { data: allAddrs } = toInsert.length > 0
-          ? await supabase.from('addresses' as any).select('id, formatted_address, house_number, label').eq('user_id', user.id).order('created_at', { ascending: false })
-          : { data: addrs };
-
-        if (allAddrs && (allAddrs as any[]).length > 0) {
+        if (addrs) {
           const seen = new Set<string>();
-          const unique = (allAddrs as unknown as SavedAddress[]).filter(a => {
+          const unique = (addrs as unknown as SavedAddress[]).filter(a => {
             const key = `${a.formatted_address}||${a.house_number || ''}`;
             if (seen.has(key)) return false;
             seen.add(key);
@@ -104,15 +70,12 @@ const PaymentPage = () => {
           setDbAddresses(unique);
         }
 
-        // Fetch name from profile
         const { data: profile } = await supabase
           .from('profiles')
           .select('full_name')
           .eq('user_id', user.id)
           .maybeSingle();
-        if (profile?.full_name) {
-          setCustomerName(profile.full_name);
-        }
+        if (profile?.full_name) setCustomerName(profile.full_name);
       }
     };
     init();
@@ -126,10 +89,7 @@ const PaymentPage = () => {
     (c.category === 'first_order' ? totalOrders === 0 : true)
   );
 
-  const firstOrderDiscount = freeItemCampaign && cart.length > 0
-    ? -Math.min(...cart.map(c => c.price))
-    : 0;
-
+  const firstOrderDiscount = freeItemCampaign && cart.length > 0 ? -Math.min(...cart.map(c => c.price)) : 0;
   const pointsDiscount = usePoints ? -Math.min(walletBalance, subtotal + firstOrderDiscount) : 0;
   const computedDeliveryFee = subtotal > freeDeliveryAbove ? 0 : deliveryFee;
   const total = Math.max(0, subtotal + firstOrderDiscount + pointsDiscount + computedDeliveryFee);
@@ -162,9 +122,6 @@ const PaymentPage = () => {
     setLocationDetected(true);
   };
 
-  // Display-only full address (never stored as customer_address)
-  const fullAddressDisplay = houseNumber ? `${houseNumber}, ${address}` : address;
-
   const handlePay = async () => {
     if (!address.trim() || !customerName.trim() || processing) return;
     setProcessing(true);
@@ -182,14 +139,13 @@ const PaymentPage = () => {
       const user = authRes.data?.user;
       const pointsSettings = (pointsRes.data as any) || null;
 
-        // Resolve phone: store state → profile → auth user
-        let resolvedPhone = phoneNumber || user?.phone || null;
-        if (!resolvedPhone && user) {
-          const { data: prof } = await supabase.from('profiles').select('phone').eq('user_id', user.id).maybeSingle();
-          if (prof?.phone) resolvedPhone = prof.phone;
-        }
+      let resolvedPhone = phoneNumber || user?.phone || null;
+      if (!resolvedPhone && user) {
+        const { data: prof } = await supabase.from('profiles').select('phone').eq('user_id', user.id).maybeSingle();
+        if (prof?.phone) resolvedPhone = prof.phone;
+      }
 
-        const orderPayload = {
+      const orderPayload = {
         store_id: storeId,
         user_id: user?.id || null,
         customer_name: customerName.trim(),
@@ -203,7 +159,7 @@ const PaymentPage = () => {
         payment_method: selected,
         payment_status: selected === 'cod' ? 'pending' : 'paid',
         status: 'new' as const,
-        order_number: 'BRY-' + Math.floor(10000 + Math.random() * 90000),
+        order_number: 'GOOF-' + Math.floor(10000 + Math.random() * 90000),
       };
 
       const { data: order, error: orderError } = await supabase
@@ -218,7 +174,6 @@ const PaymentPage = () => {
         return;
       }
 
-      // Insert order items
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       const orderItems = cart.map(item => {
         const rawId = item.id.includes('_') ? item.id.split('_')[0] : item.id;
@@ -230,10 +185,8 @@ const PaymentPage = () => {
           price: item.price,
         };
       });
-
       await supabase.from('order_items').insert(orderItems);
 
-      // Save address for user (avoid duplicates by formatted_address + house_number combo)
       if (user && address.trim()) {
         const alreadySaved = dbAddresses.some(
           a => a.formatted_address === address && (a.house_number || '') === (houseNumber || '')
@@ -247,41 +200,28 @@ const PaymentPage = () => {
           });
         }
       }
-
-      // Save name to profile
       if (user && customerName.trim()) {
         await supabase.from('profiles').update({ full_name: customerName.trim() }).eq('user_id', user.id);
       }
 
-      // Earn Goofy Points
       if (user && pointsSettings?.earning_enabled) {
         const earnPercent = pointsSettings.earning_percent || 2.5;
         let pointsEarned = Math.floor(total * earnPercent / 100);
-        if (pointsSettings.max_earn_per_order) {
-          pointsEarned = Math.min(pointsEarned, pointsSettings.max_earn_per_order);
-        }
+        if (pointsSettings.max_earn_per_order) pointsEarned = Math.min(pointsEarned, pointsSettings.max_earn_per_order);
         if (pointsEarned > 0) {
-          const expiresAt = pointsSettings.expiry_days
-            ? new Date(Date.now() + pointsSettings.expiry_days * 86400000).toISOString()
-            : null;
+          const expiresAt = pointsSettings.expiry_days ? new Date(Date.now() + pointsSettings.expiry_days * 86400000).toISOString() : null;
           await supabase.from('points_transactions').insert({
-            user_id: user.id,
-            type: 'earned',
-            amount: pointsEarned,
+            user_id: user.id, type: 'earned', amount: pointsEarned,
             balance_after: walletBalance + pointsEarned,
             description: `Earned from Order #${order.order_number}`,
-            order_id: order.id,
-            expires_at: expiresAt,
+            order_id: order.id, expires_at: expiresAt,
           } as any);
         }
       }
 
-      // Deduct points if used
       if (usePoints && pointsDiscount < 0 && user) {
         await supabase.from('points_transactions').insert({
-          user_id: user.id,
-          type: 'spent',
-          amount: pointsDiscount,
+          user_id: user.id, type: 'spent', amount: pointsDiscount,
           balance_after: walletBalance + pointsDiscount,
           description: `Redeemed on Order #${order.order_number}`,
           order_id: order.id,
@@ -289,7 +229,6 @@ const PaymentPage = () => {
       }
 
       setOrderNumber(order.order_number);
-      setOrderId(order.id);
       setProcessing(false);
       setSuccess(true);
       clearCart();
@@ -303,61 +242,64 @@ const PaymentPage = () => {
   if (success) {
     return (
       <div className="fixed inset-0 bg-background flex flex-col items-center justify-center px-6">
-        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', damping: 12 }} className="text-center space-y-6">
-          <motion.div animate={{ rotate: [0, 360] }} transition={{ duration: 1 }} className="inline-block">
-            <CheckCircle2 size={80} className="text-secondary" />
+        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', damping: 12 }} className="text-center space-y-6 max-w-sm w-full">
+          <motion.div animate={{ y: [0, -8, 0] }} transition={{ duration: 2, repeat: Infinity }} className="inline-block">
+            <Icon3D name="gift" size={120} alt="" />
           </motion.div>
-          <h1 className="font-heading text-2xl text-gradient-gold leading-tight">Order Confirmed!<br />Hang Tight</h1>
-          <p className="text-muted-foreground text-sm">Order #{orderNumber}</p>
-          <motion.button whileTap={{ scale: 0.97 }} onClick={() => navigate('/tracking', { state: { orderId } })}
-            className="w-full py-4 bg-gradient-saffron rounded-xl font-heading text-sm uppercase tracking-widest text-primary-foreground">
-            Track My Biryani
+          <div>
+            <h1 className="font-display text-3xl text-ink leading-tight -tracking-wide">Booking confirmed!</h1>
+            <p className="text-muted-foreground text-sm font-heading mt-2">Order #{orderNumber}</p>
+          </div>
+          <motion.button whileTap={{ scale: 0.97 }} onClick={() => navigate('/orders')}
+            className="w-full py-4 bg-ink rounded-full font-display text-base text-white">
+            View my booking
           </motion.button>
-          <button onClick={() => navigate('/home')} className="text-muted-foreground text-xs underline">Back to Menu</button>
+          <button onClick={() => navigate('/home')} className="text-muted-foreground text-xs underline font-heading">Back to home</button>
         </motion.div>
       </div>
     );
   }
 
+  const fullAddressDisplay = houseNumber ? `${houseNumber}, ${address}` : address;
+
   return (
     <div className="min-h-screen bg-background pb-32">
-      <header className="sticky top-0 z-40 bg-card/95 backdrop-blur-xl border-b border-border">
-        <div className="flex items-center gap-3 px-4 h-14">
-          <button onClick={() => navigate(-1)}><ArrowLeft size={20} className="text-foreground" /></button>
-          <h1 className="font-heading text-lg text-foreground">Checkout</h1>
+      <header className="sticky top-0 z-40 bg-background/85 backdrop-blur-xl">
+        <div className="flex items-center gap-3 px-5 h-16 max-w-lg mx-auto">
+          <motion.button whileTap={{ scale: 0.9 }} onClick={() => navigate(-1)}
+            className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+            <ArrowLeft size={18} className="text-ink" strokeWidth={2.5} />
+          </motion.button>
+          <h1 className="font-display text-xl text-ink -tracking-wide">Checkout</h1>
         </div>
       </header>
 
-      <div className="px-4 pt-4 space-y-4">
+      <div className="px-4 pt-4 space-y-4 max-w-lg mx-auto">
         {/* Customer Name */}
         <div className="space-y-1.5">
-          <label className="text-xs font-medium text-muted-foreground flex items-center gap-1"><User size={12} /> Your Name</label>
+          <label className="text-xs font-heading text-ink/70 flex items-center gap-1"><User size={12} /> Your Name</label>
           <input
             value={customerName}
             onChange={e => setCustomerName(e.target.value)}
             placeholder="Enter your full name *"
-            className={`w-full px-3 py-2.5 bg-muted border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-secondary ${
-              !customerName.trim() ? 'border-destructive/50' : 'border-border'
+            className={`w-full px-4 py-3.5 bg-card border-2 rounded-2xl text-sm text-ink placeholder:text-ink/35 focus:outline-none focus:border-coral transition-colors ${
+              !customerName.trim() ? 'border-destructive/40' : 'border-ink/8'
             }`}
           />
-          {!customerName.trim() && (
-            <p className="text-[11px] text-destructive">Name is required to place an order</p>
-          )}
         </div>
 
-        {/* Delivery address */}
+        {/* Address */}
         <div className="space-y-2">
-          <label className="text-xs font-medium text-muted-foreground flex items-center gap-1"><MapPin size={12} /> Delivery Address</label>
+          <label className="text-xs font-heading text-ink/70 flex items-center gap-1"><MapPin size={12} /> Delivery Address</label>
 
-          {/* Saved addresses */}
           {dbAddresses.length > 0 && (
             <div className="space-y-1.5">
               <button
                 onClick={() => setShowAddressPicker(!showAddressPicker)}
-                className="w-full flex items-center justify-between p-3 bg-card border border-border rounded-xl text-sm text-foreground"
+                className="w-full flex items-center justify-between p-3.5 bg-card border-2 border-ink/8 rounded-2xl text-sm text-ink"
               >
-                <span className="text-muted-foreground">📍 Saved Addresses ({dbAddresses.length})</span>
-                <ChevronDown size={14} className={`text-muted-foreground transition-transform ${showAddressPicker ? 'rotate-180' : ''}`} />
+                <span className="text-ink/60 font-heading">📍 Saved addresses ({dbAddresses.length})</span>
+                <ChevronDown size={14} className={`text-ink/40 transition-transform ${showAddressPicker ? 'rotate-180' : ''}`} />
               </button>
               {showAddressPicker && (
                 <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="space-y-1.5">
@@ -365,10 +307,10 @@ const PaymentPage = () => {
                     <button
                       key={addr.id}
                       onClick={() => handleSelectSavedAddress(addr)}
-                      className="w-full text-left p-3 bg-muted/50 border border-border rounded-lg text-sm text-foreground hover:border-secondary/50 transition-colors"
+                      className="w-full text-left p-3 bg-muted border-2 border-ink/5 rounded-2xl text-sm text-ink hover:border-coral/40 transition-colors"
                     >
-                      <p className="font-medium text-xs">{addr.label || 'Delivery'}</p>
-                      <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">
+                      <p className="font-display text-xs">{addr.label || 'Delivery'}</p>
+                      <p className="text-[11px] text-ink/55 mt-0.5 line-clamp-2 font-heading">
                         {addr.house_number ? `${addr.house_number}, ` : ''}{addr.formatted_address}
                       </p>
                     </button>
@@ -378,105 +320,94 @@ const PaymentPage = () => {
             </div>
           )}
 
-          {/* Use current location button */}
           {!locationDetected && !address && (
             <motion.button initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} whileTap={{ scale: 0.97 }}
               onClick={handleUseCurrentLocation} disabled={locatingGPS}
-              className="w-full flex items-center gap-3 p-3.5 bg-secondary/10 border border-secondary/30 rounded-xl text-sm text-foreground transition-colors">
-              {locatingGPS ? <Loader2 size={18} className="text-secondary animate-spin" /> : <Navigation size={18} className="text-secondary" />}
+              className="w-full flex items-center gap-3 p-3.5 bg-mint/15 border-2 border-mint/30 rounded-2xl text-sm text-ink">
+              {locatingGPS ? <Loader2 size={18} className="text-ink animate-spin" /> : <Navigation size={18} className="text-ink" />}
               <div className="text-left">
-                <p className="font-semibold text-sm">{locatingGPS ? 'Detecting location...' : 'Use Current Location'}</p>
-                <p className="text-xs text-muted-foreground">Auto-fill address using GPS</p>
+                <p className="font-display text-sm">{locatingGPS ? 'Detecting location…' : 'Use Current Location'}</p>
+                <p className="text-xs text-ink/55 font-heading">Auto-fill address using GPS</p>
               </div>
             </motion.button>
           )}
 
           <textarea value={address} onChange={e => setAddress(e.target.value)}
-            placeholder="Enter your full delivery address..."
-            rows={2}
-            className="w-full px-3 py-2.5 bg-muted border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-secondary resize-none" />
+            placeholder="Enter your full delivery address…" rows={2}
+            className="w-full px-4 py-3 bg-card border-2 border-ink/8 rounded-2xl text-sm text-ink placeholder:text-ink/35 focus:outline-none focus:border-coral resize-none transition-colors" />
 
           <div className="relative">
-            <Home size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Home size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-ink/40" />
             <input
               value={houseNumber}
               onChange={e => setHouseNumber(e.target.value)}
-              placeholder="House / Flat / Floor number (e.g. B-204, 2nd Floor)"
-              className="w-full pl-9 pr-3 py-2.5 bg-muted border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-secondary"
+              placeholder="House / Flat / Floor (e.g. B-204)"
+              className="w-full pl-10 pr-4 py-3.5 bg-card border-2 border-ink/8 rounded-2xl text-sm text-ink placeholder:text-ink/35 focus:outline-none focus:border-coral transition-colors"
             />
           </div>
 
-          {address && (
-            <button onClick={handleUseCurrentLocation} disabled={locatingGPS}
-              className="flex items-center gap-1.5 text-xs text-secondary font-medium">
-              {locatingGPS ? <Loader2 size={12} className="animate-spin" /> : <Navigation size={12} />}
-              {locatingGPS ? 'Detecting...' : 'Re-detect location'}
-            </button>
+          {fullAddressDisplay && (
+            <p className="text-[10px] text-ink/50 px-1 font-heading line-clamp-2">📍 {fullAddressDisplay}</p>
           )}
         </div>
 
-        {/* Order summary */}
-        <div className="bg-card border border-border rounded-xl p-4 space-y-2">
-          <h3 className="text-xs font-medium text-muted-foreground">Order Summary</h3>
-          {cart.map(item => (
-            <div key={item.id} className="flex justify-between text-sm">
-              <span className="text-foreground">{item.name} x{item.quantity}</span>
-              <span className="text-foreground">₹{item.price * item.quantity}</span>
-            </div>
-          ))}
-          <div className="border-t border-border pt-2 space-y-1">
-            <div className="flex justify-between text-sm text-foreground"><span>Subtotal</span><span>₹{subtotal}</span></div>
-            {firstOrderDiscount < 0 && <div className="flex justify-between text-sm text-green-500"><span>1+1 FREE</span><span>₹{firstOrderDiscount}</span></div>}
-            {pointsDiscount < 0 && <div className="flex justify-between text-sm text-secondary"><span>Points</span><span>₹{pointsDiscount}</span></div>}
-            <div className="flex justify-between text-sm text-muted-foreground"><span>Delivery</span><span>{computedDeliveryFee === 0 ? 'FREE' : `₹${computedDeliveryFee}`}</span></div>
-            <div className="flex justify-between font-heading text-base text-foreground pt-1 border-t border-border">
-              <span>Total</span><span className="text-secondary">₹{total}</span>
-            </div>
+        {/* Payment methods */}
+        <div className="space-y-2">
+          <label className="text-xs font-heading text-ink/70">Pay with</label>
+          <div className="grid grid-cols-2 gap-2">
+            {paymentMethods.map(m => {
+              const sel = selected === m.id;
+              return (
+                <motion.button
+                  key={m.id}
+                  whileTap={{ scale: 0.96 }}
+                  onClick={() => setSelected(m.id)}
+                  className={`p-3 rounded-2xl border-2 text-left transition-all ${sel ? 'border-coral bg-coral/5 shadow-pop-coral' : 'border-ink/8 bg-card'}`}
+                >
+                  <Icon3D name={m.icon} size={28} alt="" />
+                  <p className="font-display text-sm text-ink mt-1.5">{m.label}</p>
+                  <p className="text-[10px] text-ink/55 font-heading mt-0.5 line-clamp-1">{m.desc}</p>
+                </motion.button>
+              );
+            })}
           </div>
         </div>
 
-        {/* Points toggle */}
+        {/* Use points */}
         {walletBalance > 0 && (
-          <button onClick={() => setUsePoints(!usePoints)}
-            className={`w-full flex items-center justify-between p-3 rounded-xl border transition-colors ${usePoints ? 'bg-secondary/10 border-secondary/30' : 'bg-card border-border'}`}>
-            <span className="text-sm text-foreground">Use Goofy Points ({walletBalance} pts)</span>
-            <div className={`w-10 h-5 rounded-full transition-colors ${usePoints ? 'bg-secondary' : 'bg-muted'} flex items-center`}>
-              <div className={`w-4 h-4 rounded-full bg-foreground transition-transform ${usePoints ? 'translate-x-5' : 'translate-x-0.5'}`} />
+          <button
+            onClick={() => setUsePoints(!usePoints)}
+            className="w-full flex items-center justify-between p-3.5 bg-card border-2 border-ink/8 rounded-2xl"
+          >
+            <div className="flex items-center gap-3">
+              <Icon3D name="wallet" size={28} alt="" />
+              <div className="text-left">
+                <p className="font-display text-sm text-ink">Use Goofy Points</p>
+                <p className="text-[11px] text-ink/55 font-heading">{walletBalance} pts available</p>
+              </div>
+            </div>
+            <div className={`w-11 h-6 rounded-full flex items-center px-0.5 transition-colors ${usePoints ? 'bg-mint' : 'bg-ink/15'}`}>
+              <div className={`w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${usePoints ? 'translate-x-5' : 'translate-x-0'}`} />
             </div>
           </button>
         )}
 
-        {/* Payment method */}
-        <div className="space-y-2">
-          <p className="text-xs font-medium text-muted-foreground">Payment Method</p>
-          {paymentMethods.map(method => (
-            <motion.button key={method.id} whileTap={{ scale: 0.98 }} onClick={() => setSelected(method.id)}
-              className={`w-full flex items-center gap-4 p-4 rounded-xl border transition-colors ${
-                selected === method.id ? 'bg-secondary/10 border-secondary/30' : 'bg-card border-border'
-              }`}>
-              <method.icon size={22} className={selected === method.id ? 'text-secondary' : 'text-muted-foreground'} />
-              <div className="text-left">
-                <p className="text-sm font-semibold text-foreground">{method.label}</p>
-                <p className="text-xs text-muted-foreground">{method.desc}</p>
-              </div>
-              <div className={`ml-auto w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                selected === method.id ? 'border-secondary' : 'border-muted-foreground/30'
-              }`}>
-                {selected === method.id && <div className="w-2.5 h-2.5 rounded-full bg-secondary" />}
-              </div>
-            </motion.button>
-          ))}
+        {/* Summary */}
+        <div className="bg-card border-2 border-ink/8 rounded-2xl p-4 space-y-2">
+          <div className="flex justify-between text-sm text-ink font-heading"><span>Subtotal</span><span className="tabular-nums">₹{subtotal}</span></div>
+          {firstOrderDiscount < 0 && <div className="flex justify-between text-sm text-mint font-heading"><span>Welcome offer</span><span>−₹{Math.abs(firstOrderDiscount)}</span></div>}
+          {pointsDiscount < 0 && <div className="flex justify-between text-sm text-mint font-heading"><span>Points</span><span>−₹{Math.abs(pointsDiscount)}</span></div>}
+          <div className="flex justify-between text-sm text-ink font-heading"><span>Delivery</span><span className="tabular-nums">{computedDeliveryFee === 0 ? 'FREE' : `₹${computedDeliveryFee}`}</span></div>
+          <div className="border-t-2 border-ink/5 pt-2 flex justify-between font-display text-lg text-ink">
+            <span>Total</span><span className="text-coral tabular-nums">₹{total}</span>
+          </div>
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-xl border-t border-border p-4">
-        <motion.button whileTap={{ scale: 0.97 }} onClick={handlePay} disabled={processing || !address.trim() || !customerName.trim()}
-          className="w-full py-4 bg-gradient-saffron rounded-xl font-heading text-sm uppercase tracking-widest text-primary-foreground shadow-saffron disabled:opacity-60 flex items-center justify-center gap-2">
-          {processing ? (
-            <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }} className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full" />
-          ) : (
-            `Place Order • ₹${total}`
-          )}
+      <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-xl border-t-2 border-ink/5 p-4">
+        <motion.button whileTap={{ scale: 0.97 }} onClick={handlePay} disabled={!customerName.trim() || !address.trim() || processing}
+          className="w-full py-4 bg-ink rounded-full font-display text-base text-white shadow-pop disabled:opacity-40 max-w-lg mx-auto block">
+          {processing ? 'Placing order…' : `Pay ₹${total}`}
         </motion.button>
       </div>
     </div>

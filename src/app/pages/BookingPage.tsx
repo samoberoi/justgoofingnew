@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Users, Sparkles, CheckCircle2, PartyPopper, Plus } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAppStore } from '../store';
 import { useStoreSelection } from '../hooks/useStoreSelection';
@@ -128,8 +128,8 @@ const BookingPage = () => {
         {/* Package summary */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
           className="bg-card border-2 border-ink/8 rounded-3xl p-4 flex gap-3 shadow-pop">
-          <div className="w-16 h-16 rounded-2xl shrink-0 overflow-hidden bg-gradient-butter flex items-center justify-center">
-            {item.image_url ? <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" /> : <PartyPopper size={26} className="text-ink" />}
+          <div className="w-16 h-16 rounded-2xl shrink-0 overflow-hidden bg-butter flex items-center justify-center">
+            {item.image_url ? <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" /> : <Icon3D name="gift" size={36} alt="" />}
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-display text-base text-ink">{item.name}</h3>
@@ -140,8 +140,8 @@ const BookingPage = () => {
 
         {isFreeWelcome && (
           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-            className="bg-gradient-mint rounded-3xl p-4 flex items-center gap-3 shadow-pop-mint text-ink">
-            <Sparkles size={20} className="shrink-0" />
+            className="bg-mint rounded-3xl p-4 flex items-center gap-3 shadow-pop-mint text-ink">
+            <Icon3D name="gift" size={28} alt="" />
             <div>
               <p className="font-display text-sm">{welcomeCampaign!.name}</p>
               <p className="text-[11px] text-ink/70">This one's on us 🎉</p>
@@ -153,7 +153,7 @@ const BookingPage = () => {
         <div className="bg-card border-2 border-ink/8 rounded-3xl p-4 space-y-3 shadow-soft">
           <div className="flex items-center justify-between">
             <label className="font-display text-base text-ink flex items-center gap-2">
-              <Users size={16} className="text-coral" /> Who's coming?
+              <Icon3D name="kid" size={22} alt="" /> Who's coming?
             </label>
             <button onClick={() => navigate('/kids')} className="text-[11px] font-heading text-coral flex items-center gap-1">
               <Plus size={12} /> Manage Kids

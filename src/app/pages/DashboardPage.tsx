@@ -65,7 +65,7 @@ const LiveTimer = ({ checkedInAt }: { checkedInAt: string }) => {
   const m = Math.floor((elapsed % 3600) / 60);
   const s = elapsed % 60;
   return (
-    <span className="font-display text-5xl text-white tabular-nums tracking-tight">
+    <span className="font-display text-4xl sm:text-5xl text-white tabular-nums tracking-tight">
       {String(h).padStart(2, '0')}:{String(m).padStart(2, '0')}:{String(s).padStart(2, '0')}
     </span>
   );
@@ -148,18 +148,18 @@ const DashboardPage = () => {
               exit={{ opacity: 0 }}
               className="relative bg-ink rounded-[32px] p-6 shadow-hero overflow-hidden"
             >
-              <div className="absolute top-5 right-5">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-mint">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Icon3D name="clock" size={20} alt="" />
+                  <p className="font-heading text-sm text-white/70">Playing right now</p>
+                </div>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-mint shrink-0">
                   <span className="relative flex w-1.5 h-1.5">
                     <span className="absolute inline-flex w-full h-full rounded-full bg-ink opacity-75 animate-ping" />
                     <span className="relative inline-flex w-1.5 h-1.5 rounded-full bg-ink" />
                   </span>
                   <span className="text-[10px] font-display text-ink">LIVE</span>
                 </span>
-              </div>
-              <div className="flex items-center gap-2 mb-2">
-                <Icon3D name="clock" size={20} alt="" />
-                <p className="font-heading text-sm text-white/70">Playing right now</p>
               </div>
               <div className="py-2">
                 <LiveTimer checkedInAt={activeSession.checked_in_at} />

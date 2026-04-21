@@ -158,14 +158,15 @@ const LoginPage = () => {
             className="w-full max-w-sm space-y-7 text-center relative z-10"
           >
             <div>
-              <motion.img
-                src="/logo.png"
-                alt="Just Goofing"
+              <motion.div
                 animate={{ rotate: [0, 4, -4, 0] }}
                 transition={{ duration: 2, repeat: Infinity, repeatDelay: 4 }}
-                className="h-24 mx-auto"
-              />
-              <p className="mt-3 text-muted-foreground text-sm font-medium">Where the fun never stops 🎉</p>
+                className="w-20 h-20 mx-auto rounded-3xl bg-ink flex items-center justify-center shadow-hero"
+              >
+                <span className="font-display text-white text-3xl leading-none">JG</span>
+              </motion.div>
+              <h1 className="font-display text-3xl text-ink mt-4 -tracking-wide">Just Goofing</h1>
+              <p className="mt-1.5 text-muted-foreground text-sm font-heading">Where the fun never stops 🎉</p>
             </div>
 
             <div className="space-y-4">

@@ -2,7 +2,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { AnimatePresence } from "framer-motion";
+import PageTransition from "./app/components/PageTransition";
 import { AppProvider } from "./app/store";
 import { StoreSelectionProvider } from "./app/hooks/useStoreSelection";
 import { OpsAuthProvider, useAuth } from "./ops/hooks/useAuth";
@@ -64,26 +66,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<SplashScreen />} />
-              <Route path="/login" element={<LoginPage />} />
-
-              {/* Customer routes */}
-              <Route path="/welcome" element={<WelcomePage />} />
-              <Route path="/home" element={<DashboardPage />} />
-              <Route path="/menu" element={<MenuPage />} />
-              <Route path="/buy-pack/:packId" element={<BuyPackPage />} />
-              <Route path="/my-qr" element={<MyQRPage />} />
-              <Route path="/extend-session/:sessionId" element={<ExtendSessionPage />} />
-              <Route path="/book/:itemId" element={<BookingPage />} />
-              <Route path="/booking-confirmed/:bookingId" element={<BookingConfirmedPage />} />
-              <Route path="/wallet" element={<WalletPage />} />
-              <Route path="/orders" element={<OrdersPage />} />
-              <Route path="/tiers" element={<TiersPage />} />
-              <Route path="/streak" element={<StreakPage />} />
-              <Route path="/profile" element={<ProfilePage />} />
-              <Route path="/kids" element={<KidsPage />} />
-              <Route path="/notifications" element={<NotificationsPage />} />
+            <AnimatedRoutes />
 
               {/* Ops routes */}
               <Route path="/dashboard" element={

@@ -15,7 +15,7 @@ import ProfileReferral from '../components/profile/ProfileReferral';
 import ProfileRecentOrders from '../components/profile/ProfileRecentOrders';
 import ProfileAddresses from '../components/profile/ProfileAddresses';
 import ProfileBadges from '../components/profile/ProfileBadges';
-import { Star, Sparkle, Squiggle } from '../components/Stickers';
+
 
 const ProfilePage = () => {
   const navigate = useNavigate();
@@ -60,22 +60,20 @@ const ProfilePage = () => {
   const tierEmoji = totalOrders >= 50 ? '👑' : totalOrders >= 25 ? '🏆' : totalOrders >= 10 ? '⭐' : '🌱';
 
   return (
-    <div className="min-h-screen bg-background pb-24 relative overflow-hidden">
-      {/* Decorative stickers */}
-      <Star className="absolute top-20 right-6 w-7 h-7 text-butter opacity-50 animate-wobble" />
-      <Sparkle className="absolute top-40 left-5 w-6 h-6 text-coral opacity-50 animate-bounce-soft" />
-      <Squiggle className="absolute top-72 right-8 w-12 h-6 text-mint opacity-40" />
-
-      <header className="sticky top-0 z-40 bg-background/85 backdrop-blur-xl border-b-2 border-ink/5">
-        <div className="flex items-center gap-3 px-4 h-16">
+    <div className="min-h-screen bg-background pb-32">
+      <header className="sticky top-0 z-40 bg-background/85 backdrop-blur-xl">
+        <div className="flex items-center gap-3 px-5 h-16 max-w-lg mx-auto">
           <motion.button
             whileTap={{ scale: 0.9 }}
             onClick={() => navigate('/home')}
-            className="w-10 h-10 rounded-2xl bg-card border-2 border-ink/8 shadow-soft flex items-center justify-center"
+            className="w-10 h-10 rounded-full bg-muted flex items-center justify-center"
           >
-            <ArrowLeft size={18} className="text-ink" />
+            <ArrowLeft size={18} className="text-ink" strokeWidth={2.5} />
           </motion.button>
-          <h1 className="font-display text-xl text-ink">Profile 🎈</h1>
+          <div className="flex items-center gap-2 flex-1">
+            <Icon3D name="badge" size={26} alt="" />
+            <h1 className="font-display text-xl text-ink -tracking-wide">Profile</h1>
+          </div>
         </div>
       </header>
 
