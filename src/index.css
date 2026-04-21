@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,222 +6,174 @@
 
 @layer base {
   :root {
-    /* Bright Kids Playground — cream base, candy accents */
-    --background: 36 100% 97%;
-    --foreground: 260 25% 18%;
+    /* === REFERENCE PALETTE: dark hero + white body + vivid accents === */
+    --background: 0 0% 100%;            /* pure white body */
+    --foreground: 240 10% 7%;           /* near-black ink */
 
     --card: 0 0% 100%;
-    --card-foreground: 260 25% 18%;
+    --card-foreground: 240 10% 7%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 260 25% 18%;
+    --popover-foreground: 240 10% 7%;
 
-    /* Primary: Coral pink */
-    --primary: 352 100% 73%;
-    --primary-foreground: 0 0% 100%;
+    /* Primary = lime green from reference */
+    --primary: 75 88% 58%;              /* #C6F432 vibe */
+    --primary-foreground: 240 10% 7%;
 
-    /* Secondary: Mint */
-    --secondary: 168 50% 65%;
-    --secondary-foreground: 260 25% 18%;
+    /* Secondary = hot pink */
+    --secondary: 333 100% 71%;          /* #FF6BB5 */
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 36 35% 92%;
-    --muted-foreground: 260 12% 45%;
+    --muted: 240 6% 96%;
+    --muted-foreground: 240 5% 45%;
 
-    /* Accent: Butter yellow */
-    --accent: 42 100% 70%;
-    --accent-foreground: 260 25% 18%;
+    /* Accent = lavender */
+    --accent: 256 65% 78%;              /* #B8A5E3 */
+    --accent-foreground: 240 10% 7%;
 
-    --destructive: 0 84% 65%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 260 30% 92%;
-    --input: 260 30% 94%;
-    --ring: 352 100% 73%;
+    --border: 240 6% 92%;
+    --input: 240 6% 96%;
+    --ring: 75 88% 58%;
 
     --radius: 1.5rem;
 
-    /* Bright kids palette */
-    --coral: 352 100% 73%;        /* #FF7A8A */
-    --mint: 168 50% 65%;           /* #7DD3C0 */
-    --butter: 42 100% 70%;         /* #FFD56B */
-    --lavender: 256 55% 78%;       /* #B8A5E3 */
-    --sky: 195 70% 70%;            /* #7EC8E3 */
-    --peach: 18 100% 78%;          /* #FFB48E */
-    --bubblegum: 330 100% 78%;     /* #FFA3D1 */
-    --grape: 270 60% 60%;          /* #8E5BD9 */
+    /* === Reference accent palette (kept under old class names) === */
+    --coral: 333 100% 71%;              /* hot pink */
+    --mint: 75 88% 58%;                 /* lime green */
+    --butter: 48 100% 65%;              /* yellow */
+    --lavender: 256 65% 78%;            /* lavender */
+    --sky: 199 90% 70%;                 /* sky blue */
+    --peach: 18 100% 75%;               /* coral peach */
+    --bubblegum: 333 100% 78%;          /* light pink */
+    --grape: 268 70% 60%;               /* purple */
 
-    --cream: 36 100% 97%;
-    --ink: 260 25% 18%;            /* #2D2438 */
+    --cream: 0 0% 100%;
+    --ink: 240 10% 7%;                  /* near-black for hero cards */
+    --hero: 240 10% 7%;                 /* dark hero surface */
+    --hero-foreground: 0 0% 100%;
 
-    --sidebar-background: 36 100% 97%;
-    --sidebar-foreground: 260 25% 18%;
-    --sidebar-primary: 352 100% 73%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 36 35% 92%;
-    --sidebar-accent-foreground: 260 25% 18%;
-    --sidebar-border: 260 30% 92%;
-    --sidebar-ring: 352 100% 73%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 240 10% 7%;
+    --sidebar-primary: 75 88% 58%;
+    --sidebar-primary-foreground: 240 10% 7%;
+    --sidebar-accent: 240 6% 96%;
+    --sidebar-accent-foreground: 240 10% 7%;
+    --sidebar-border: 240 6% 92%;
+    --sidebar-ring: 75 88% 58%;
   }
 }
 
 @layer base {
-  * {
-    @apply border-border;
-  }
-
-  body {
-    @apply bg-background text-foreground font-body antialiased;
-  }
-
+  * { @apply border-border; }
+  body { @apply bg-background text-foreground font-body antialiased; }
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Fredoka', system-ui, sans-serif;
-    font-weight: 600;
-    letter-spacing: -0.01em;
+    font-family: 'Plus Jakarta Sans', 'Manrope', system-ui, sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.02em;
   }
 }
 
 @layer components {
   .font-display {
-    font-family: 'Fredoka', system-ui, sans-serif;
-    font-weight: 700;
-    letter-spacing: -0.02em;
+    font-family: 'Plus Jakarta Sans', 'Manrope', system-ui, sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.025em;
   }
-
   .font-heading {
-    font-family: 'Fredoka', system-ui, sans-serif;
-    font-weight: 600;
+    font-family: 'Plus Jakarta Sans', 'Manrope', system-ui, sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.015em;
   }
-
   .font-body {
-    font-family: 'DM Sans', system-ui, sans-serif;
+    font-family: 'Manrope', system-ui, sans-serif;
+    font-weight: 500;
   }
 
-  /* Playful gradients */
-  .bg-gradient-coral {
-    background: linear-gradient(135deg, hsl(352 100% 78%), hsl(352 100% 68%));
+  /* === Reference-style flat color blocks (no gradients on body) === */
+  .bg-gradient-coral    { background-color: hsl(var(--coral)); }
+  .bg-gradient-mint     { background-color: hsl(var(--mint)); }
+  .bg-gradient-butter   { background-color: hsl(var(--butter)); }
+  .bg-gradient-lavender { background-color: hsl(var(--lavender)); }
+  .bg-gradient-sky      { background-color: hsl(var(--sky)); }
+  .bg-gradient-peach    { background-color: hsl(var(--peach)); }
+  .bg-gradient-bubblegum{ background-color: hsl(var(--bubblegum)); }
+  .bg-gradient-rainbow  {
+    background: linear-gradient(135deg, hsl(var(--mint)) 0%, hsl(var(--coral)) 50%, hsl(var(--lavender)) 100%);
   }
-  .bg-gradient-mint {
-    background: linear-gradient(135deg, hsl(168 60% 72%), hsl(168 50% 60%));
-  }
-  .bg-gradient-butter {
-    background: linear-gradient(135deg, hsl(42 100% 76%), hsl(42 100% 65%));
-  }
-  .bg-gradient-lavender {
-    background: linear-gradient(135deg, hsl(256 70% 84%), hsl(256 55% 73%));
-  }
-  .bg-gradient-sky {
-    background: linear-gradient(135deg, hsl(195 75% 78%), hsl(195 70% 65%));
-  }
-  .bg-gradient-peach {
-    background: linear-gradient(135deg, hsl(18 100% 84%), hsl(18 100% 72%));
-  }
-  .bg-gradient-bubblegum {
-    background: linear-gradient(135deg, hsl(330 100% 84%), hsl(330 100% 72%));
-  }
-  .bg-gradient-rainbow {
-    background: linear-gradient(135deg, hsl(352 100% 78%) 0%, hsl(42 100% 70%) 50%, hsl(168 50% 65%) 100%);
-  }
+  .bg-hero { background-color: hsl(var(--hero)); color: hsl(var(--hero-foreground)); }
 
-  /* Legacy aliases — keep old class names working with the new candy palette */
-  .bg-gradient-saffron { background: linear-gradient(135deg, hsl(352 100% 78%), hsl(352 100% 68%)); }
-  .bg-gradient-gold { background: linear-gradient(135deg, hsl(42 100% 76%), hsl(42 100% 65%)); }
-  .text-saffron { color: hsl(var(--coral)); }
-  .shadow-saffron { box-shadow: 0 8px 0 -2px hsl(352 100% 60% / 0.25), 0 12px 24px -6px hsl(352 100% 60% / 0.3); }
-  .shadow-gold { box-shadow: 0 8px 0 -2px hsl(42 100% 55% / 0.25), 0 12px 24px -6px hsl(42 100% 55% / 0.3); }
-  .mughal-pattern {
+  /* Legacy aliases for old saffron/gold classes still scattered around */
+  .bg-gradient-saffron { background-color: hsl(var(--coral)); }
+  .bg-gradient-gold    { background-color: hsl(var(--butter)); }
+  .text-saffron        { color: hsl(var(--coral)); }
+  .shadow-saffron      { box-shadow: 0 10px 30px -10px hsl(var(--coral) / 0.45); }
+  .shadow-gold         { box-shadow: 0 10px 30px -10px hsl(var(--butter) / 0.45); }
+
+  .mughal-pattern,
+  .bg-confetti {
     background-image:
-      radial-gradient(circle at 10% 20%, hsl(352 100% 73% / 0.08) 0%, transparent 12%),
-      radial-gradient(circle at 90% 30%, hsl(168 50% 65% / 0.08) 0%, transparent 12%),
-      radial-gradient(circle at 30% 80%, hsl(42 100% 70% / 0.08) 0%, transparent 12%),
-      radial-gradient(circle at 80% 90%, hsl(256 55% 78% / 0.08) 0%, transparent 12%);
+      radial-gradient(circle at 12% 18%, hsl(var(--mint) / 0.08) 0%, transparent 14%),
+      radial-gradient(circle at 88% 28%, hsl(var(--coral) / 0.08) 0%, transparent 14%),
+      radial-gradient(circle at 28% 82%, hsl(var(--butter) / 0.08) 0%, transparent 14%),
+      radial-gradient(circle at 82% 88%, hsl(var(--lavender) / 0.08) 0%, transparent 14%);
   }
 
-  .text-gradient-rainbow,
+  .text-gradient-rainbow {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, hsl(var(--mint)), hsl(var(--coral)), hsl(var(--lavender)));
+  }
   .text-gradient-gold {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, hsl(352 100% 65%), hsl(270 60% 60%), hsl(195 70% 60%));
+    background-image: linear-gradient(135deg, hsl(var(--butter)), hsl(var(--coral)));
   }
 
-  /* No-scrollbar utility for horizontal scrollers */
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
 
-  /* Playful shadows */
-  .shadow-pop {
-    box-shadow: 0 8px 0 -2px hsl(260 25% 18% / 0.08), 0 12px 24px -8px hsl(260 25% 18% / 0.12);
-  }
-  .shadow-pop-coral {
-    box-shadow: 0 8px 0 -2px hsl(352 100% 60% / 0.25), 0 12px 24px -6px hsl(352 100% 60% / 0.3);
-  }
-  .shadow-pop-mint {
-    box-shadow: 0 8px 0 -2px hsl(168 50% 50% / 0.25), 0 12px 24px -6px hsl(168 50% 50% / 0.3);
-  }
-  .shadow-pop-butter {
-    box-shadow: 0 8px 0 -2px hsl(42 100% 55% / 0.25), 0 12px 24px -6px hsl(42 100% 55% / 0.3);
-  }
-  .shadow-pop-lavender {
-    box-shadow: 0 8px 0 -2px hsl(256 55% 60% / 0.25), 0 12px 24px -6px hsl(256 55% 60% / 0.3);
-  }
-  .shadow-soft {
-    box-shadow: 0 4px 16px -4px hsl(260 25% 18% / 0.1);
-  }
-
-  /* Sticker decorations background */
-  .bg-confetti {
-    background-image:
-      radial-gradient(circle at 10% 20%, hsl(352 100% 73% / 0.08) 0%, transparent 12%),
-      radial-gradient(circle at 90% 30%, hsl(168 50% 65% / 0.08) 0%, transparent 12%),
-      radial-gradient(circle at 30% 80%, hsl(42 100% 70% / 0.08) 0%, transparent 12%),
-      radial-gradient(circle at 80% 90%, hsl(256 55% 78% / 0.08) 0%, transparent 12%);
-  }
+  /* === Reference shadow style: tight, soft, no offset block === */
+  .shadow-pop          { box-shadow: 0 8px 24px -8px hsl(var(--ink) / 0.18); }
+  .shadow-pop-coral    { box-shadow: 0 12px 28px -10px hsl(var(--coral) / 0.55); }
+  .shadow-pop-mint     { box-shadow: 0 12px 28px -10px hsl(var(--mint) / 0.55); }
+  .shadow-pop-butter   { box-shadow: 0 12px 28px -10px hsl(var(--butter) / 0.55); }
+  .shadow-pop-lavender { box-shadow: 0 12px 28px -10px hsl(var(--lavender) / 0.55); }
+  .shadow-soft         { box-shadow: 0 4px 16px -6px hsl(var(--ink) / 0.10); }
+  .shadow-hero         { box-shadow: 0 24px 48px -16px hsl(var(--ink) / 0.35); }
 
   .bg-dots {
-    background-image: radial-gradient(circle, hsl(260 25% 18% / 0.06) 1px, transparent 1px);
-    background-size: 20px 20px;
+    background-image: radial-gradient(circle, hsl(var(--ink) / 0.05) 1px, transparent 1px);
+    background-size: 22px 22px;
   }
 
-  .section-padding {
-    @apply py-16 md:py-24 px-6 md:px-12 lg:px-20;
+  .section-padding { @apply py-16 md:py-24 px-6 md:px-12 lg:px-20; }
+  .heading-xl { @apply text-5xl md:text-7xl font-display tracking-tight leading-none; }
+  .heading-lg { @apply text-4xl md:text-5xl font-display tracking-tight leading-tight; }
+
+  /* Pill chip — used for tags/categories matching reference */
+  .chip {
+    @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted text-foreground text-xs font-heading;
   }
-
-  .heading-xl {
-    @apply text-5xl md:text-7xl font-display tracking-tight leading-none;
-  }
-
-  .heading-lg {
-    @apply text-4xl md:text-5xl font-display tracking-tight leading-tight;
+  .chip-dark {
+    @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-ink text-white text-xs font-heading;
   }
 }
 
-/* Scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-}
-::-webkit-scrollbar-track {
-  background: hsl(36 100% 97%);
-}
-::-webkit-scrollbar-thumb {
-  background: hsl(352 100% 73% / 0.3);
-  border-radius: 3px;
-}
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: hsl(0 0% 98%); }
+::-webkit-scrollbar-thumb { background: hsl(var(--ink) / 0.2); border-radius: 3px; }
 
-html {
-  scroll-behavior: smooth;
-}
+html { scroll-behavior: smooth; }
 
-/* Wobble animation for fun */
 @keyframes wobble {
   0%, 100% { transform: rotate(-2deg); }
   50% { transform: rotate(2deg); }
 }
-.animate-wobble {
-  animation: wobble 3s ease-in-out infinite;
-}
+.animate-wobble { animation: wobble 3s ease-in-out infinite; }
 
 @keyframes bounce-soft {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-6px); }
 }
-.animate-bounce-soft {
-  animation: bounce-soft 2.5s ease-in-out infinite;
-}
+.animate-bounce-soft { animation: bounce-soft 2.5s ease-in-out infinite; }
