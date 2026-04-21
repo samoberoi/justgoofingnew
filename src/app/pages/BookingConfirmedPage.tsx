@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { CheckCircle2, Calendar, Clock, Users, ArrowRight, MapPin } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useStoreSelection } from '../hooks/useStoreSelection';
-import { Star, Sparkle, Heart, Confetti } from '../components/Stickers';
+import Icon3D from '../components/Icon3D';
 
 const BookingConfirmedPage = () => {
   const navigate = useNavigate();
@@ -30,98 +30,95 @@ const BookingConfirmedPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background bg-confetti flex flex-col items-center justify-start pt-12 px-6 pb-24 relative overflow-hidden">
-      {/* Confetti animation */}
-      {[...Array(18)].map((_, i) => (
+    <div className="min-h-screen bg-background flex flex-col items-center justify-start pt-10 px-5 pb-24 relative overflow-hidden">
+      {[...Array(14)].map((_, i) => (
         <motion.div
           key={i}
           initial={{ y: -20, x: Math.random() * 400 - 200, opacity: 0 }}
           animate={{ y: window.innerHeight + 20, opacity: [0, 1, 1, 0], rotate: Math.random() * 720 }}
           transition={{ duration: 4 + Math.random() * 3, delay: Math.random() * 2, repeat: Infinity }}
           className="absolute w-2.5 h-2.5 rounded-sm pointer-events-none"
-          style={{ background: ['#FF7A8A', '#7DD3C0', '#FFD56B', '#B8A5E3', '#FFA3D1'][i % 5] }}
+          style={{ background: ['hsl(var(--coral))', 'hsl(var(--mint))', 'hsl(var(--butter))', 'hsl(var(--lavender))'][i % 4] }}
         />
       ))}
-
-      <Star className="absolute top-16 left-8 w-10 h-10 text-butter opacity-60 animate-wobble" />
-      <Heart className="absolute top-32 right-10 w-9 h-9 text-bubblegum opacity-60 animate-bounce-soft" />
 
       <motion.div
         initial={{ scale: 0, rotate: -120 }}
         animate={{ scale: 1, rotate: 0 }}
         transition={{ type: 'spring', stiffness: 180, damping: 14 }}
-        className="w-24 h-24 rounded-3xl bg-gradient-mint flex items-center justify-center mb-4 shadow-pop-mint"
+        className="w-24 h-24 rounded-3xl bg-mint flex items-center justify-center mb-4 shadow-pop-mint relative z-10"
       >
-        <CheckCircle2 size={44} className="text-white" />
+        <CheckCircle2 size={44} className="text-ink" strokeWidth={2.5} />
       </motion.div>
 
-      <h1 className="font-display text-3xl text-ink text-center">Booking Confirmed! 🎉</h1>
-      <p className="text-sm text-ink/60 mt-2 text-center">See you at Just Goofing!</p>
+      <h1 className="font-display text-3xl text-ink text-center -tracking-wide relative z-10">Booking confirmed!</h1>
+      <p className="text-sm text-muted-foreground mt-2 text-center font-heading relative z-10">See you at Just Goofing 🎉</p>
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
-        className="mt-6 w-full max-w-md bg-card border-2 border-ink/8 rounded-3xl p-5 space-y-4 shadow-pop relative overflow-hidden"
+        className="mt-6 w-full max-w-md bg-card rounded-[28px] p-5 space-y-4 shadow-pop border border-border relative z-10"
       >
-        <Confetti className="absolute top-2 right-2 w-8 h-8 text-coral opacity-40" />
-
-        <div className="text-center pb-3 border-b-2 border-ink/5">
-          <p className="text-[10px] text-ink/55 uppercase tracking-wider font-heading">Booking ID</p>
-          <p className="font-display text-2xl text-coral">{booking.booking_number}</p>
+        <div className="text-center pb-3 border-b border-border">
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-heading">Booking ID</p>
+          <p className="font-display text-2xl text-coral mt-1">{booking.booking_number}</p>
         </div>
 
-        <div className="space-y-2.5">
+        <div className="space-y-3">
           <p className="font-display text-base text-ink">{booking.package_name}</p>
-          <div className="flex items-center gap-2 text-sm text-ink">
-            <Calendar size={14} className="text-coral" />
+          <div className="flex items-center gap-2 text-sm text-ink font-heading">
+            <Calendar size={14} className="text-coral" strokeWidth={2.5} />
             {new Date(booking.booking_date).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' })}
           </div>
-          <div className="flex items-center gap-2 text-sm text-ink">
-            <Clock size={14} className="text-mint" />
+          <div className="flex items-center gap-2 text-sm text-ink font-heading">
+            <Clock size={14} className="text-mint" strokeWidth={2.5} />
             {String(booking.slot_time).slice(0, 5)}
           </div>
-          <div className="flex items-center gap-2 text-sm text-ink">
-            <Users size={14} className="text-butter" />
+          <div className="flex items-center gap-2 text-sm text-ink font-heading">
+            <Users size={14} className="text-butter" strokeWidth={2.5} />
             {booking.num_kids} {booking.num_kids === 1 ? 'kid' : 'kids'}
           </div>
           {selectedStore?.name && (
-            <div className="flex items-start gap-2 text-xs text-ink/60">
-              <MapPin size={12} className="text-grape mt-0.5 shrink-0" />
+            <div className="flex items-start gap-2 text-xs text-muted-foreground font-heading">
+              <MapPin size={12} className="text-grape mt-0.5 shrink-0" strokeWidth={2.5} />
               {selectedStore.name}
             </div>
           )}
         </div>
 
-        <div className="border-t-2 border-ink/5 pt-3">
+        <div className="border-t border-border pt-3">
           <div className="flex justify-between items-center">
-            <span className="text-sm text-ink/60">Pay at venue</span>
+            <span className="text-sm text-muted-foreground font-heading">Pay at venue</span>
             <span className="font-display text-xl text-ink">₹{Number(booking.total_amount)}</span>
           </div>
           {booking.is_free_welcome && (
-            <p className="text-[11px] text-mint mt-1 font-heading">🎉 Welcome offer applied — FREE!</p>
+            <p className="text-[11px] text-mint mt-1 font-display">Welcome offer applied — FREE!</p>
           )}
         </div>
 
-        <div className="bg-gradient-butter rounded-2xl p-3.5 text-center">
-          <p className="text-[10px] text-ink/70 uppercase tracking-wider font-heading mb-1">Show this code at the counter</p>
-          <p className="font-display text-base text-ink tracking-widest">{booking.qr_code}</p>
+        <div className="bg-butter rounded-2xl p-4 flex items-center gap-3">
+          <Icon3D name="qr" size={44} alt="" />
+          <div>
+            <p className="text-[10px] text-ink/70 uppercase tracking-wider font-heading">Show at counter</p>
+            <p className="font-display text-base text-ink tracking-widest mt-0.5">{booking.qr_code}</p>
+          </div>
         </div>
       </motion.div>
 
-      <div className="mt-6 w-full max-w-md flex flex-col gap-2">
+      <div className="mt-6 w-full max-w-md flex flex-col gap-2 relative z-10">
         <motion.button
           whileTap={{ scale: 0.97 }}
           onClick={() => navigate('/orders')}
-          className="w-full py-3.5 bg-gradient-coral rounded-2xl font-heading text-sm text-white shadow-pop-coral flex items-center justify-center gap-2"
+          className="w-full py-3.5 bg-ink rounded-full font-display text-sm text-white flex items-center justify-center gap-2"
         >
-          View My Bookings <ArrowRight size={14} />
+          View bookings <ArrowRight size={14} strokeWidth={2.5} />
         </motion.button>
         <button
           onClick={() => navigate('/home')}
-          className="w-full py-3 border-2 border-ink/8 rounded-2xl text-sm text-ink/60 font-heading"
+          className="w-full py-3 text-sm text-muted-foreground font-heading"
         >
-          Back to Home
+          Back to home
         </button>
       </div>
     </div>

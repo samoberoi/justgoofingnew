@@ -1,7 +1,7 @@
-import { Bell, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store';
 import { motion } from 'framer-motion';
+import Icon3D from './Icon3D';
 
 const PlayfulHeader = () => {
   const { walletBalance } = useAppStore();
@@ -21,18 +21,11 @@ const PlayfulHeader = () => {
           <motion.button
             whileTap={{ scale: 0.92 }}
             onClick={() => navigate('/wallet')}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-mint shadow-pop-mint"
+            className="flex items-center gap-1.5 pl-1.5 pr-3 py-1 rounded-full bg-mint shadow-pop-mint"
+            aria-label="Wallet"
           >
-            <span className="text-xs">🪙</span>
+            <Icon3D name="wallet" size={22} alt="" />
             <span className="text-xs text-ink font-display tabular-nums">{walletBalance}</span>
-          </motion.button>
-
-          <motion.button
-            whileTap={{ scale: 0.9 }}
-            className="w-10 h-10 rounded-full bg-muted flex items-center justify-center"
-            aria-label="Search"
-          >
-            <Search size={16} className="text-ink" strokeWidth={2.5} />
           </motion.button>
 
           <motion.button
@@ -41,8 +34,8 @@ const PlayfulHeader = () => {
             className="relative w-10 h-10 rounded-full bg-muted flex items-center justify-center"
             aria-label="Notifications"
           >
-            <Bell size={16} className="text-ink" strokeWidth={2.5} />
-            <span className="absolute top-2 right-2 w-2 h-2 bg-coral rounded-full ring-2 ring-background" />
+            <Icon3D name="bell" size={26} alt="" />
+            <span className="absolute top-1 right-1 w-2 h-2 bg-coral rounded-full ring-2 ring-background" />
           </motion.button>
         </div>
       </div>

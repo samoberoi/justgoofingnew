@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Package, Check, Sparkles, Infinity as InfinityIcon } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAppStore } from '../store';
 import { useStoreSelection } from '../hooks/useStoreSelection';
-import { Star, Heart, Sparkle } from '../components/Stickers';
+import Icon3D, { Icon3DName } from '../components/Icon3D';
 import { toast } from 'sonner';
 
 interface PlayPack {
@@ -138,77 +138,71 @@ const BuyPackPage = () => {
   const perHour = pack.total_hours > 1 ? Math.round(pack.price / pack.total_hours) : null;
 
   return (
-    <div className="min-h-screen bg-background bg-confetti pb-32">
+    <div className="min-h-screen bg-background pb-32">
       <header className="sticky top-0 z-40 bg-background/85 backdrop-blur-xl">
-        <div className="flex items-center gap-3 px-4 h-16 max-w-lg mx-auto">
-          <button onClick={() => navigate(-1)} className="w-10 h-10 flex items-center justify-center rounded-full bg-card border-2 border-ink/10 shadow-soft">
+        <div className="flex items-center gap-3 px-5 h-16 max-w-lg mx-auto">
+          <motion.button whileTap={{ scale: 0.9 }} onClick={() => navigate(-1)}
+            className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
             <ArrowLeft size={18} className="text-ink" strokeWidth={2.5} />
-          </button>
-          <h1 className="font-display text-xl text-ink">{isFree ? 'Free Hour 🎁' : 'Get Pack'}</h1>
+          </motion.button>
+          <h1 className="font-display text-xl text-ink -tracking-wide">{isFree ? 'Free hour' : 'Get pack'}</h1>
         </div>
       </header>
 
-      <div className="px-4 pt-4 max-w-lg mx-auto">
+      <div className="px-5 pt-4 max-w-lg mx-auto space-y-5">
+        {/* Hero */}
         <motion.div
           initial={{ opacity: 0, y: 16, scale: 0.96 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          className="relative bg-gradient-coral rounded-[32px] p-7 text-center shadow-pop-coral border-2 border-ink/8 overflow-hidden"
+          className="relative bg-ink rounded-[32px] p-6 overflow-hidden shadow-hero"
         >
-          <div className="absolute top-4 left-4 animate-wobble">
-            <Star size={28} color="hsl(var(--butter))" />
+          <div className="relative z-10 max-w-[60%]">
+            <p className="text-xs text-white/60 font-heading uppercase tracking-wider">{pack.total_hours} hour pack</p>
+            <h2 className="font-display text-3xl text-white mt-1 -tracking-wide leading-tight">{pack.name}</h2>
+            {pack.description && (
+              <p className="text-xs text-white/55 mt-2 leading-relaxed font-heading line-clamp-2">{pack.description}</p>
+            )}
+            <div className="mt-4 flex items-baseline gap-2">
+              <span className="font-display text-4xl text-mint -tracking-wide">{isFree ? 'FREE' : `₹${pack.price}`}</span>
+              {perHour && <span className="text-xs text-white/55 font-heading">≈ ₹{perHour}/hr</span>}
+            </div>
           </div>
-          <div className="absolute top-6 right-6 animate-bounce-soft">
-            <Heart size={22} color="hsl(var(--card))" />
-          </div>
-          <div className="absolute bottom-4 left-8">
-            <Sparkle size={16} color="hsl(var(--card))" />
-          </div>
-
           <motion.div
             animate={{ y: [0, -6, 0] }}
-            transition={{ duration: 2.5, repeat: Infinity }}
-            className="w-28 h-28 mx-auto rounded-3xl bg-card border-4 border-ink/10 flex flex-col items-center justify-center shadow-pop relative z-10"
+            transition={{ duration: 2.8, repeat: Infinity }}
+            className="absolute -bottom-2 -right-2"
           >
-            <span className="font-display text-4xl text-ink leading-none">{pack.total_hours}</span>
-            <span className="text-[10px] font-display text-ink/70 uppercase mt-1">hours</span>
+            <Icon3D name={isFree ? 'gift' : 'clock'} size={150} alt="" />
           </motion.div>
-          <h2 className="font-display text-2xl text-ink mt-5 relative z-10">{pack.name}</h2>
-          {pack.description && (
-            <p className="text-sm text-ink/80 mt-2 leading-relaxed font-medium relative z-10">{pack.description}</p>
-          )}
-          <div className="mt-5 relative z-10">
-            <span className="font-display text-4xl text-ink">{isFree ? 'FREE' : `₹${pack.price}`}</span>
-            {perHour && <p className="text-xs text-ink/70 mt-1 font-medium">≈ ₹{perHour} per hour</p>}
-          </div>
         </motion.div>
 
-        <div className="mt-5 bg-card rounded-[24px] p-5 space-y-3 shadow-soft border-2 border-ink/8">
+        <div className="bg-card rounded-[24px] p-5 space-y-3 shadow-soft border border-border">
           <h3 className="font-display text-sm text-ink">What you get</h3>
-          <Row icon={<Package size={14} className="text-ink" strokeWidth={2.5} />} color="butter" label={`${pack.total_hours} hour${pack.total_hours > 1 ? 's' : ''} of play time`} />
-          <Row icon={<InfinityIcon size={14} className="text-ink" strokeWidth={2.5} />} color="mint" label="No expiry — use whenever" />
-          <Row icon={<Check size={14} className="text-ink" strokeWidth={3} />} color="lavender" label="Walk in anytime, no booking needed" />
-          <Row icon={<Sparkles size={14} className="text-ink" strokeWidth={2.5} />} color="coral" label="Earn Goofy Points every visit" />
+          <Row icon="clock" label={`${pack.total_hours} hour${pack.total_hours > 1 ? 's' : ''} of play time`} />
+          <Row icon="badge" label="No expiry — use whenever" />
+          <Row icon="qr" label="Walk in anytime, no booking needed" />
+          <Row icon="wallet" label="Earn Goofy Points every visit" />
         </div>
 
         {alreadyClaimed && (
-          <div className="mt-4 bg-butter/30 border-2 border-ink/8 rounded-2xl p-4">
+          <div className="bg-butter/40 rounded-[20px] p-4">
             <p className="text-sm text-ink font-display">You've already claimed your FREE hour. Check your dashboard!</p>
           </div>
         )}
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-xl border-t-2 border-ink/8 p-4">
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-xl border-t border-border p-4">
         <div className="max-w-lg mx-auto">
           <motion.button
             whileTap={{ scale: 0.97 }}
             onClick={handlePurchase}
             disabled={purchasing || alreadyClaimed}
-            className="w-full py-4 bg-gradient-coral rounded-2xl font-display text-base text-ink shadow-pop-coral border-2 border-ink/10 disabled:opacity-40"
+            className="w-full py-4 bg-ink rounded-full font-display text-base text-white disabled:opacity-40"
           >
-            {purchasing ? 'Adding…' : alreadyClaimed ? 'Already Claimed' : isFree ? 'Claim My Free Hour 🎁' : `Reserve for ₹${pack.price} · Pay at Venue`}
+            {purchasing ? 'Adding…' : alreadyClaimed ? 'Already claimed' : isFree ? 'Claim my free hour 🎁' : `Reserve for ₹${pack.price} · Pay at venue`}
           </motion.button>
-          <p className="text-[11px] text-muted-foreground text-center mt-2 font-medium">
-            {isFree ? 'No payment needed ✨' : 'You\'ll see your pack as Pending. Visit the centre to settle payment & activate.'}
+          <p className="text-[11px] text-muted-foreground text-center mt-2 font-heading">
+            {isFree ? 'No payment needed ✨' : "You'll see your pack as Pending. Visit the centre to pay & activate."}
           </p>
         </div>
       </div>
@@ -216,17 +210,10 @@ const BuyPackPage = () => {
   );
 };
 
-const colorMap: Record<string, string> = {
-  coral: 'bg-coral/20',
-  mint: 'bg-mint/30',
-  butter: 'bg-butter/30',
-  lavender: 'bg-lavender/30',
-};
-
-const Row = ({ icon, label, color }: { icon: React.ReactNode; label: string; color: string }) => (
+const Row = ({ icon, label }: { icon: Icon3DName; label: string }) => (
   <div className="flex items-center gap-3">
-    <div className={`w-9 h-9 rounded-xl ${colorMap[color]} border-2 border-ink/8 flex items-center justify-center shrink-0`}>{icon}</div>
-    <span className="text-sm text-ink font-medium">{label}</span>
+    <Icon3D name={icon} size={36} alt="" />
+    <span className="text-sm text-ink font-heading">{label}</span>
   </div>
 );
 

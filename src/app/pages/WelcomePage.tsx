@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Gift, ArrowRight, Sparkles } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAppStore } from '../store';
-import charGirl from '@/assets/char-girl.png';
+import Icon3D from '../components/Icon3D';
+import illusWelcome from '@/assets/illus/illus-welcome.png';
 
 const WelcomePage = () => {
   const navigate = useNavigate();
@@ -49,7 +50,6 @@ const WelcomePage = () => {
 
   return (
     <div className="fixed inset-0 bg-background flex flex-col overflow-y-auto">
-      {/* Top dark hero block with character */}
       <div className="relative bg-ink px-6 pt-10 pb-8">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
@@ -73,8 +73,8 @@ const WelcomePage = () => {
           className="relative mx-auto w-full max-w-[280px] aspect-square rounded-[32px] bg-coral overflow-hidden shadow-pop-coral"
         >
           <motion.img
-            src={charGirl}
-            alt="Welcome"
+            src={illusWelcome}
+            alt="Welcome character"
             animate={{ y: [0, -6, 0] }}
             transition={{ duration: 3, repeat: Infinity }}
             className="absolute inset-0 w-full h-full object-contain object-bottom p-3"
@@ -82,7 +82,6 @@ const WelcomePage = () => {
         </motion.div>
       </div>
 
-      {/* White content sheet */}
       <div className="flex-1 bg-background -mt-6 rounded-t-[36px] px-6 pt-8 pb-10 space-y-6">
         <motion.div
           initial={{ y: 12, opacity: 0 }}
@@ -97,23 +96,19 @@ const WelcomePage = () => {
           <p className="text-muted-foreground text-sm mt-2 font-heading">Let the goofing begin 🎈</p>
         </motion.div>
 
-        {/* Free hour offer */}
         <motion.div
           initial={{ y: 16, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.25 }}
           className="bg-mint rounded-[28px] p-5 shadow-pop-mint flex items-center gap-4"
         >
-          <div className="w-12 h-12 rounded-2xl bg-ink flex items-center justify-center shrink-0">
-            <Sparkles size={20} className="text-mint" strokeWidth={2.5} />
-          </div>
+          <Icon3D name="gift" size={56} alt="" />
           <div className="flex-1 min-w-0">
             <p className="font-display text-ink text-base leading-tight">1 Hour FREE</p>
             <p className="text-ink/70 text-xs mt-0.5">Auto-applied on first booking</p>
           </div>
         </motion.div>
 
-        {/* Referral */}
         <motion.div
           initial={{ y: 16, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -121,7 +116,7 @@ const WelcomePage = () => {
           className="bg-muted rounded-[28px] p-5 space-y-3"
         >
           <div className="flex items-center gap-2">
-            <Gift size={16} className="text-coral" strokeWidth={2.5} />
+            <Icon3D name="gift" size={22} alt="" />
             <p className="text-sm text-ink font-heading">Got a friend's code?</p>
           </div>
           <div className="flex gap-2">
