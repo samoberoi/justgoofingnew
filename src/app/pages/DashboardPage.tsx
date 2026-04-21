@@ -80,7 +80,7 @@ const DashboardPage = () => {
   const [loading, setLoading] = useState(true);
 
   const loadData = useCallback(async () => {
-    if (!userId) return;
+    if (!userId) { setLoading(false); return; }
     const today = new Date().toISOString().split('T')[0];
 
     const [packsRes, bookingsRes, sessionRes] = await Promise.all([
@@ -105,6 +105,16 @@ const DashboardPage = () => {
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [userId, loadData]);
+
+  // If session not hydrated yet, supabase may still be restoring — give it a moment, then redirect to login.
+  useEffect(() => {
+    if (userId) return;
+    const t = setTimeout(async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) navigate('/login', { replace: true });
+    }, 800);
+    return () => clearTimeout(t);
+  }, [userId, navigate]);
 
   const activePacks = packs.filter(p => p.status === 'active');
   const pendingPacks = packs.filter(p => p.status === 'pending' || p.payment_status === 'pending');
