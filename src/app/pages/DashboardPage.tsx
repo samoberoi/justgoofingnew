@@ -106,6 +106,16 @@ const DashboardPage = () => {
     return () => { supabase.removeChannel(channel); };
   }, [userId, loadData]);
 
+  // If session not hydrated yet, supabase may still be restoring — give it a moment, then redirect to login.
+  useEffect(() => {
+    if (userId) return;
+    const t = setTimeout(async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) navigate('/login', { replace: true });
+    }, 800);
+    return () => clearTimeout(t);
+  }, [userId, navigate]);
+
   const activePacks = packs.filter(p => p.status === 'active');
   const pendingPacks = packs.filter(p => p.status === 'pending' || p.payment_status === 'pending');
   const totalHoursOwned = activePacks.reduce((sum, p) => sum + (Number(p.total_hours) - Number(p.hours_used)), 0);
