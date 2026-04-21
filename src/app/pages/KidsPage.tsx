@@ -419,7 +419,7 @@ const KidsPage = () => {
                   disabled={saving || !form.name.trim()}
                   className="w-full py-4 bg-gradient-coral rounded-2xl font-heading text-base text-white shadow-pop-coral flex items-center justify-center gap-2 disabled:opacity-40 disabled:shadow-none"
                 >
-                  <Check size={18} /> {saving ? 'Saving…' : editingId ? 'Save Changes' : 'Add Kid'}
+                  ✓ {saving ? 'Saving…' : editingId ? 'Save Changes' : 'Add Kid'}
                 </motion.button>
               </div>
             </motion.div>
