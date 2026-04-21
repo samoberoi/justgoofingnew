@@ -80,7 +80,7 @@ const DashboardPage = () => {
   const [loading, setLoading] = useState(true);
 
   const loadData = useCallback(async () => {
-    if (!userId) return;
+    if (!userId) { setLoading(false); return; }
     const today = new Date().toISOString().split('T')[0];
 
     const [packsRes, bookingsRes, sessionRes] = await Promise.all([
