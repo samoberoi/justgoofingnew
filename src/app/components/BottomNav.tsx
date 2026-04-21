@@ -1,19 +1,18 @@
-import { Home, Sparkles, Gift, User, Plus } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import Icon3D, { Icon3DName } from './Icon3D';
 
-const tabs = [
-  { path: '/home', icon: Home, label: 'Home' },
-  { path: '/menu', icon: Sparkles, label: 'Play' },
-  { path: '/wallet', icon: Gift, label: 'Rewards' },
-  { path: '/profile', icon: User, label: 'Me' },
+const tabs: { path: string; icon: Icon3DName; label: string }[] = [
+  { path: '/home', icon: 'home', label: 'Home' },
+  { path: '/menu', icon: 'play', label: 'Play' },
+  { path: '/wallet', icon: 'wallet', label: 'Rewards' },
+  { path: '/profile', icon: 'user', label: 'Me' },
 ];
 
 const BottomNav = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Reference layout: 2 tabs · center FAB · 2 tabs
   const left = tabs.slice(0, 2);
   const right = tabs.slice(2);
 
@@ -21,17 +20,18 @@ const BottomNav = () => {
     const isActive = location.pathname === tab.path;
     return (
       <motion.button
-        whileTap={{ scale: 0.88 }}
+        whileTap={{ scale: 0.85 }}
         onClick={() => navigate(tab.path)}
         className="relative flex flex-col items-center justify-center w-14 h-14"
         aria-label={tab.label}
       >
-        <tab.icon
-          size={22}
-          className={isActive ? 'text-ink' : 'text-muted-foreground'}
-          strokeWidth={isActive ? 2.6 : 2}
-          fill={isActive ? 'currentColor' : 'none'}
-        />
+        <motion.div
+          animate={{ scale: isActive ? 1.15 : 1, y: isActive ? -2 : 0 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+          className={isActive ? '' : 'opacity-55 grayscale'}
+        >
+          <Icon3D name={tab.icon} size={32} alt={tab.label} />
+        </motion.div>
         {isActive && (
           <motion.div
             layoutId="navdot"
@@ -49,21 +49,21 @@ const BottomNav = () => {
           <div className="flex gap-1">
             {left.map(t => <Tab key={t.path} tab={t} />)}
           </div>
-          <div className="w-14" /> {/* spacer for FAB */}
+          <div className="w-14" />
           <div className="flex gap-1">
             {right.map(t => <Tab key={t.path} tab={t} />)}
           </div>
         </div>
 
-        {/* Center FAB — reference style black hexagon */}
+        {/* Center FAB — 3D play icon on dark disc */}
         <motion.button
           whileTap={{ scale: 0.9 }}
           whileHover={{ scale: 1.05 }}
           onClick={() => navigate('/menu')}
           className="absolute left-1/2 -translate-x-1/2 -top-3 w-16 h-16 rounded-full bg-ink flex items-center justify-center shadow-hero ring-4 ring-background"
-          aria-label="Add"
+          aria-label="Play"
         >
-          <Plus size={26} className="text-white" strokeWidth={3} />
+          <Icon3D name="play" size={40} alt="" />
         </motion.button>
       </div>
     </nav>
