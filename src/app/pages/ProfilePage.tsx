@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, ChevronRight, Volume2, VolumeX, Bell, BellOff, LogOut } from 'lucide-react';
+import { ArrowLeft, ChevronRight, Volume2, VolumeX, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store';
 import BottomNav from '../components/BottomNav';
+import Icon3D from '../components/Icon3D';
 import { supabase } from '@/integrations/supabase/client';
 
 import ProfileHero from '../components/profile/ProfileHero';
@@ -108,17 +109,19 @@ const ProfilePage = () => {
       {/* Quick links */}
       <div className="px-4 pt-5 space-y-2">
         {[
-          { label: 'Goofy Points Wallet', path: '/wallet', icon: '💰', bg: 'bg-gradient-butter' },
-          { label: 'My Bookings', path: '/orders', icon: '🎟️', bg: 'bg-gradient-mint' },
+          { label: 'Rewards Wallet', path: '/wallet', icon: 'wallet' as const },
+          { label: 'My Bookings', path: '/orders', icon: 'orders' as const },
+          { label: 'My Kids', path: '/kids', icon: 'kid' as const },
+          { label: 'Notifications', path: '/notifications', icon: 'bell' as const },
         ].map(item => (
           <motion.button
             key={item.path}
             whileTap={{ scale: 0.97 }}
             onClick={() => navigate(item.path)}
-            className="w-full flex items-center gap-3 p-3.5 bg-card border-2 border-ink/8 rounded-2xl shadow-soft"
+            className="w-full flex items-center gap-3 p-3.5 bg-card border border-border rounded-2xl shadow-soft"
           >
-            <div className={`w-10 h-10 rounded-xl ${item.bg} flex items-center justify-center text-lg`}>
-              {item.icon}
+            <div className="w-11 h-11 rounded-2xl bg-muted flex items-center justify-center">
+              <Icon3D name={item.icon} size={26} alt="" />
             </div>
             <span className="text-sm font-heading text-ink flex-1 text-left">{item.label}</span>
             <ChevronRight size={16} className="text-ink/40" />
@@ -130,29 +133,29 @@ const ProfilePage = () => {
       <div className="px-4 pt-3 space-y-2">
         <button
           onClick={() => setMusicEnabled(!musicEnabled)}
-          className="w-full flex items-center justify-between p-3.5 bg-card border-2 border-ink/8 rounded-2xl"
+          className="w-full flex items-center justify-between p-3.5 bg-card border border-border rounded-2xl"
         >
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-lavender/25 flex items-center justify-center">
-              {musicEnabled ? <Volume2 size={16} className="text-grape" /> : <VolumeX size={16} className="text-ink/40" />}
+            <div className="w-11 h-11 rounded-2xl bg-muted flex items-center justify-center">
+              {musicEnabled ? <Volume2 size={18} className="text-ink" /> : <VolumeX size={18} className="text-ink/40" />}
             </div>
             <span className="text-sm font-heading text-ink">Music</span>
           </div>
-          <div className={`w-11 h-6 rounded-full transition-colors flex items-center px-0.5 ${musicEnabled ? 'bg-coral' : 'bg-ink/15'}`}>
+          <div className={`w-11 h-6 rounded-full transition-colors flex items-center px-0.5 ${musicEnabled ? 'bg-primary' : 'bg-ink/15'}`}>
             <div className={`w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${musicEnabled ? 'translate-x-5' : 'translate-x-0'}`} />
           </div>
         </button>
         <button
           onClick={() => setNotificationsEnabled(!notificationsEnabled)}
-          className="w-full flex items-center justify-between p-3.5 bg-card border-2 border-ink/8 rounded-2xl"
+          className="w-full flex items-center justify-between p-3.5 bg-card border border-border rounded-2xl"
         >
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-sky/25 flex items-center justify-center">
-              {notificationsEnabled ? <Bell size={16} className="text-sky" /> : <BellOff size={16} className="text-ink/40" />}
+            <div className="w-11 h-11 rounded-2xl bg-muted flex items-center justify-center">
+              <Icon3D name="bell" size={26} alt="" className={notificationsEnabled ? '' : 'opacity-40 grayscale'} />
             </div>
             <span className="text-sm font-heading text-ink">Notifications</span>
           </div>
-          <div className={`w-11 h-6 rounded-full transition-colors flex items-center px-0.5 ${notificationsEnabled ? 'bg-coral' : 'bg-ink/15'}`}>
+          <div className={`w-11 h-6 rounded-full transition-colors flex items-center px-0.5 ${notificationsEnabled ? 'bg-primary' : 'bg-ink/15'}`}>
             <div className={`w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${notificationsEnabled ? 'translate-x-5' : 'translate-x-0'}`} />
           </div>
         </button>

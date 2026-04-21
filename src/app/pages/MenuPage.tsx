@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { MapPin, Search, ArrowLeft, PartyPopper, Clock, Package } from 'lucide-react';
+import { MapPin, Search, ArrowLeft, PartyPopper } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import BottomNav from '../components/BottomNav';
+import Icon3D from '../components/Icon3D';
 import { useStoreSelection } from '../hooks/useStoreSelection';
 import { useMenu, MenuItem } from '../hooks/useMenu';
 import { supabase } from '@/integrations/supabase/client';
@@ -43,7 +44,7 @@ const PackCard = ({ pack, index, onBuy }: { pack: PlayPack; index: number; onBuy
       <div className="relative z-10 max-w-[60%]">
         <div className="flex items-center gap-2 mb-2">
           <span className="chip-dark text-[10px] py-1">
-            <Clock size={10} strokeWidth={2.5} /> {pack.total_hours} hrs
+            <Icon3D name="clock" size={12} alt="" /> {pack.total_hours} hrs
           </span>
           {isFree && (
             <span className="text-[10px] px-2.5 py-1 rounded-full bg-white text-ink font-display">FREE</span>
@@ -170,7 +171,7 @@ const MenuPage = () => {
                 tab === 'packs' ? 'bg-ink text-white' : 'bg-muted text-ink'
               }`}
             >
-              <Package size={13} strokeWidth={2.5} /> Hour Packs
+              <Icon3D name="gift" size={16} alt="" /> Hour Packs
             </button>
             <button
               onClick={() => setTab('visits')}
@@ -178,7 +179,7 @@ const MenuPage = () => {
                 tab === 'visits' ? 'bg-ink text-white' : 'bg-muted text-ink'
               }`}
             >
-              <Clock size={13} strokeWidth={2.5} /> One-off
+              <Icon3D name="calendar" size={16} alt="" /> One-off
             </button>
           </div>
         </div>

@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Calendar, Clock, Users, Sparkles, CheckCircle2, PartyPopper, Plus } from 'lucide-react';
+import { ArrowLeft, Users, Sparkles, CheckCircle2, PartyPopper, Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAppStore } from '../store';
 import { useStoreSelection } from '../hooks/useStoreSelection';
 import { useKids, calcAge } from '../hooks/useKids';
-import { Star, Sparkle } from '../components/Stickers';
+import Icon3D from '../components/Icon3D';
 
 const SLOTS = ['11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00'];
 
@@ -113,17 +113,14 @@ const BookingPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-32 relative overflow-hidden">
-      <Star className="absolute top-24 right-8 w-7 h-7 text-butter opacity-50 animate-wobble" />
-      <Sparkle className="absolute top-72 left-6 w-6 h-6 text-coral opacity-50 animate-bounce-soft" />
-
-      <header className="sticky top-0 z-40 bg-background/85 backdrop-blur-xl border-b-2 border-ink/5">
-        <div className="flex items-center gap-3 px-4 h-16">
+    <div className="min-h-screen bg-background pb-32">
+      <header className="sticky top-0 z-40 bg-background/85 backdrop-blur-xl">
+        <div className="flex items-center gap-3 px-5 h-16 max-w-lg mx-auto">
           <motion.button whileTap={{ scale: 0.9 }} onClick={() => navigate(-1)}
-            className="w-10 h-10 rounded-2xl bg-card border-2 border-ink/8 shadow-soft flex items-center justify-center">
-            <ArrowLeft size={18} className="text-ink" />
+            className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+            <ArrowLeft size={18} className="text-ink" strokeWidth={2.5} />
           </motion.button>
-          <h1 className="font-display text-xl text-ink">Book a Slot 🎟️</h1>
+          <h1 className="font-display text-xl text-ink -tracking-wide">Book a Slot</h1>
         </div>
       </header>
 
@@ -225,7 +222,7 @@ const BookingPage = () => {
         {/* Date */}
         <div className="bg-card border-2 border-ink/8 rounded-3xl p-4 space-y-3 shadow-soft">
           <label className="font-display text-base text-ink flex items-center gap-2">
-            <Calendar size={16} className="text-mint" /> Pick a Date
+            <Icon3D name="calendar" size={22} alt="" /> Pick a Date
           </label>
           <input
             type="date" value={date} min={today} max={maxDate}
@@ -237,7 +234,7 @@ const BookingPage = () => {
         {/* Slot */}
         <div className="bg-card border-2 border-ink/8 rounded-3xl p-4 space-y-3 shadow-soft">
           <label className="font-display text-base text-ink flex items-center gap-2">
-            <Clock size={16} className="text-butter" /> Pick a Time
+            <Icon3D name="clock" size={22} alt="" /> Pick a Time
           </label>
           <div className="grid grid-cols-4 gap-2">
             {SLOTS.map(s => (

@@ -4,7 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useAppStore } from '../store';
 import { ArrowRight, Shield, Loader2 } from 'lucide-react';
-import { Star, Heart, Sparkle, Cloud } from '../components/Stickers';
+import Icon3D from '../components/Icon3D';
+import charHero from '@/assets/char-hero.png';
 
 const OTP_LENGTH = 6;
 
@@ -131,36 +132,21 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="fixed inset-0 bg-background bg-confetti flex flex-col items-center justify-center px-6 overflow-hidden">
-      {/* Floating decorations */}
-      <motion.div
-        animate={{ y: [0, -10, 0], rotate: [0, 5, 0] }}
-        transition={{ duration: 4, repeat: Infinity }}
-        className="absolute top-[8%] left-[10%]"
-      >
-        <Cloud size={70} color="hsl(var(--sky))" />
-      </motion.div>
-      <motion.div
-        animate={{ y: [0, -8, 0], rotate: [0, -5, 0] }}
-        transition={{ duration: 5, repeat: Infinity, delay: 1 }}
-        className="absolute top-[12%] right-[8%]"
-      >
-        <Star size={36} color="hsl(var(--butter))" />
-      </motion.div>
-      <motion.div
-        animate={{ y: [0, -6, 0] }}
-        transition={{ duration: 3, repeat: Infinity, delay: 0.5 }}
-        className="absolute bottom-[20%] left-[12%]"
-      >
-        <Heart size={28} color="hsl(var(--coral))" />
-      </motion.div>
-      <motion.div
-        animate={{ rotate: [0, 360] }}
-        transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-        className="absolute bottom-[15%] right-[10%]"
-      >
-        <Sparkle size={28} color="hsl(var(--lavender))" />
-      </motion.div>
+    <div className="fixed inset-0 bg-background flex flex-col items-center justify-center px-6 overflow-hidden">
+      {/* Floating 3D character */}
+      <motion.img
+        src={charHero}
+        alt=""
+        animate={{ y: [0, -10, 0] }}
+        transition={{ duration: 3, repeat: Infinity }}
+        className="absolute top-[6%] right-[-2rem] w-40 h-40 object-contain pointer-events-none opacity-90"
+      />
+      <div className="absolute top-[14%] left-6">
+        <Icon3D name="gift" size={56} alt="" className="animate-bounce-soft" />
+      </div>
+      <div className="absolute bottom-[18%] right-6">
+        <Icon3D name="play" size={48} alt="" />
+      </div>
 
       <AnimatePresence mode="wait">
         {step === 'phone' && (
