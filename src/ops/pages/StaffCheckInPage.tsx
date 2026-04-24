@@ -828,7 +828,7 @@ const StaffCheckInPage = () => {
                     session={s}
                     now={now}
                     busy={extendingId === s.id}
-                    onExtend={() => handleExtend(s.id)}
+                    onExtend={(h) => handleExtend(s.id, h)}
                     onCheckOut={() => handleCheckOut(s.id)}
                   />
                 ))
