@@ -56,17 +56,19 @@ const BottomNav = () => {
           </div>
         </div>
 
-        {/* Center FAB — perfectly centered to nav pill */}
-        <motion.button
-          whileTap={{ scale: 0.92 }}
-          animate={{ y: [0, -3, 0] }}
-          transition={{ y: { duration: 2.4, repeat: Infinity, ease: 'easeInOut' } }}
-          onClick={() => navigate('/my-qr')}
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-[60%] w-16 h-16 rounded-full bg-ink flex items-center justify-center shadow-hero ring-4 ring-background"
-          aria-label="My QR"
-        >
-          <Icon3D name="qr" size={34} alt="" />
-        </motion.button>
+        {/* Center FAB — perfectly centered to nav pill, lifted above */}
+        <div className="absolute left-1/2 -top-5 -translate-x-1/2 pointer-events-auto">
+          <motion.button
+            whileTap={{ scale: 0.92 }}
+            animate={{ y: [0, -3, 0] }}
+            transition={{ y: { duration: 2.4, repeat: Infinity, ease: 'easeInOut' } }}
+            onClick={() => navigate('/my-qr')}
+            className="w-16 h-16 rounded-full bg-ink flex items-center justify-center shadow-hero ring-4 ring-background"
+            aria-label="My QR"
+          >
+            <Icon3D name="qr" size={32} alt="" />
+          </motion.button>
+        </div>
       </div>
     </nav>
   );
