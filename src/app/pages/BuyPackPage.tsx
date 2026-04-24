@@ -145,7 +145,9 @@ const BuyPackPage = () => {
   }
 
   const isFree = pack.pack_type === 'welcome_free';
+  const isParty = pack.pack_type === 'party';
   const perHour = pack.total_hours > 1 ? Math.round(pack.price / pack.total_hours) : null;
+  const partyImg = isParty ? matchPartyImage(pack.name) : null;
 
   return (
     <div className="min-h-screen bg-background pb-32">
@@ -155,7 +157,7 @@ const BuyPackPage = () => {
             className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
             <ArrowLeft size={18} className="text-ink" strokeWidth={2.5} />
           </motion.button>
-          <h1 className="font-display text-xl text-ink -tracking-wide">{isFree ? 'Free hour' : 'Get pack'}</h1>
+          <h1 className="font-display text-xl text-ink -tracking-wide">{isFree ? 'Free hour' : isParty ? 'Birthday party' : 'Get pack'}</h1>
         </div>
       </header>
 
@@ -167,23 +169,33 @@ const BuyPackPage = () => {
           className="relative bg-ink rounded-[32px] p-6 overflow-hidden shadow-hero"
         >
           <div className="relative z-10 max-w-[60%]">
-            <p className="text-xs text-white/60 font-heading uppercase tracking-wider">{pack.total_hours} hour pack</p>
+            <p className="text-xs text-white/60 font-heading uppercase tracking-wider">{isParty ? 'Party package' : `${pack.total_hours} hour pack`}</p>
             <h2 className="font-display text-3xl text-white mt-1 -tracking-wide leading-tight">{pack.name}</h2>
             {pack.description && (
               <p className="text-xs text-white/55 mt-2 leading-relaxed font-heading line-clamp-2">{pack.description}</p>
             )}
             <div className="mt-4 flex items-baseline gap-2">
               <span className="font-display text-4xl text-mint -tracking-wide">{isFree ? 'FREE' : `₹${pack.price}`}</span>
-              {perHour && <span className="text-xs text-white/55 font-heading">≈ ₹{perHour}/hr</span>}
+              {isParty ? <span className="text-xs text-white/55 font-heading">/kid</span> : perHour && <span className="text-xs text-white/55 font-heading">≈ ₹{perHour}/hr</span>}
             </div>
           </div>
-          <motion.div
-            animate={{ y: [0, -6, 0] }}
-            transition={{ duration: 2.8, repeat: Infinity }}
-            className="absolute -bottom-2 -right-2"
-          >
-            <Icon3D name={isFree ? 'gift' : 'clock'} size={150} alt="" />
-          </motion.div>
+          {partyImg ? (
+            <motion.img
+              src={partyImg}
+              alt={pack.name}
+              animate={{ y: [0, -6, 0] }}
+              transition={{ duration: 2.8, repeat: Infinity }}
+              className="absolute -bottom-3 -right-3 w-40 h-40 rounded-3xl object-cover shadow-soft"
+            />
+          ) : (
+            <motion.div
+              animate={{ y: [0, -6, 0] }}
+              transition={{ duration: 2.8, repeat: Infinity }}
+              className="absolute -bottom-2 -right-2"
+            >
+              <Icon3D name={isFree ? 'gift' : 'clock'} size={150} alt="" />
+            </motion.div>
+          )}
         </motion.div>
 
         <div className="bg-card rounded-[24px] p-5 space-y-3 shadow-soft border border-border">
