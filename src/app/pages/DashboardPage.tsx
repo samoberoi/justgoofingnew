@@ -386,12 +386,13 @@ const DashboardPage = () => {
             <h3 className="font-display text-xl text-ink -tracking-wide leading-tight mt-0.5">Throw a birthday party 🎉</h3>
             <p className="text-[11px] text-ink/65 font-heading mt-1.5">Basic · Bash · Bonanza — from ₹1,000/kid</p>
           </div>
-          <motion.div
-            animate={{ y: [0, -4, 0], rotate: [0, 6, 0] }}
+          <motion.img
+            src={partyBonanza}
+            alt=""
+            animate={{ y: [0, -4, 0], rotate: [0, 4, 0] }}
             transition={{ duration: 3, repeat: Infinity }}
-          >
-            <Icon3D name="gift" size={64} alt="" />
-          </motion.div>
+            className="w-20 h-20 rounded-2xl object-cover shadow-soft flex-shrink-0"
+          />
         </motion.button>
 
         {/* EMPTY STATE */}
