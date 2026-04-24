@@ -90,22 +90,22 @@ const ExtendSessionPage = () => {
         </motion.div>
 
         <div>
-          <p className="font-display text-base text-ink mb-3 px-1">How many more hours?</p>
-          <div className="grid grid-cols-3 gap-2.5">
-            {HOUR_OPTIONS.map(h => (
+          <p className="font-display text-base text-ink mb-3 px-1">How much longer?</p>
+          <div className="grid grid-cols-4 gap-2.5">
+            {HOUR_OPTIONS.map(opt => (
               <motion.button
-                key={h}
+                key={opt.value}
                 whileTap={{ scale: 0.94 }}
-                onClick={() => setHours(h)}
+                onClick={() => setHours(opt.value)}
                 className={`py-6 rounded-[24px] transition-all ${
-                  hours === h
+                  hours === opt.value
                     ? 'bg-coral text-white shadow-pop-coral'
                     : 'bg-card border border-border'
                 }`}
               >
-                <div className={`font-display text-3xl ${hours === h ? 'text-white' : 'text-ink'}`}>+{h}</div>
-                <div className={`text-[10px] uppercase tracking-wider mt-0.5 font-heading ${hours === h ? 'text-white/80' : 'text-muted-foreground'}`}>
-                  hour{h > 1 ? 's' : ''}
+                <div className={`font-display text-2xl ${hours === opt.value ? 'text-white' : 'text-ink'}`}>{opt.label}</div>
+                <div className={`text-[10px] uppercase tracking-wider mt-0.5 font-heading ${hours === opt.value ? 'text-white/80' : 'text-muted-foreground'}`}>
+                  {opt.sub}
                 </div>
               </motion.button>
             ))}
@@ -119,7 +119,7 @@ const ExtendSessionPage = () => {
           </div>
           <div className="flex items-center justify-between text-sm font-heading">
             <span className="text-muted-foreground">Extending by</span>
-            <span className="font-display text-coral">+{hours}h</span>
+            <span className="font-display text-coral">+{hours < 1 ? `${hours * 60}m` : `${hours}h`}</span>
           </div>
           <div className="border-t border-border pt-2 flex items-center justify-between">
             <span className="text-ink font-display text-sm">Remaining after</span>
