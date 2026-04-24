@@ -375,6 +375,25 @@ const DashboardPage = () => {
           </section>
         )}
 
+        {/* PARTIES CTA */}
+        <motion.button
+          whileTap={{ scale: 0.98 }}
+          onClick={() => navigate('/parties')}
+          className="w-full bg-butter rounded-[28px] p-5 flex items-center gap-4 shadow-pop text-left overflow-hidden relative"
+        >
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] text-ink/60 font-heading uppercase tracking-wider">One-off</p>
+            <h3 className="font-display text-xl text-ink -tracking-wide leading-tight mt-0.5">Throw a birthday party 🎉</h3>
+            <p className="text-[11px] text-ink/65 font-heading mt-1.5">Basic · Bash · Bonanza — from ₹1,000/kid</p>
+          </div>
+          <motion.div
+            animate={{ y: [0, -4, 0], rotate: [0, 6, 0] }}
+            transition={{ duration: 3, repeat: Infinity }}
+          >
+            <Icon3D name="gift" size={64} alt="" />
+          </motion.div>
+        </motion.button>
+
         {/* EMPTY STATE */}
         {!hasAnything && (
           <motion.div

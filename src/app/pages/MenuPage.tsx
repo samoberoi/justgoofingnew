@@ -124,6 +124,7 @@ const MenuPage = () => {
         .from('play_packs' as any)
         .select('*')
         .eq('is_active', true)
+        .neq('pack_type', 'party')
         .order('display_order', { ascending: true });
       setPacks((data as any) || []);
     };
