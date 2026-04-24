@@ -463,15 +463,16 @@ const StaffCheckInPage = () => {
     );
   };
 
-  // Extend session by 1 hour (records on play_sessions; deducted at checkout)
-  const handleExtend = async (sessionId: string) => {
+  // Extend session by N hours (0.5 or 1); deducted at checkout
+  const handleExtend = async (sessionId: string, addHours: number) => {
     const session = activeSessions.find(s => s.id === sessionId);
     if (!session) return;
     setExtendingId(sessionId);
 
     const remaining = await getRemainingHoursFor(session.user_id);
     const multiplier = session.num_kids || (session.plus_one ? 2 : 1);
-    const needed = 1 * multiplier;
+    const needed = addHours * multiplier;
+    const label = addHours < 1 ? `${addHours * 60} mins` : `${addHours}h`;
 
     if (remaining < needed) {
       toast.error('No more hours available 👋', {
@@ -484,13 +485,13 @@ const StaffCheckInPage = () => {
 
     const { error } = await supabase
       .from('play_sessions' as any)
-      .update({ extended_hours: Number(session.extended_hours || 0) + 1 })
+      .update({ extended_hours: Number(session.extended_hours || 0) + addHours })
       .eq('id', sessionId);
 
     if (error) {
       toast.error('Could not extend', { description: error.message });
     } else {
-      toast.success('Extended by 1 hour ⏱️', {
+      toast.success(`Extended by ${label} ⏱️`, {
         description: `${needed}h will be deducted at checkout.`,
       });
     }
