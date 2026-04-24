@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import charHero from '@/assets/char-hero.png';
 import charGirl from '@/assets/char-girl.png';
 import charCool from '@/assets/char-cool.png';
+import partyBonanza from '@/assets/party-bonanza.jpg';
 
 interface UserPack {
   id: string;
