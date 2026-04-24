@@ -854,7 +854,7 @@ const ActiveSessionCard = ({
   session: ActiveSession;
   now: number;
   busy: boolean;
-  onExtend: () => void;
+  onExtend: (hours: number) => void;
   onCheckOut: () => void;
 }) => {
   const checkedInMs = new Date(session.checked_in_at).getTime();
