@@ -7,6 +7,16 @@ import { useAppStore } from '../store';
 import { useStoreSelection } from '../hooks/useStoreSelection';
 import Icon3D, { Icon3DName } from '../components/Icon3D';
 import { toast } from 'sonner';
+import partyBasic from '@/assets/party-basic.jpg';
+import partyBash from '@/assets/party-bash.jpg';
+import partyBonanza from '@/assets/party-bonanza.jpg';
+
+const matchPartyImage = (name: string) => {
+  const n = name.toLowerCase();
+  if (n.includes('bonanza')) return partyBonanza;
+  if (n.includes('bash')) return partyBash;
+  return partyBasic;
+};
 
 interface PlayPack {
   id: string;
