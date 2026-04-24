@@ -149,7 +149,7 @@ const ExtendSessionPage = () => {
             disabled={!canExtend || submitting}
             className="w-full py-4 bg-ink rounded-full font-display text-base text-white disabled:opacity-40 flex items-center justify-center gap-2"
           >
-            {submitting ? 'Extending…' : <><Plus size={16} strokeWidth={2.5} /> Extend by {hours}h</>}
+            {submitting ? 'Extending…' : <><Plus size={16} strokeWidth={2.5} /> Extend by {hours < 1 ? `${hours * 60} mins` : `${hours}h`}</>}
           </motion.button>
         </div>
       </div>
