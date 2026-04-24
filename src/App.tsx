@@ -26,6 +26,7 @@ import ProfilePage from "./app/pages/ProfilePage";
 import KidsPage from "./app/pages/KidsPage";
 import NotificationsPage from "./app/pages/NotificationsPage";
 import PaymentPage from "./app/pages/PaymentPage";
+import PartiesPage from "./app/pages/PartiesPage";
 
 // Ops pages
 import SuperAdminDashboard from "./ops/pages/SuperAdminDashboard";
