@@ -1,15 +1,18 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { MapPin, Search, ArrowLeft, PartyPopper } from 'lucide-react';
+import { MapPin, Search, ArrowLeft, PartyPopper, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import BottomNav from '../components/BottomNav';
 import Icon3D from '../components/Icon3D';
 import { useStoreSelection } from '../hooks/useStoreSelection';
 import { useMenu, MenuItem } from '../hooks/useMenu';
 import { supabase } from '@/integrations/supabase/client';
-import charHero from '@/assets/char-hero.png';
-import charGirl from '@/assets/char-girl.png';
-import charCool from '@/assets/char-cool.png';
+import packPlayDate from '@/assets/pack-playdate.jpg';
+import pack5h from '@/assets/pack-5h.jpg';
+import pack10h from '@/assets/pack-10h.jpg';
+import pack20h from '@/assets/pack-20h.jpg';
+import pack30h from '@/assets/pack-30h.jpg';
+import pack60h from '@/assets/pack-60h.jpg';
 
 interface PlayPack {
   id: string;
@@ -22,51 +25,80 @@ interface PlayPack {
 }
 
 const accents = [
-  { bg: 'bg-coral', char: charGirl },
-  { bg: 'bg-mint', char: charHero },
-  { bg: 'bg-lavender', char: charCool },
-  { bg: 'bg-butter', char: charHero },
+  { bg: 'bg-coral' },
+  { bg: 'bg-mint' },
+  { bg: 'bg-lavender' },
+  { bg: 'bg-butter' },
+  { bg: 'bg-sky' },
+  { bg: 'bg-coral' },
 ];
 
+const matchPackImage = (pack: PlayPack): string | null => {
+  if (pack.pack_type === 'play_date') return packPlayDate;
+  if (pack.pack_type !== 'hour_pack') return null;
+  const h = pack.total_hours;
+  if (h <= 5) return pack5h;
+  if (h <= 10) return pack10h;
+  if (h <= 20) return pack20h;
+  if (h <= 30) return pack30h;
+  return pack60h;
+};
+
+const validityFor = (pack: PlayPack) => {
+  if (pack.pack_type === 'play_date') return 'Single visit';
+  if (pack.pack_type !== 'hour_pack') return null;
+  return pack.total_hours <= 10 ? '2 month validity' : '3 month validity';
+};
+
 const PackCard = ({ pack, index, onBuy }: { pack: PlayPack; index: number; onBuy: (p: PlayPack) => void }) => {
-  const isFree = pack.price === 0;
-  const perHour = pack.total_hours > 1 ? Math.round(pack.price / pack.total_hours) : null;
+  const perHour = pack.pack_type === 'hour_pack' && pack.total_hours > 1 ? Math.round(pack.price / pack.total_hours) : null;
   const a = accents[index % accents.length];
+  const img = matchPackImage(pack);
+  const validity = validityFor(pack);
+  const shortDesc = (pack.description || '').split('\n')[0];
 
   return (
     <motion.button
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.06 }}
+      whileTap={{ scale: 0.98 }}
       onClick={() => onBuy(pack)}
-      className={`relative ${a.bg} rounded-[32px] p-5 overflow-hidden text-left w-full`}
+      className={`relative ${a.bg} rounded-[32px] p-5 overflow-hidden text-left w-full shadow-pop`}
     >
-      <div className="relative z-10 max-w-[60%]">
-        <div className="flex items-center gap-2 mb-2">
-          <span className="chip-dark text-[10px] py-1">
-            <Icon3D name="clock" size={12} alt="" /> {pack.total_hours} hrs
-          </span>
-          {isFree && (
-            <span className="text-[10px] px-2.5 py-1 rounded-full bg-white text-ink font-display">FREE</span>
+      <div className="flex items-stretch gap-4">
+        <div className="flex-1 min-w-0 z-10 relative">
+          <div className="flex items-center gap-2 mb-2 flex-wrap">
+            <span className="chip-dark text-[10px] py-1">
+              <Icon3D name="clock" size={12} alt="" /> {pack.total_hours} hrs
+            </span>
+            {validity && (
+              <span className="text-[10px] px-2.5 py-1 rounded-full bg-white/80 text-ink font-display">{validity}</span>
+            )}
+          </div>
+          <h3 className="font-display text-xl text-ink leading-tight -tracking-wide truncate">{pack.name}</h3>
+          {shortDesc && (
+            <p className="text-xs text-ink/70 mt-1.5 leading-relaxed line-clamp-2 font-heading">{shortDesc}</p>
           )}
+          <div className="flex items-baseline gap-1.5 mt-4">
+            <span className="font-display text-2xl text-ink">₹{pack.price.toLocaleString('en-IN')}</span>
+            {perHour && <span className="text-[10px] text-ink/60 font-heading">≈ ₹{perHour}/hr</span>}
+          </div>
         </div>
-        <h3 className="font-display text-xl text-ink leading-tight -tracking-wide">{pack.name}</h3>
-        {pack.description && (
-          <p className="text-xs text-ink/70 mt-1.5 leading-relaxed line-clamp-2 font-heading">{pack.description}</p>
-        )}
-        <div className="flex items-baseline gap-1.5 mt-4">
-          <span className="font-display text-2xl text-ink">{isFree ? 'FREE' : `₹${pack.price}`}</span>
-          {perHour && <span className="text-[10px] text-ink/60 font-heading">≈ ₹{perHour}/hr</span>}
-        </div>
-      </div>
 
-      <motion.img
-        src={a.char}
-        alt=""
-        animate={{ y: [0, -4, 0] }}
-        transition={{ duration: 3, repeat: Infinity, delay: index * 0.2 }}
-        className="absolute -bottom-2 -right-4 w-32 h-32 object-contain pointer-events-none"
-      />
+        {img && (
+          <motion.img
+            src={img}
+            alt={pack.name}
+            width={120}
+            height={120}
+            loading="lazy"
+            animate={{ y: [0, -4, 0] }}
+            transition={{ duration: 2.6, repeat: Infinity, delay: index * 0.2 }}
+            className="w-28 h-28 rounded-2xl object-cover shadow-soft flex-shrink-0 self-center"
+          />
+        )}
+      </div>
     </motion.button>
   );
 };
@@ -110,11 +142,114 @@ const PackageCard = ({ item, index, onBook }: { item: MenuItem; index: number; o
   );
 };
 
+// ---------- Add-ons & Themes (static, sourced from playbook photos) ----------
+
+interface Activity {
+  name: string;
+  price: string;
+}
+const activities: Activity[] = [
+  { name: 'Photographer', price: '₹4,500' },
+  { name: 'Bubble Ring', price: '₹4,000' },
+  { name: 'Magic Show (Normal / with Animals)', price: '₹4,500' },
+  { name: 'Puppet Show', price: '₹4,000' },
+  { name: 'Selfie Booth', price: '₹5,000' },
+  { name: 'Tattoo Artist', price: '₹2,500' },
+  { name: 'Live Character', price: '₹6,500' },
+  { name: 'Craft Corner / Paper Craft / Stone Painting', price: '₹4,000' },
+  { name: 'Balloon Art', price: '₹4,000' },
+  { name: 'Nail Art', price: '₹3,000' },
+  { name: 'Cup Cake Decoration', price: '₹100 / head' },
+  { name: 'Cupcake Making / Decorating', price: '₹200 / head' },
+  { name: 'Hair Braiding', price: '₹4,000' },
+  { name: 'Chocolate Fountain', price: '₹4,000' },
+  { name: "Potter's Wheel", price: '₹5,000' },
+  { name: 'Game Coordinator', price: '₹4,000' },
+  { name: 'Science Lab (Outsourced)', price: 'On request' },
+  { name: 'Gol Gappe & Papdi Chaat Live Counter', price: 'As per activity' },
+  { name: 'Ice Cream Parlor', price: 'As per activity' },
+  { name: 'Maggi Live Counter', price: 'As per activity' },
+  { name: 'Ramen Noodles', price: 'As per activity' },
+];
+
+const themes = [
+  'Baby Shark','Rainbow Dash','Paw Patrol','Lima','Peppa Pig','Avengers','Super Hero','Lego','Cars','Animals','Lion King','Football','Science (Mad Scientist)','Detective','Minecraft','Tokka-Bokka','Cocomelon','Two Fast Two Furious',
+  'Train','Unicorn','Minions','Tom & Jerry','PJ Mask','Colors / Crayola','Frozen','Fairy','Dino','Space','Rainbow','Nerf Guns','Cricket','Soccer','Jungle','Monsters','Monster Truck','Magic',
+  'Fruits','Go Green','Ben & Holly','Geronimo','Candy-Land','Thomas Cars','Among Us','Picnic','Construction','Dominoes','James Bond','Pirates of the Sea','Mermaid',"Gabby's Dollhouse",'Masha & the Bear','Subway Surfers','Pop It',
+];
+
+const AddonsTab = () => (
+  <div className="px-5 pt-4 space-y-5 max-w-lg mx-auto">
+    {/* Why celebrate */}
+    <div className="bg-lavender rounded-[28px] p-5">
+      <div className="flex items-center gap-2 mb-3">
+        <Sparkles size={16} className="text-ink" strokeWidth={2.5} />
+        <h3 className="font-display text-base text-ink -tracking-wide">Why celebrate at Just Goofing?</h3>
+      </div>
+      <ul className="space-y-1.5 text-xs text-ink/80 font-heading leading-relaxed">
+        <li>• Dedicated private event zone</li>
+        <li>• Safe, sanitized & air-purified play area</li>
+        <li>• Café catering for all age groups</li>
+        <li>• Trained kids hosts</li>
+        <li>• Customizable décor</li>
+        <li>• Hassle-free planning</li>
+      </ul>
+    </div>
+
+    {/* Activities */}
+    <div>
+      <h3 className="font-display text-lg text-ink -tracking-wide px-1 mb-2.5">Additional Activities</h3>
+      <div className="bg-card rounded-[24px] border border-border overflow-hidden">
+        {activities.map((a, i) => (
+          <div
+            key={a.name}
+            className={`flex items-center justify-between px-4 py-3 ${i !== activities.length - 1 ? 'border-b border-border' : ''}`}
+          >
+            <span className="text-xs text-ink font-heading flex-1 pr-3">{a.name}</span>
+            <span className="font-display text-xs text-ink whitespace-nowrap">{a.price}</span>
+          </div>
+        ))}
+      </div>
+      <p className="text-[11px] text-muted-foreground font-heading mt-2 px-1">
+        Tell our team which activities you'd like and we'll add them to your party booking.
+      </p>
+    </div>
+
+    {/* Themes */}
+    <div>
+      <h3 className="font-display text-lg text-ink -tracking-wide px-1 mb-2.5">Themes for Birthday</h3>
+      <div className="bg-butter rounded-[24px] p-4">
+        <div className="flex flex-wrap gap-2">
+          {themes.map(t => (
+            <span
+              key={t}
+              className="px-3 py-1.5 rounded-full bg-white/70 text-[11px] font-heading text-ink"
+            >
+              {t}
+            </span>
+          ))}
+        </div>
+        <p className="text-[11px] text-ink/65 font-heading mt-3">
+          Pick any theme — we customise invites, backdrop & décor to match.
+        </p>
+      </div>
+    </div>
+
+    {/* Hours */}
+    <div className="bg-muted rounded-[24px] p-4">
+      <p className="font-display text-sm text-ink mb-1">Play Area Timings</p>
+      <p className="text-xs text-ink/70 font-heading leading-relaxed">
+        Weekdays: 4:00 PM – 8:00 PM<br/>Weekends: 11:00 AM – 8:00 PM
+      </p>
+    </div>
+  </div>
+);
+
 const MenuPage = () => {
   const navigate = useNavigate();
   const { selectedStore } = useStoreSelection();
   const { categories, grouped, uncategorized, loading, items } = useMenu(selectedStore?.id);
-  const [tab, setTab] = useState<'packs' | 'visits'>('packs');
+  const [tab, setTab] = useState<'packs' | 'visits' | 'addons'>('packs');
   const [packs, setPacks] = useState<PlayPack[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -163,7 +298,7 @@ const MenuPage = () => {
           </div>
         </div>
 
-        {/* Reference-style pill tabs */}
+        {/* Pill tabs */}
         <div className="px-5 pb-3 max-w-lg mx-auto">
           <div className="flex gap-2 overflow-x-auto no-scrollbar">
             <button
@@ -172,7 +307,7 @@ const MenuPage = () => {
                 tab === 'packs' ? 'bg-ink text-white' : 'bg-muted text-ink'
               }`}
             >
-              <Icon3D name="gift" size={16} alt="" /> Hour Packs
+              <Icon3D name="clock" size={16} alt="" /> Hour Packs
             </button>
             <button
               onClick={() => setTab('visits')}
@@ -182,18 +317,26 @@ const MenuPage = () => {
             >
               <Icon3D name="calendar" size={16} alt="" /> One-off
             </button>
+            <button
+              onClick={() => setTab('addons')}
+              className={`px-5 py-2.5 rounded-full text-xs font-display whitespace-nowrap flex items-center gap-1.5 transition-all ${
+                tab === 'addons' ? 'bg-ink text-white' : 'bg-muted text-ink'
+              }`}
+            >
+              <Icon3D name="gift" size={16} alt="" /> Add-ons & Themes
+            </button>
           </div>
         </div>
       </header>
 
-      {tab === 'packs' ? (
+      {tab === 'packs' && (
         <div className="px-5 pt-4 space-y-3.5 max-w-lg mx-auto">
           {/* Hint card */}
           <div className="bg-muted rounded-[24px] p-4">
             <p className="font-display text-sm text-ink">Why hour packs?</p>
             <p className="text-xs text-ink/70 mt-1 leading-relaxed font-heading">
-              Buy hours in bulk, save big, use anytime.{' '}
-              <span className="font-display text-ink">No expiry — ever!</span>
+              Buy hours in bulk, save big, use anytime within validity.{' '}
+              <span className="font-display text-ink">Group of up to 5 kids.</span>
             </p>
           </div>
 
@@ -205,7 +348,9 @@ const MenuPage = () => {
             packs.map((pack, idx) => <PackCard key={pack.id} pack={pack} index={idx} onBuy={handleBuyPack} />)
           )}
         </div>
-      ) : (
+      )}
+
+      {tab === 'visits' && (
         <div className="px-5 pt-4 space-y-4 max-w-lg mx-auto">
           <div className="relative">
             <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" strokeWidth={2.5} />
@@ -260,6 +405,8 @@ const MenuPage = () => {
           )}
         </div>
       )}
+
+      {tab === 'addons' && <AddonsTab />}
 
       <BottomNav />
     </div>

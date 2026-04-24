@@ -10,12 +10,35 @@ import { toast } from 'sonner';
 import partyBasic from '@/assets/party-basic.jpg';
 import partyBash from '@/assets/party-bash.jpg';
 import partyBonanza from '@/assets/party-bonanza.jpg';
+import packPlayDate from '@/assets/pack-playdate.jpg';
+import pack5h from '@/assets/pack-5h.jpg';
+import pack10h from '@/assets/pack-10h.jpg';
+import pack20h from '@/assets/pack-20h.jpg';
+import pack30h from '@/assets/pack-30h.jpg';
+import pack60h from '@/assets/pack-60h.jpg';
 
 const matchPartyImage = (name: string) => {
   const n = name.toLowerCase();
   if (n.includes('bonanza')) return partyBonanza;
   if (n.includes('bash')) return partyBash;
   return partyBasic;
+};
+
+const matchPackImage = (packType: string, hours: number, name: string): string | null => {
+  if (packType === 'party') return matchPartyImage(name);
+  if (packType === 'play_date') return packPlayDate;
+  if (packType !== 'hour_pack') return null;
+  if (hours <= 5) return pack5h;
+  if (hours <= 10) return pack10h;
+  if (hours <= 20) return pack20h;
+  if (hours <= 30) return pack30h;
+  return pack60h;
+};
+
+const validityFor = (packType: string, hours: number) => {
+  if (packType === 'play_date') return 'Single visit · Inclusive of GST';
+  if (packType !== 'hour_pack') return null;
+  return hours <= 10 ? '2 month validity' : '3 month validity';
 };
 
 interface PlayPack {
@@ -146,8 +169,57 @@ const BuyPackPage = () => {
 
   const isFree = pack.pack_type === 'welcome_free';
   const isParty = pack.pack_type === 'party';
-  const perHour = pack.total_hours > 1 ? Math.round(pack.price / pack.total_hours) : null;
-  const partyImg = isParty ? matchPartyImage(pack.name) : null;
+  const isHourPack = pack.pack_type === 'hour_pack';
+  const isPlayDate = pack.pack_type === 'play_date';
+  const perHour = isHourPack && pack.total_hours > 1 ? Math.round(pack.price / pack.total_hours) : null;
+  const heroImg = matchPackImage(pack.pack_type, pack.total_hours, pack.name);
+  const validity = validityFor(pack.pack_type, pack.total_hours);
+
+  // Parse description: split on blank lines into sections; bullet lines start with •
+  const sections = (pack.description || '')
+    .split(/\n\s*\n/)
+    .map(s => s.trim())
+    .filter(Boolean);
+
+  const renderSection = (text: string, key: number) => {
+    const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+    const allBullets = lines.every(l => l.startsWith('•'));
+    if (allBullets) {
+      return (
+        <ul key={key} className="space-y-1.5">
+          {lines.map((l, i) => (
+            <li key={i} className="text-sm text-ink/80 font-heading flex gap-2 leading-relaxed">
+              <span className="text-coral mt-0.5">•</span>
+              <span>{l.replace(/^•\s*/, '')}</span>
+            </li>
+          ))}
+        </ul>
+      );
+    }
+    return (
+      <div key={key} className="space-y-1">
+        {lines.map((l, i) => {
+          const isBullet = l.startsWith('•');
+          return (
+            <p key={i} className={`text-sm leading-relaxed font-heading ${isBullet ? 'text-ink/80 pl-2' : 'text-ink/75'}`}>
+              {l}
+            </p>
+          );
+        })}
+      </div>
+    );
+  };
+
+  const headerLabel = isFree
+    ? 'Free hour'
+    : isParty
+      ? 'Birthday party'
+      : isPlayDate
+        ? 'Play date'
+        : 'Hour pack';
+
+  const heroEyebrow = isParty ? 'Party package' : isPlayDate ? 'Single visit pack' : `${pack.total_hours} hour pack`;
+  const priceSuffix = isParty ? '/kid' : isPlayDate ? ' onwards' : perHour ? `≈ ₹${perHour}/hr` : '';
 
   return (
     <div className="min-h-screen bg-background pb-32">
@@ -157,7 +229,7 @@ const BuyPackPage = () => {
             className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
             <ArrowLeft size={18} className="text-ink" strokeWidth={2.5} />
           </motion.button>
-          <h1 className="font-display text-xl text-ink -tracking-wide">{isFree ? 'Free hour' : isParty ? 'Birthday party' : 'Get pack'}</h1>
+          <h1 className="font-display text-xl text-ink -tracking-wide">{headerLabel}</h1>
         </div>
       </header>
 
@@ -169,19 +241,23 @@ const BuyPackPage = () => {
           className="relative bg-ink rounded-[32px] p-6 overflow-hidden shadow-hero"
         >
           <div className="relative z-10 max-w-[60%]">
-            <p className="text-xs text-white/60 font-heading uppercase tracking-wider">{isParty ? 'Party package' : `${pack.total_hours} hour pack`}</p>
+            <p className="text-xs text-white/60 font-heading uppercase tracking-wider">{heroEyebrow}</p>
             <h2 className="font-display text-3xl text-white mt-1 -tracking-wide leading-tight">{pack.name}</h2>
-            {pack.description && (
-              <p className="text-xs text-white/55 mt-2 leading-relaxed font-heading line-clamp-2">{pack.description}</p>
+            {validity && (
+              <span className="inline-block mt-2 text-[10px] px-2.5 py-1 rounded-full bg-white/15 text-white/85 font-display">
+                {validity}
+              </span>
             )}
-            <div className="mt-4 flex items-baseline gap-2">
-              <span className="font-display text-4xl text-mint -tracking-wide">{isFree ? 'FREE' : `₹${pack.price}`}</span>
-              {isParty ? <span className="text-xs text-white/55 font-heading">/kid</span> : perHour && <span className="text-xs text-white/55 font-heading">≈ ₹{perHour}/hr</span>}
+            <div className="mt-4 flex items-baseline gap-2 flex-wrap">
+              <span className="font-display text-4xl text-mint -tracking-wide">
+                {isFree ? 'FREE' : `₹${pack.price.toLocaleString('en-IN')}`}
+              </span>
+              {priceSuffix && <span className="text-xs text-white/55 font-heading">{priceSuffix}</span>}
             </div>
           </div>
-          {partyImg ? (
+          {heroImg ? (
             <motion.img
-              src={partyImg}
+              src={heroImg}
               alt={pack.name}
               animate={{ y: [0, -6, 0] }}
               transition={{ duration: 2.8, repeat: Infinity }}
@@ -198,12 +274,25 @@ const BuyPackPage = () => {
           )}
         </motion.div>
 
+        {/* Description (parsed) */}
+        {sections.length > 0 && (
+          <div className="bg-card rounded-[24px] p-5 space-y-4 shadow-soft border border-border">
+            <h3 className="font-display text-sm text-ink">What's included</h3>
+            {sections.map((s, i) => renderSection(s, i))}
+          </div>
+        )}
+
+        {/* Quick facts */}
         <div className="bg-card rounded-[24px] p-5 space-y-3 shadow-soft border border-border">
-          <h3 className="font-display text-sm text-ink">What you get</h3>
-          <Row icon="clock" label={`${pack.total_hours} hour${pack.total_hours > 1 ? 's' : ''} of play time`} />
-          <Row icon="badge" label="No expiry — use whenever" />
-          <Row icon="qr" label="Walk in anytime, no booking needed" />
-          <Row icon="wallet" label="Earn Goofy Points every visit" />
+          <h3 className="font-display text-sm text-ink">Good to know</h3>
+          {isHourPack && <Row icon="clock" label={`${pack.total_hours} hour${pack.total_hours > 1 ? 's' : ''} of play time`} />}
+          {isHourPack && <Row icon="calendar" label={validity || 'Use within validity'} />}
+          {isHourPack && <Row icon="badge" label="Group of up to 5 kids at one time" />}
+          {isParty && <Row icon="clock" label={`${pack.total_hours} hour celebration`} />}
+          {isParty && <Row icon="gift" label="Up to 10 kids · extras at per-kid price" />}
+          {isPlayDate && <Row icon="clock" label={`${pack.total_hours} hours of play`} />}
+          {isPlayDate && <Row icon="gift" label="Includes meal pack" />}
+          <Row icon="qr" label="Walk in at your store, no booking needed" />
         </div>
 
         {alreadyClaimed && (

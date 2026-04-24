@@ -101,6 +101,7 @@ const PartiesPage = () => {
           {packs.map((pack, i) => {
             const a = accents[i % accents.length];
             const img = matchImage(pack.name);
+            const tagline = (pack.description || '').split('\n')[0];
             return (
               <motion.button
                 key={pack.id}
@@ -114,13 +115,15 @@ const PartiesPage = () => {
                 <div className="flex items-center gap-4">
                   <div className="flex-1 min-w-0">
                     <h3 className="font-display text-2xl text-ink -tracking-wide leading-tight truncate">{pack.name}</h3>
-                    <p className="text-[11px] text-ink/60 font-heading mt-1">{pack.total_hours} hours · Up to 10 kids</p>
+                    {tagline && (
+                      <p className="text-[11px] text-ink/65 font-heading mt-1 line-clamp-1">{tagline}</p>
+                    )}
                     <div className="mt-3 flex items-baseline gap-1.5">
-                      <span className="font-display text-3xl text-ink -tracking-wide">₹{pack.price}</span>
-                      <span className="text-xs text-ink/55 font-heading">/kid</span>
+                      <span className="font-display text-3xl text-ink -tracking-wide">₹{pack.price.toLocaleString('en-IN')}</span>
+                      <span className="text-xs text-ink/55 font-heading">/kid onwards</span>
                     </div>
                     <div className="mt-3 inline-flex items-center gap-1 px-3 h-7 rounded-full bg-ink/10">
-                      <span className="text-[11px] font-display text-ink">View details</span>
+                      <span className="text-[11px] font-display text-ink">View full details</span>
                     </div>
                   </div>
                   <motion.img
