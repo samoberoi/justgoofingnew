@@ -7,7 +7,12 @@ import { useAppStore } from '../store';
 import { toast } from 'sonner';
 import Icon3D from '../components/Icon3D';
 
-const HOUR_OPTIONS = [1, 2, 3];
+const HOUR_OPTIONS: { value: number; label: string; sub: string }[] = [
+  { value: 0.5, label: '+30', sub: 'mins' },
+  { value: 1, label: '+1', sub: 'hour' },
+  { value: 2, label: '+2', sub: 'hours' },
+  { value: 3, label: '+3', sub: 'hours' },
+];
 
 const ExtendSessionPage = () => {
   const { sessionId } = useParams<{ sessionId: string }>();
@@ -15,7 +20,7 @@ const ExtendSessionPage = () => {
   const { userId } = useAppStore();
   const [session, setSession] = useState<any>(null);
   const [packs, setPacks] = useState<any[]>([]);
-  const [hours, setHours] = useState(1);
+  const [hours, setHours] = useState<number>(1);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -47,7 +52,8 @@ const ExtendSessionPage = () => {
       toast.error('Could not extend', { description: error.message });
       return;
     }
-    toast.success(`+${hours}h added! 🎉`, { description: 'Show your QR to staff to confirm.' });
+    const label = hours < 1 ? `${hours * 60} mins` : `${hours}h`;
+    toast.success(`+${label} added! 🎉`, { description: 'Show your QR to staff to confirm.' });
     navigate('/home');
   };
 
@@ -85,22 +91,22 @@ const ExtendSessionPage = () => {
         </motion.div>
 
         <div>
-          <p className="font-display text-base text-ink mb-3 px-1">How many more hours?</p>
-          <div className="grid grid-cols-3 gap-2.5">
-            {HOUR_OPTIONS.map(h => (
+          <p className="font-display text-base text-ink mb-3 px-1">How much longer?</p>
+          <div className="grid grid-cols-4 gap-2.5">
+            {HOUR_OPTIONS.map(opt => (
               <motion.button
-                key={h}
+                key={opt.value}
                 whileTap={{ scale: 0.94 }}
-                onClick={() => setHours(h)}
+                onClick={() => setHours(opt.value)}
                 className={`py-6 rounded-[24px] transition-all ${
-                  hours === h
+                  hours === opt.value
                     ? 'bg-coral text-white shadow-pop-coral'
                     : 'bg-card border border-border'
                 }`}
               >
-                <div className={`font-display text-3xl ${hours === h ? 'text-white' : 'text-ink'}`}>+{h}</div>
-                <div className={`text-[10px] uppercase tracking-wider mt-0.5 font-heading ${hours === h ? 'text-white/80' : 'text-muted-foreground'}`}>
-                  hour{h > 1 ? 's' : ''}
+                <div className={`font-display text-2xl ${hours === opt.value ? 'text-white' : 'text-ink'}`}>{opt.label}</div>
+                <div className={`text-[10px] uppercase tracking-wider mt-0.5 font-heading ${hours === opt.value ? 'text-white/80' : 'text-muted-foreground'}`}>
+                  {opt.sub}
                 </div>
               </motion.button>
             ))}
@@ -114,7 +120,7 @@ const ExtendSessionPage = () => {
           </div>
           <div className="flex items-center justify-between text-sm font-heading">
             <span className="text-muted-foreground">Extending by</span>
-            <span className="font-display text-coral">+{hours}h</span>
+            <span className="font-display text-coral">+{hours < 1 ? `${hours * 60}m` : `${hours}h`}</span>
           </div>
           <div className="border-t border-border pt-2 flex items-center justify-between">
             <span className="text-ink font-display text-sm">Remaining after</span>
@@ -123,7 +129,7 @@ const ExtendSessionPage = () => {
         </div>
 
         <p className="text-[11px] text-muted-foreground text-center font-heading">
-          Minimum 1 hour deducted per extension. Partial hours round up.
+          Minimum 30 minutes deducted per extension. Partial time rounds up.
         </p>
 
         {!canExtend && (
@@ -143,7 +149,7 @@ const ExtendSessionPage = () => {
             disabled={!canExtend || submitting}
             className="w-full py-4 bg-ink rounded-full font-display text-base text-white disabled:opacity-40 flex items-center justify-center gap-2"
           >
-            {submitting ? 'Extending…' : <><Plus size={16} strokeWidth={2.5} /> Extend by {hours}h</>}
+            {submitting ? 'Extending…' : <><Plus size={16} strokeWidth={2.5} /> Extend by {hours < 1 ? `${hours * 60} mins` : `${hours}h`}</>}
           </motion.button>
         </div>
       </div>

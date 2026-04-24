@@ -463,15 +463,16 @@ const StaffCheckInPage = () => {
     );
   };
 
-  // Extend session by 1 hour (records on play_sessions; deducted at checkout)
-  const handleExtend = async (sessionId: string) => {
+  // Extend session by N hours (0.5 or 1); deducted at checkout
+  const handleExtend = async (sessionId: string, addHours: number) => {
     const session = activeSessions.find(s => s.id === sessionId);
     if (!session) return;
     setExtendingId(sessionId);
 
     const remaining = await getRemainingHoursFor(session.user_id);
     const multiplier = session.num_kids || (session.plus_one ? 2 : 1);
-    const needed = 1 * multiplier;
+    const needed = addHours * multiplier;
+    const label = addHours < 1 ? `${addHours * 60} mins` : `${addHours}h`;
 
     if (remaining < needed) {
       toast.error('No more hours available 👋', {
@@ -484,13 +485,13 @@ const StaffCheckInPage = () => {
 
     const { error } = await supabase
       .from('play_sessions' as any)
-      .update({ extended_hours: Number(session.extended_hours || 0) + 1 })
+      .update({ extended_hours: Number(session.extended_hours || 0) + addHours })
       .eq('id', sessionId);
 
     if (error) {
       toast.error('Could not extend', { description: error.message });
     } else {
-      toast.success('Extended by 1 hour ⏱️', {
+      toast.success(`Extended by ${label} ⏱️`, {
         description: `${needed}h will be deducted at checkout.`,
       });
     }
@@ -827,7 +828,7 @@ const StaffCheckInPage = () => {
                     session={s}
                     now={now}
                     busy={extendingId === s.id}
-                    onExtend={() => handleExtend(s.id)}
+                    onExtend={(h) => handleExtend(s.id, h)}
                     onCheckOut={() => handleCheckOut(s.id)}
                   />
                 ))
@@ -853,7 +854,7 @@ const ActiveSessionCard = ({
   session: ActiveSession;
   now: number;
   busy: boolean;
-  onExtend: () => void;
+  onExtend: (hours: number) => void;
   onCheckOut: () => void;
 }) => {
   const checkedInMs = new Date(session.checked_in_at).getTime();
@@ -927,24 +928,34 @@ const ActiveSessionCard = ({
         <div className={`h-full ${phaseStyle.bar} transition-all`} style={{ width: `${pct}%` }} />
       </div>
 
-      {/* Actions: always show checkout; show extend in amber/red/over */}
-      <div className="mt-3 grid grid-cols-2 gap-2">
+      {/* Actions: extend +30m / +1h, plus checkout */}
+      <div className="mt-3 grid grid-cols-3 gap-2">
         <motion.button
           whileTap={{ scale: 0.96 }}
-          onClick={onExtend}
+          onClick={() => onExtend(0.5)}
           disabled={busy}
-          className={`py-2.5 rounded-2xl text-xs font-heading border-2 transition-all flex items-center justify-center gap-1.5 disabled:opacity-50 ${
+          className={`py-2.5 rounded-2xl text-xs font-heading border-2 transition-all flex items-center justify-center gap-1 disabled:opacity-50 ${
             showActions ? 'bg-mint border-mint text-ink shadow-pop-mint' : 'bg-card border-ink/10 text-ink/70'
           }`}
         >
-          ⏱️ Extend +1h
+          ⏱️ +30m
+        </motion.button>
+        <motion.button
+          whileTap={{ scale: 0.96 }}
+          onClick={() => onExtend(1)}
+          disabled={busy}
+          className={`py-2.5 rounded-2xl text-xs font-heading border-2 transition-all flex items-center justify-center gap-1 disabled:opacity-50 ${
+            showActions ? 'bg-mint border-mint text-ink shadow-pop-mint' : 'bg-card border-ink/10 text-ink/70'
+          }`}
+        >
+          ⏱️ +1h
         </motion.button>
         <motion.button
           whileTap={{ scale: 0.96 }}
           onClick={onCheckOut}
-          className="py-2.5 bg-gradient-coral rounded-2xl text-xs font-heading text-white shadow-pop-coral flex items-center justify-center gap-1.5"
+          className="py-2.5 bg-gradient-coral rounded-2xl text-xs font-heading text-white shadow-pop-coral flex items-center justify-center gap-1"
         >
-          <LogOut size={13} /> Check Out
+          <LogOut size={13} /> Out
         </motion.button>
       </div>
     </motion.div>
