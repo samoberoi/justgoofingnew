@@ -129,7 +129,7 @@ const ExtendSessionPage = () => {
         </div>
 
         <p className="text-[11px] text-muted-foreground text-center font-heading">
-          Minimum 1 hour deducted per extension. Partial hours round up.
+          Minimum 30 minutes deducted per extension. Partial time rounds up.
         </p>
 
         {!canExtend && (
