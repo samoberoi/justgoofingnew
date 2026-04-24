@@ -16,8 +16,8 @@ interface PartyPack {
 
 const accents = [
   { bg: 'bg-butter', icon: 'gift' as const },
-  { bg: 'bg-lavender', icon: 'star' as const },
-  { bg: 'bg-coral', icon: 'cake' as const },
+  { bg: 'bg-lavender', icon: 'streak' as const },
+  { bg: 'bg-coral', icon: 'badge' as const },
 ];
 
 const PartiesPage = () => {
