@@ -10,12 +10,35 @@ import { toast } from 'sonner';
 import partyBasic from '@/assets/party-basic.jpg';
 import partyBash from '@/assets/party-bash.jpg';
 import partyBonanza from '@/assets/party-bonanza.jpg';
+import packPlayDate from '@/assets/pack-playdate.jpg';
+import pack5h from '@/assets/pack-5h.jpg';
+import pack10h from '@/assets/pack-10h.jpg';
+import pack20h from '@/assets/pack-20h.jpg';
+import pack30h from '@/assets/pack-30h.jpg';
+import pack60h from '@/assets/pack-60h.jpg';
 
 const matchPartyImage = (name: string) => {
   const n = name.toLowerCase();
   if (n.includes('bonanza')) return partyBonanza;
   if (n.includes('bash')) return partyBash;
   return partyBasic;
+};
+
+const matchPackImage = (packType: string, hours: number, name: string): string | null => {
+  if (packType === 'party') return matchPartyImage(name);
+  if (packType === 'play_date') return packPlayDate;
+  if (packType !== 'hour_pack') return null;
+  if (hours <= 5) return pack5h;
+  if (hours <= 10) return pack10h;
+  if (hours <= 20) return pack20h;
+  if (hours <= 30) return pack30h;
+  return pack60h;
+};
+
+const validityFor = (packType: string, hours: number) => {
+  if (packType === 'play_date') return 'Single visit · Inclusive of GST';
+  if (packType !== 'hour_pack') return null;
+  return hours <= 10 ? '2 month validity' : '3 month validity';
 };
 
 interface PlayPack {
