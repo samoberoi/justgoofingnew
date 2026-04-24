@@ -5,6 +5,9 @@ import { ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import Icon3D from '../components/Icon3D';
 import BottomNav from '../components/BottomNav';
+import partyBasic from '@/assets/party-basic.jpg';
+import partyBash from '@/assets/party-bash.jpg';
+import partyBonanza from '@/assets/party-bonanza.jpg';
 
 interface PartyPack {
   id: string;
@@ -15,10 +18,17 @@ interface PartyPack {
 }
 
 const accents = [
-  { bg: 'bg-butter', icon: 'gift' as const },
-  { bg: 'bg-lavender', icon: 'streak' as const },
-  { bg: 'bg-coral', icon: 'badge' as const },
+  { bg: 'bg-butter', icon: 'gift' as const, image: partyBasic },
+  { bg: 'bg-lavender', icon: 'streak' as const, image: partyBash },
+  { bg: 'bg-coral', icon: 'badge' as const, image: partyBonanza },
 ];
+
+const matchImage = (name: string) => {
+  const n = name.toLowerCase();
+  if (n.includes('bonanza')) return partyBonanza;
+  if (n.includes('bash')) return partyBash;
+  return partyBasic;
+};
 
 const PartiesPage = () => {
   const navigate = useNavigate();
