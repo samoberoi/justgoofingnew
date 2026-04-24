@@ -52,7 +52,8 @@ const ExtendSessionPage = () => {
       toast.error('Could not extend', { description: error.message });
       return;
     }
-    toast.success(`+${hours}h added! 🎉`, { description: 'Show your QR to staff to confirm.' });
+    const label = hours < 1 ? `${hours * 60} mins` : `${hours}h`;
+    toast.success(`+${label} added! 🎉`, { description: 'Show your QR to staff to confirm.' });
     navigate('/home');
   };
 
