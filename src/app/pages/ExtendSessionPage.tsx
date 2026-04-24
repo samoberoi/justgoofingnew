@@ -7,7 +7,12 @@ import { useAppStore } from '../store';
 import { toast } from 'sonner';
 import Icon3D from '../components/Icon3D';
 
-const HOUR_OPTIONS = [1, 2, 3];
+const HOUR_OPTIONS: { value: number; label: string; sub: string }[] = [
+  { value: 0.5, label: '+30', sub: 'mins' },
+  { value: 1, label: '+1', sub: 'hour' },
+  { value: 2, label: '+2', sub: 'hours' },
+  { value: 3, label: '+3', sub: 'hours' },
+];
 
 const ExtendSessionPage = () => {
   const { sessionId } = useParams<{ sessionId: string }>();
@@ -15,7 +20,7 @@ const ExtendSessionPage = () => {
   const { userId } = useAppStore();
   const [session, setSession] = useState<any>(null);
   const [packs, setPacks] = useState<any[]>([]);
-  const [hours, setHours] = useState(1);
+  const [hours, setHours] = useState<number>(1);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
