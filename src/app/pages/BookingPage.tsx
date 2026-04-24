@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, CheckCircle2, Plus } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Plus, Car, Utensils } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAppStore } from '../store';
 import { useStoreSelection } from '../hooks/useStoreSelection';
@@ -10,10 +10,17 @@ import Icon3D from '../components/Icon3D';
 
 const SLOTS = ['11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00'];
 
+// Pricing matrix per package name
+const PRICING: Record<string, { playNoCar: number; playWithCar: number; kidsBuffet: number; adultBuffet: number }> = {
+  'Basic Party':   { playNoCar: 800,  playWithCar: 1000, kidsBuffet: 600, adultBuffet: 1000 },
+  'Bash Party':    { playNoCar: 1000, playWithCar: 1200, kidsBuffet: 800, adultBuffet: 1250 },
+  'Bonanza Party': { playNoCar: 1200, playWithCar: 1400, kidsBuffet: 900, adultBuffet: 1400 },
+};
+
 const BookingPage = () => {
   const navigate = useNavigate();
   const { itemId } = useParams<{ itemId: string }>();
-  const { userId, phoneNumber, userName, totalOrders, activeCampaigns, refreshUserData } = useAppStore();
+  const { userId, phoneNumber, userName, refreshUserData } = useAppStore();
   const { selectedStore } = useStoreSelection();
   const { kids } = useKids(userId);
 
@@ -25,14 +32,15 @@ const BookingPage = () => {
   const [slot, setSlot] = useState<string>('11:00');
   const [selectedKidIds, setSelectedKidIds] = useState<string[]>([]);
   const [extraKids, setExtraKids] = useState(0);
+  const [adults, setAdults] = useState(0);
+  const [withCar, setWithCar] = useState<boolean>(false);
+  const [kidsBuffet, setKidsBuffet] = useState<boolean>(false);
+  const [adultBuffet, setAdultBuffet] = useState<boolean>(false);
+  const [discount, setDiscount] = useState<number>(0);
+  const [discountInput, setDiscountInput] = useState<string>('');
   const [notes, setNotes] = useState('');
   const [contactName, setContactName] = useState(userName || '');
   const [contactPhone, setContactPhone] = useState(phoneNumber || '');
-
-  const welcomeCampaign = activeCampaigns.find(c =>
-    c.category === 'welcome' && c.is_active && c.auto_apply && totalOrders === 0
-  );
-  const isFreeWelcome = !!welcomeCampaign && totalOrders === 0;
 
   useEffect(() => {
     setContactName(userName || '');
@@ -50,9 +58,20 @@ const BookingPage = () => {
   }, [itemId]);
 
   const numKids = selectedKidIds.length + extraKids;
-  const price = item ? Number(item.discounted_price || item.price) : 0;
-  const discount = isFreeWelcome ? price : 0;
-  const total = Math.max(0, price - discount);
+  const pricing = item ? PRICING[item.name] : null;
+
+  const breakdown = useMemo(() => {
+    if (!pricing) return { playPerKid: 0, playSubtotal: 0, kidsBuffetSubtotal: 0, adultBuffetSubtotal: 0, subtotal: 0 };
+    const playPerKid = withCar ? pricing.playWithCar : pricing.playNoCar;
+    const playSubtotal = playPerKid * numKids;
+    const kidsBuffetSubtotal = kidsBuffet ? pricing.kidsBuffet * numKids : 0;
+    const adultBuffetSubtotal = adultBuffet ? pricing.adultBuffet * adults : 0;
+    const subtotal = playSubtotal + kidsBuffetSubtotal + adultBuffetSubtotal;
+    return { playPerKid, playSubtotal, kidsBuffetSubtotal, adultBuffetSubtotal, subtotal };
+  }, [pricing, withCar, kidsBuffet, adultBuffet, numKids, adults]);
+
+  const safeDiscount = Math.max(0, Math.min(discount, breakdown.subtotal));
+  const total = Math.max(0, breakdown.subtotal - safeDiscount);
 
   const today = new Date().toISOString().split('T')[0];
   const maxDate = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
@@ -62,11 +81,23 @@ const BookingPage = () => {
     setSelectedKidIds(prev => prev.includes(id) ? prev.filter(k => k !== id) : [...prev, id]);
   };
 
+  const applyDiscount = () => {
+    const v = parseFloat(discountInput);
+    setDiscount(isNaN(v) || v < 0 ? 0 : v);
+  };
+
   const handleConfirm = async () => {
     if (!canSubmit || !userId || !item || !selectedStore) return;
     setSubmitting(true);
     const firstKid = kids.find(k => k.id === selectedKidIds[0]);
     const kidNames = selectedKidIds.map(id => kids.find(k => k.id === id)?.name).filter(Boolean).join(', ');
+
+    const optionsLine = [
+      withCar ? 'With Car' : 'Without Car',
+      kidsBuffet ? `Kids Buffet (${numKids})` : null,
+      adultBuffet ? `Adult Buffet (${adults})` : null,
+    ].filter(Boolean).join(' · ');
+    const fullNotes = [optionsLine, notes.trim()].filter(Boolean).join('\n');
 
     const { data: booking, error } = await supabase
       .from('bookings' as any)
@@ -75,7 +106,7 @@ const BookingPage = () => {
         store_id: selectedStore.id,
         menu_item_id: item.id,
         package_name: item.name,
-        package_price: price,
+        package_price: breakdown.playPerKid,
         customer_name: contactName.trim(),
         customer_phone: contactPhone.trim(),
         kid_name: kidNames || null,
@@ -83,11 +114,11 @@ const BookingPage = () => {
         num_kids: numKids,
         booking_date: date,
         slot_time: slot,
-        duration_hours: 1,
-        special_instructions: notes.trim() || null,
+        duration_hours: 2.5,
+        special_instructions: fullNotes || null,
         total_amount: total,
-        discount,
-        is_free_welcome: isFreeWelcome,
+        discount: safeDiscount,
+        is_free_welcome: false,
         payment_method: 'pay_at_venue',
         payment_status: 'pending',
         status: 'booked',
@@ -120,7 +151,7 @@ const BookingPage = () => {
             className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
             <ArrowLeft size={18} className="text-ink" strokeWidth={2.5} />
           </motion.button>
-          <h1 className="font-display text-xl text-ink -tracking-wide">Book a Slot</h1>
+          <h1 className="font-display text-xl text-ink -tracking-wide">Book a Party</h1>
         </div>
       </header>
 
@@ -133,20 +164,38 @@ const BookingPage = () => {
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-display text-base text-ink">{item.name}</h3>
-            <p className="text-[11px] text-ink/55 mt-0.5 line-clamp-2">{item.description}</p>
-            <p className="font-display text-base text-coral mt-1">₹{price}</p>
+            <p className="text-[11px] text-ink/55 mt-0.5">2.5 hour party</p>
+            {pricing && (
+              <p className="font-display text-base text-coral mt-1">
+                ₹{breakdown.playPerKid}<span className="text-[11px] text-ink/55 font-heading">/kid</span>
+              </p>
+            )}
           </div>
         </motion.div>
 
-        {isFreeWelcome && (
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-            className="bg-mint rounded-3xl p-4 flex items-center gap-3 shadow-pop-mint text-ink">
-            <Icon3D name="gift" size={28} alt="" />
-            <div>
-              <p className="font-display text-sm">{welcomeCampaign!.name}</p>
-              <p className="text-[11px] text-ink/70">This one's on us 🎉</p>
+        {/* CAR OPTION */}
+        {pricing && (
+          <div className="bg-card border-2 border-ink/8 rounded-3xl p-4 space-y-3 shadow-soft">
+            <label className="font-display text-base text-ink flex items-center gap-2">
+              <Car size={20} /> Play Option
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <button onClick={() => setWithCar(false)}
+                className={`p-3 rounded-2xl border-2 text-left transition-all ${
+                  !withCar ? 'border-coral bg-coral/10 shadow-pop-coral' : 'border-ink/8 bg-background'
+                }`}>
+                <p className="font-heading text-sm text-ink">Without Car</p>
+                <p className="font-display text-base text-coral mt-1">₹{pricing.playNoCar}<span className="text-[10px] text-ink/55 font-heading">/kid</span></p>
+              </button>
+              <button onClick={() => setWithCar(true)}
+                className={`p-3 rounded-2xl border-2 text-left transition-all ${
+                  withCar ? 'border-coral bg-coral/10 shadow-pop-coral' : 'border-ink/8 bg-background'
+                }`}>
+                <p className="font-heading text-sm text-ink">With Car 🚗</p>
+                <p className="font-display text-base text-coral mt-1">₹{pricing.playWithCar}<span className="text-[10px] text-ink/55 font-heading">/kid</span></p>
+              </button>
             </div>
-          </motion.div>
+          </div>
         )}
 
         {/* Pick kids */}
@@ -160,15 +209,7 @@ const BookingPage = () => {
             </button>
           </div>
 
-          {kids.length === 0 ? (
-            <button
-              onClick={() => navigate('/kids')}
-              className="w-full bg-coral/5 border-2 border-dashed border-coral/30 rounded-2xl p-4 text-center"
-            >
-              <p className="text-sm font-heading text-coral">Add your kids first</p>
-              <p className="text-[11px] text-ink/55 mt-0.5">So we know who's playing 👶</p>
-            </button>
-          ) : (
+          {kids.length > 0 && (
             <div className="grid grid-cols-2 gap-2">
               {kids.map(kid => {
                 const sel = selectedKidIds.includes(kid.id);
@@ -202,22 +243,77 @@ const BookingPage = () => {
           {/* Extra (friends) */}
           <div className="flex items-center justify-between bg-butter/15 rounded-2xl p-3 border border-butter/30">
             <div>
-              <p className="text-sm font-heading text-ink">+ Extra friends</p>
-              <p className="text-[11px] text-ink/55">Bringing other kids along?</p>
+              <p className="text-sm font-heading text-ink">+ Extra kids</p>
+              <p className="text-[11px] text-ink/55">Friends & guests</p>
             </div>
             <div className="flex items-center gap-2">
               <button onClick={() => setExtraKids(Math.max(0, extraKids - 1))}
                 className="w-8 h-8 rounded-xl bg-card border-2 border-ink/8 font-display text-ink active:scale-90">−</button>
-              <span className="font-display text-lg text-ink w-6 text-center tabular-nums">{extraKids}</span>
+              <span className="font-display text-lg text-ink w-8 text-center tabular-nums">{extraKids}</span>
               <button onClick={() => setExtraKids(extraKids + 1)}
                 className="w-8 h-8 rounded-xl bg-coral text-white font-display active:scale-90">+</button>
             </div>
           </div>
 
+          {/* Adults */}
+          <div className="flex items-center justify-between bg-mint/15 rounded-2xl p-3 border border-mint/30">
+            <div>
+              <p className="text-sm font-heading text-ink">Adults</p>
+              <p className="text-[11px] text-ink/55">Parents & guests</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button onClick={() => setAdults(Math.max(0, adults - 1))}
+                className="w-8 h-8 rounded-xl bg-card border-2 border-ink/8 font-display text-ink active:scale-90">−</button>
+              <span className="font-display text-lg text-ink w-8 text-center tabular-nums">{adults}</span>
+              <button onClick={() => setAdults(adults + 1)}
+                className="w-8 h-8 rounded-xl bg-mint text-ink font-display active:scale-90">+</button>
+            </div>
+          </div>
+
           <p className="text-[11px] text-ink/55 text-center">
-            Total kids: <span className="font-display text-coral">{numKids}</span>
+            Total kids: <span className="font-display text-coral">{numKids}</span> · Adults: <span className="font-display text-mint">{adults}</span>
           </p>
         </div>
+
+        {/* BUFFET OPTIONS */}
+        {pricing && (
+          <div className="bg-card border-2 border-ink/8 rounded-3xl p-4 space-y-3 shadow-soft">
+            <label className="font-display text-base text-ink flex items-center gap-2">
+              <Utensils size={20} /> Add Buffet (Optional)
+            </label>
+            <button onClick={() => setKidsBuffet(!kidsBuffet)}
+              className={`w-full p-3 rounded-2xl border-2 flex items-center justify-between transition-all ${
+                kidsBuffet ? 'border-coral bg-coral/10' : 'border-ink/8 bg-background'
+              }`}>
+              <div className="text-left">
+                <p className="font-heading text-sm text-ink">Kids Buffet 🍱</p>
+                <p className="text-[10px] text-ink/55">₹{pricing.kidsBuffet} × {numKids} kid{numKids !== 1 ? 's' : ''}</p>
+              </div>
+              <div className="text-right">
+                <p className="font-display text-base text-coral">₹{kidsBuffet ? pricing.kidsBuffet * numKids : 0}</p>
+                <div className={`w-10 h-6 rounded-full transition-all ${kidsBuffet ? 'bg-coral' : 'bg-ink/15'} relative mt-0.5`}>
+                  <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-all ${kidsBuffet ? 'right-0.5' : 'left-0.5'}`} />
+                </div>
+              </div>
+            </button>
+            <button onClick={() => setAdultBuffet(!adultBuffet)} disabled={adults === 0}
+              className={`w-full p-3 rounded-2xl border-2 flex items-center justify-between transition-all ${
+                adultBuffet ? 'border-coral bg-coral/10' : 'border-ink/8 bg-background'
+              } ${adults === 0 ? 'opacity-40' : ''}`}>
+              <div className="text-left">
+                <p className="font-heading text-sm text-ink">Adult Buffet 🍽️</p>
+                <p className="text-[10px] text-ink/55">₹{pricing.adultBuffet} × {adults} adult{adults !== 1 ? 's' : ''}</p>
+              </div>
+              <div className="text-right">
+                <p className="font-display text-base text-coral">₹{adultBuffet ? pricing.adultBuffet * adults : 0}</p>
+                <div className={`w-10 h-6 rounded-full transition-all ${adultBuffet ? 'bg-coral' : 'bg-ink/15'} relative mt-0.5`}>
+                  <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-all ${adultBuffet ? 'right-0.5' : 'left-0.5'}`} />
+                </div>
+              </div>
+            </button>
+            <p className="text-[10px] text-ink/55 text-center">Non-veg on extra charges</p>
+          </div>
+        )}
 
         {/* Date */}
         <div className="bg-card border-2 border-ink/8 rounded-3xl p-4 space-y-3 shadow-soft">
@@ -260,10 +356,48 @@ const BookingPage = () => {
             className="w-full px-3 py-3 bg-background border-2 border-ink/8 rounded-2xl text-sm text-ink focus:outline-none focus:border-coral resize-none" />
         </div>
 
-        {/* Price */}
+        {/* Discount */}
         <div className="bg-card border-2 border-ink/8 rounded-3xl p-4 space-y-2 shadow-soft">
-          <div className="flex justify-between text-sm text-ink"><span>Package</span><span className="tabular-nums">₹{price}</span></div>
-          {discount > 0 && <div className="flex justify-between text-sm text-mint"><span>Welcome (FREE)</span><span>−₹{discount}</span></div>}
+          <p className="font-display text-base text-ink">Discount (₹)</p>
+          <div className="flex gap-2">
+            <input type="number" min="0" value={discountInput} onChange={e => setDiscountInput(e.target.value)}
+              placeholder="0"
+              className="flex-1 px-3 py-3 bg-background border-2 border-ink/8 rounded-2xl text-sm text-ink focus:outline-none focus:border-coral" />
+            <button onClick={applyDiscount}
+              className="px-5 rounded-2xl bg-ink text-white font-heading text-sm active:scale-95">Apply</button>
+          </div>
+          {discount > 0 && (
+            <button onClick={() => { setDiscount(0); setDiscountInput(''); }}
+              className="text-[11px] text-coral font-heading">Remove discount</button>
+          )}
+        </div>
+
+        {/* Price breakdown */}
+        <div className="bg-card border-2 border-ink/8 rounded-3xl p-4 space-y-2 shadow-soft">
+          <div className="flex justify-between text-sm text-ink">
+            <span>Play ({withCar ? 'with car' : 'no car'}) × {numKids}</span>
+            <span className="tabular-nums">₹{breakdown.playSubtotal}</span>
+          </div>
+          {kidsBuffet && (
+            <div className="flex justify-between text-sm text-ink">
+              <span>Kids Buffet × {numKids}</span>
+              <span className="tabular-nums">₹{breakdown.kidsBuffetSubtotal}</span>
+            </div>
+          )}
+          {adultBuffet && adults > 0 && (
+            <div className="flex justify-between text-sm text-ink">
+              <span>Adult Buffet × {adults}</span>
+              <span className="tabular-nums">₹{breakdown.adultBuffetSubtotal}</span>
+            </div>
+          )}
+          <div className="border-t-2 border-ink/5 pt-2 flex justify-between text-sm text-ink">
+            <span>Subtotal</span><span className="tabular-nums">₹{breakdown.subtotal}</span>
+          </div>
+          {safeDiscount > 0 && (
+            <div className="flex justify-between text-sm text-mint">
+              <span>Discount</span><span>−₹{safeDiscount}</span>
+            </div>
+          )}
           <div className="border-t-2 border-ink/5 pt-2 flex justify-between font-display text-lg text-ink">
             <span>Pay at Venue</span><span className="text-coral tabular-nums">₹{total}</span>
           </div>
@@ -276,7 +410,7 @@ const BookingPage = () => {
       <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-xl border-t-2 border-ink/5 p-4">
         <motion.button whileTap={{ scale: 0.97 }} onClick={handleConfirm} disabled={!canSubmit}
           className="w-full py-4 bg-gradient-coral rounded-2xl font-display text-base text-white shadow-pop-coral disabled:opacity-40 disabled:shadow-none">
-          {submitting ? 'Booking…' : `Confirm Booking 🎉`}
+          {submitting ? 'Booking…' : `Confirm ₹${total} 🎉`}
         </motion.button>
       </div>
     </div>
