@@ -71,7 +71,7 @@ const PartiesPage = () => {
             transition={{ duration: 3, repeat: Infinity }}
             className="absolute -bottom-3 -right-3"
           >
-            <Icon3D name="cake" size={140} alt="" />
+            <Icon3D name="gift" size={140} alt="" />
           </motion.div>
         </motion.div>
 
