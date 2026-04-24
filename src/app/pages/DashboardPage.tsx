@@ -187,7 +187,7 @@ const DashboardPage = () => {
                   onClick={() => navigate('/extend-session/' + activeSession.id)}
                   className="py-3.5 bg-mint rounded-2xl text-sm font-display text-ink hover:scale-[1.02] transition-transform"
                 >
-                  + Extend 1hr
+                  + Extend time
                 </button>
               </div>
             </motion.div>
