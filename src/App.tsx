@@ -27,6 +27,7 @@ import KidsPage from "./app/pages/KidsPage";
 import NotificationsPage from "./app/pages/NotificationsPage";
 import PaymentPage from "./app/pages/PaymentPage";
 import PartiesPage from "./app/pages/PartiesPage";
+import PrivacyPolicyPage from "./app/pages/PrivacyPolicyPage";
 
 // Ops pages
 import SuperAdminDashboard from "./ops/pages/SuperAdminDashboard";
@@ -69,6 +70,7 @@ const AnimatedRoutes = () => {
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={<SplashScreen />} />
         <Route path="/login" element={<T><LoginPage /></T>} />
+        <Route path="/privacy" element={<PrivacyPolicyPage />} />
 
         {/* Customer routes */}
         <Route path="/welcome" element={<T><WelcomePage /></T>} />
