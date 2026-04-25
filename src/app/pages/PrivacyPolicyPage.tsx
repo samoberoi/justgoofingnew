@@ -119,7 +119,7 @@ const PrivacyPolicyPage = () => {
             </p>
             <ul className="list-none pl-0 space-y-1 mt-2">
               <li><strong>Email:</strong> support@justgoofing.com</li>
-              <li><strong>Owner:</strong> Anish Kumar Kanathayi</li>
+              <li><strong>Owner:</strong> HyperRevamp</li>
             </ul>
           </section>
         </div>
