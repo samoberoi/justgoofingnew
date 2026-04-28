@@ -61,7 +61,10 @@ const ProfilePage = () => {
 
   return (
     <div className="min-h-screen bg-background pb-32">
-      <header className="sticky top-0 z-40 bg-background/85 backdrop-blur-xl">
+      <header
+        className="sticky top-0 z-40 bg-background/85 backdrop-blur-xl"
+        style={{ paddingTop: 'env(safe-area-inset-top)' }}
+      >
         <div className="flex items-center gap-3 px-5 h-16 max-w-lg mx-auto">
           <motion.button
             whileTap={{ scale: 0.9 }}
