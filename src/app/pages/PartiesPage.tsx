@@ -33,6 +33,7 @@ const matchImage = (name: string) => {
 
 const PartiesPage = () => {
   const navigate = useNavigate();
+  const goBack = useSafeBack();
   const [packs, setPacks] = useState<PartyPack[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -54,7 +55,7 @@ const PartiesPage = () => {
     <div className="min-h-screen bg-background pb-32">
       <header className="sticky top-0 z-40 bg-background/85 backdrop-blur-xl">
         <div className="flex items-center gap-3 px-5 h-16 max-w-lg mx-auto">
-          <motion.button whileTap={{ scale: 0.9 }} onClick={useSafeBack()}
+          <motion.button whileTap={{ scale: 0.9 }} onClick={goBack}
             className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
             <ArrowLeft size={18} className="text-ink" strokeWidth={2.5} />
           </motion.button>
