@@ -307,11 +307,19 @@ const KidsPage = () => {
               <div className="p-5 space-y-4">
                 {/* Photo */}
                 <div className="flex flex-col items-center gap-2 -mt-1">
+                  {/*
+                    NOTE: `capture` attribute removed intentionally.
+                    On iOS (WKWebView/Capacitor), forcing camera capture without
+                    NSCameraUsageDescription in Info.plist causes an instant crash
+                    (Apple Guideline 2.1(a) rejection). Letting iOS show its native
+                    "Photo Library / Take Photo / Choose File" sheet is safe AND
+                    still uses NSPhotoLibraryUsageDescription / NSCameraUsageDescription
+                    only when the user explicitly picks those options.
+                  */}
                   <input
                     ref={fileInputRef}
                     type="file"
                     accept="image/*"
-                    capture="environment"
                     onChange={handlePhotoSelect}
                     className="hidden"
                   />
