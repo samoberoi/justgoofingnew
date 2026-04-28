@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { ArrowLeft, Lock, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useSafeBack } from '../hooks/useSafeBack';
 import { useAppStore } from '../store';
 import Icon3D from '../components/Icon3D';
 import illusTier from '@/assets/illus/illus-tier.png';
@@ -24,7 +25,7 @@ const TiersPage = () => {
     <div className="min-h-screen bg-background pb-24">
       <header className="sticky top-0 z-40 bg-background/85 backdrop-blur-xl">
         <div className="flex items-center gap-3 px-5 h-16 max-w-lg mx-auto">
-          <motion.button whileTap={{ scale: 0.9 }} onClick={() => navigate(-1)}
+          <motion.button whileTap={{ scale: 0.9 }} onClick={useSafeBack()}
             className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
             <ArrowLeft size={18} className="text-ink" strokeWidth={2.5} />
           </motion.button>
