@@ -124,11 +124,6 @@ const OpsLoginPage = () => {
                 {sending ? 'Sending OTP…' : 'Send OTP'} <ArrowRight size={16} />
               </motion.button>
             </div>
-
-            <div className="bg-butter/30 border-2 border-butter rounded-2xl p-3 text-xs">
-              <p className="font-heading text-ink mb-1">🔑 Dev Login</p>
-              <p className="text-ink/70">Phone: <span className="font-heading text-coral">8373914073</span> · OTP: <span className="font-heading text-coral">111111</span></p>
-            </div>
           </motion.div>
         )}
 
