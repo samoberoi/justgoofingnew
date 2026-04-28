@@ -6,6 +6,7 @@ import { useAppStore } from '../store';
 import { ArrowRight, Shield, Loader2 } from 'lucide-react';
 import Icon3D from '../components/Icon3D';
 import charHero from '@/assets/char-hero.png';
+import justGoofingLogo from '@/assets/just-goofing-logo.png';
 
 const OTP_LENGTH = 6;
 
@@ -161,9 +162,9 @@ const LoginPage = () => {
               <motion.div
                 animate={{ rotate: [0, 4, -4, 0] }}
                 transition={{ duration: 2, repeat: Infinity, repeatDelay: 4 }}
-                className="w-20 h-20 mx-auto rounded-3xl bg-ink flex items-center justify-center shadow-hero"
+                className="w-44 h-24 mx-auto flex items-center justify-center"
               >
-                <span className="font-display text-white text-3xl leading-none">JG</span>
+                <img src={justGoofingLogo} alt="Just Goofing" className="w-full h-full object-contain" />
               </motion.div>
               <h1 className="font-display text-3xl text-ink mt-4 -tracking-wide">Just Goofing</h1>
               <p className="mt-1.5 text-muted-foreground text-sm font-heading">Where the fun never stops 🎉</p>
