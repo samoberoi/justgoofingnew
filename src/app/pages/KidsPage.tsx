@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Plus, Trash2, Edit3, X, Camera, Loader2 } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSafeBack } from '../hooks/useSafeBack';
 import { useAppStore } from '../store';
 import { useKids, calcAge, Kid, uploadKidPhoto } from '../hooks/useKids';
 import Icon3D from '../components/Icon3D';
@@ -36,6 +37,7 @@ const empty: FormState = { name: '', gender: '', date_of_birth: '', school: '', 
 
 const KidsPage = () => {
   const navigate = useNavigate();
+  const goBack = useSafeBack();
   const [searchParams, setSearchParams] = useSearchParams();
   const { userId } = useAppStore();
   const { kids, loading, addKid, updateKid, deleteKid } = useKids(userId);
@@ -144,7 +146,7 @@ const KidsPage = () => {
         <div className="flex items-center gap-3 px-5 h-16 max-w-lg mx-auto">
           <motion.button
             whileTap={{ scale: 0.9 }}
-            onClick={() => navigate(-1)}
+            onClick={goBack}
             className="w-10 h-10 rounded-full bg-muted flex items-center justify-center"
           >
             <ArrowLeft size={18} className="text-ink" strokeWidth={2.5} />
