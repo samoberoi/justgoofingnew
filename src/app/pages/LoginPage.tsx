@@ -197,11 +197,6 @@ const LoginPage = () => {
             <div className="flex items-center justify-center gap-2 text-muted-foreground text-xs font-medium">
               <Shield size={12} strokeWidth={2.5} /> Your number is safe with us
             </div>
-
-            <div className="bg-gradient-butter rounded-2xl p-3.5 text-xs text-ink border-2 border-ink/10 shadow-soft">
-              <p className="font-display mb-1">🔑 Dev Login</p>
-              <p className="font-medium">Admin: <span className="font-display">8373914073</span> · OTP: <span className="font-display">111111</span></p>
-            </div>
           </motion.div>
         )}
 
