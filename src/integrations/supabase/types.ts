@@ -1242,10 +1242,12 @@ export type Database = {
           aadhaar_number: string | null
           anniversary: string | null
           avatar_url: string | null
+          biometric_enabled: boolean
           birthday: string | null
           created_at: string
           designation: string | null
           diet_preference: string | null
+          email: string | null
           full_name: string | null
           id: string
           pan_document_url: string | null
@@ -1255,6 +1257,7 @@ export type Database = {
           parent2_name: string | null
           parent2_phone: string | null
           phone: string | null
+          pin_hash: string | null
           salary: number | null
           start_date: string | null
           updated_at: string
@@ -1265,10 +1268,12 @@ export type Database = {
           aadhaar_number?: string | null
           anniversary?: string | null
           avatar_url?: string | null
+          biometric_enabled?: boolean
           birthday?: string | null
           created_at?: string
           designation?: string | null
           diet_preference?: string | null
+          email?: string | null
           full_name?: string | null
           id?: string
           pan_document_url?: string | null
@@ -1278,6 +1283,7 @@ export type Database = {
           parent2_name?: string | null
           parent2_phone?: string | null
           phone?: string | null
+          pin_hash?: string | null
           salary?: number | null
           start_date?: string | null
           updated_at?: string
@@ -1288,10 +1294,12 @@ export type Database = {
           aadhaar_number?: string | null
           anniversary?: string | null
           avatar_url?: string | null
+          biometric_enabled?: boolean
           birthday?: string | null
           created_at?: string
           designation?: string | null
           diet_preference?: string | null
+          email?: string | null
           full_name?: string | null
           id?: string
           pan_document_url?: string | null
@@ -1301,6 +1309,7 @@ export type Database = {
           parent2_name?: string | null
           parent2_phone?: string | null
           phone?: string | null
+          pin_hash?: string | null
           salary?: number | null
           start_date?: string | null
           updated_at?: string
@@ -1837,6 +1846,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_email_for_phone: { Args: { _phone: string }; Returns: string }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
@@ -1847,6 +1857,11 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      phone_has_pin: { Args: { _phone: string }; Returns: boolean }
+      verify_phone_pin: {
+        Args: { _phone: string; _pin_hash: string }
         Returns: boolean
       }
     }
