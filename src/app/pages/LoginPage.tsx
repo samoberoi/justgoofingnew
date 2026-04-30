@@ -138,8 +138,13 @@ const LoginPage = () => {
       });
       if (signErr) throw signErr;
 
-      // First login — offer biometric setup
-      if (biometricAvail && !isBiometricEnabled(p)) {
+      // First login — offer biometric setup. Re-check here because native
+      // biometric availability can be unknown during the initial webview load.
+      const nativeBiometricAvail = await isBiometricAvailable();
+      setBiometricAvail(nativeBiometricAvail);
+      if (nativeBiometricAvail) setBiometryLabel(await getBiometryLabel());
+
+      if (nativeBiometricAvail && !isBiometricEnabled(p)) {
         // stash pin temporarily for the biometric-prompt step
         sessionStorage.setItem('jg_pending_pin', pinValue);
         setStep('biometric-prompt');
