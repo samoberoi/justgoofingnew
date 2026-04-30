@@ -184,7 +184,7 @@ const ProfilePage = () => {
       </div>
 
       {/* Logout */}
-      <div className="px-4 pt-5 pb-8">
+      <div className="px-4 pt-5 pb-3">
         <motion.button
           whileTap={{ scale: 0.97 }}
           onClick={handleLogout}
@@ -193,6 +193,76 @@ const ProfilePage = () => {
           <LogOut size={14} /> Sign Out
         </motion.button>
       </div>
+
+      {/* Delete Account */}
+      <div className="px-4 pt-2 pb-10">
+        <div className="bg-card border border-border rounded-2xl p-4">
+          <div className="flex items-start gap-3 mb-3">
+            <div className="w-10 h-10 rounded-2xl bg-red-50 flex items-center justify-center shrink-0">
+              <Trash2 size={18} className="text-red-600" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-sm font-heading text-ink">Delete Account</h3>
+              <p className="text-xs text-ink/60 mt-1 leading-relaxed">
+                Permanently delete your account and all associated data — kids, bookings, addresses, photos and order history. This cannot be undone.
+              </p>
+            </div>
+          </div>
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            onClick={() => { setConfirmText(''); setShowDeleteModal(true); }}
+            className="w-full py-3 rounded-xl bg-red-600 text-white text-sm font-heading flex items-center justify-center gap-2"
+          >
+            <Trash2 size={14} /> Delete My Account
+          </motion.button>
+        </div>
+      </div>
+
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <motion.div
+            initial={{ y: 40, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            className="w-full max-w-md bg-background rounded-3xl p-6 shadow-xl"
+          >
+            <div className="w-14 h-14 mx-auto rounded-full bg-red-50 flex items-center justify-center mb-4">
+              <AlertTriangle size={26} className="text-red-600" />
+            </div>
+            <h2 className="text-lg font-display text-ink text-center -tracking-wide">Delete your account?</h2>
+            <p className="text-sm text-ink/70 text-center mt-2 leading-relaxed">
+              This will permanently delete your profile, kids, bookings, addresses, photos and order history. This action <strong>cannot be undone</strong>.
+            </p>
+            <p className="text-xs text-ink/60 mt-4 mb-2">
+              Type <strong>DELETE</strong> to confirm:
+            </p>
+            <input
+              type="text"
+              value={confirmText}
+              onChange={(e) => setConfirmText(e.target.value)}
+              placeholder="DELETE"
+              autoCapitalize="characters"
+              className="w-full px-4 py-3 rounded-xl border-2 border-border bg-card text-ink text-sm font-mono tracking-wider focus:outline-none focus:border-red-500"
+              disabled={deleting}
+            />
+            <div className="flex gap-3 mt-5">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                disabled={deleting}
+                className="flex-1 py-3 rounded-xl bg-muted text-ink text-sm font-heading"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={confirmText !== 'DELETE' || deleting}
+                className="flex-1 py-3 rounded-xl bg-red-600 text-white text-sm font-heading disabled:opacity-40"
+              >
+                {deleting ? 'Deleting…' : 'Delete Forever'}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
 
       <BottomNav />
     </div>
