@@ -60,6 +60,22 @@ const ProfilePage = () => {
     navigate('/');
   };
 
+  const handleDeleteAccount = async () => {
+    if (confirmText !== 'DELETE') return;
+    setDeleting(true);
+    try {
+      const { error } = await supabase.functions.invoke('delete-account');
+      if (error) throw error;
+      toast({ title: 'Account deleted', description: 'Your account and data have been permanently removed.' });
+      await supabase.auth.signOut();
+      setLoggedIn(false);
+      navigate('/');
+    } catch (e: any) {
+      toast({ title: 'Could not delete account', description: e?.message || 'Please try again.', variant: 'destructive' });
+      setDeleting(false);
+    }
+  };
+
   const tierName = totalOrders >= 50 ? 'Legend' : totalOrders >= 25 ? 'Elite' : totalOrders >= 10 ? 'Pro' : 'Rookie';
   const tierEmoji = totalOrders >= 50 ? '👑' : totalOrders >= 25 ? '🏆' : totalOrders >= 10 ? '⭐' : '🌱';
 
