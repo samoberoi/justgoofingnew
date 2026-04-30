@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, ChevronRight, Volume2, VolumeX, LogOut } from 'lucide-react';
+import { ArrowLeft, ChevronRight, Volume2, VolumeX, LogOut, Trash2, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store';
 import BottomNav from '../components/BottomNav';
 import Icon3D from '../components/Icon3D';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
 import ProfileHero from '../components/profile/ProfileHero';
 import ProfileStats from '../components/profile/ProfileStats';
