@@ -1,1 +1,7 @@
 project_id = "cplzejdscauliufitzpa"
+
+[functions.setup-pin]
+verify_jwt = false
+
+[functions.forgot-pin]
+verify_jwt = false
